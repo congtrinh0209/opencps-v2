@@ -3,8 +3,14 @@
 </#if>
 
 <div class="row panel">
-    <div class="row-header">
-        <div class="background-triangle-big">CHI TIÊT THỦ TỤC HÀNH CHÍNH</div>
+    <div class="row-header align-middle">
+        <div class="background-triangle-big">CHI TIẾT THỦ TỤC HÀNH CHÍNH</div>
+        <div class="pull-right group-icons align-middle-lg">
+            <a href="javascript:;" onclick="fnBack();">
+                <i class="fa fa-reply" aria-hidden="true"></i>
+                Quay lại
+            </a>
+        </div>
     </div>
     <div class="panel-body" id="dataDetailServiceInfo">
         <div class="row MB15">
@@ -167,9 +173,45 @@
 </div>
 
 <script type="text/javascript">
-    $(document).ready(function(){
+    var setValue = function(combobox,value) {
+      combobox.value(value);
+    }
+    var fnBack = function() {
+        var tabstrip = $("#service_info_tabstrip").data("kendoTabStrip");
+      var index=tabstrip.select().index();
+      var content=tabstrip.contentElement(index);
+      var id = $(content).find('li.active').attr("dataPk");
+      console.log(id);
+
+      $("#serviceinfo-right-content").load("${ajax.serviceinfomain_list}",function(result){
+        if(index == 2){
+          $("#service_info_list_view").getKendoListView().dataSource.read({
+            "level": id
+          });
+          var levelCombobox =  $("#levelSearch").data("kendoComboBox");
+          setValue(levelCombobox,id);
+          levelCombobox.trigger("change");
+          levelCombobox._isSelect = false;
+        }else if(index == 1){
+         $("#service_info_list_view").getKendoListView().dataSource.read({
+          "domain": id
+        });
+         var domainCombobox =  $("#domainCodeSearch").data("kendoComboBox");
+         setValue(domainCombobox,id);
+         domainCombobox.trigger("change");
+         domainCombobox._isSelect = false;
+       }else{
+        $("#service_info_list_view").getKendoListView().dataSource.read({
+          "administration": id
+        });
+        var administrationCombobox =  $("#administrationCodeSearch").data("kendoComboBox");
+        setValue(administrationCombobox,id);
+        administrationCombobox.trigger("change");
+        administrationCombobox._isSelect = false;
+      }
 
     });
+    }
 
     var pullDataDetail= function(id){
         console.log(id);
@@ -197,16 +239,18 @@
                                 for(var i=0; i<result.serviceConfigs.length;i++){
                                     var item = result.serviceConfigs[i];
                                     if(item.serviceLevel>=3){
-                                        submitDsier += '<li><a href="/web/cong-tiep-nhan/register">'+item.govAgencyName+'</a></li>';
+                                        submitDsier += '<li><a href="/web${(Request.layoutfriendurl)!}/dich-vu-cong#/add-dvc/' + item.serviceConfigId + '">'+item.govAgencyName+'</a></li>';
                                     }else{
                                         submitDsier += '<li><a href="javascript:;" class="showInstruction" serviceInstruction='+item.serviceInstruction+'>'+item.govAgencyName+'</a></li>';
                                     }
                                 }
                             }else{
                                 if(result.serviceConfigs.serviceLevel>=3){
+                                    submitDsier = '<div class="dropdown"><button class="btn btn-active btn-small  dropdown-toggle" type="button" data-toggle="dropdown">Nộp hồ sơ <span class="caret"></span></button><ul class="dropdown-menu">';
                                     // submitDsier += '<li><a href='+result.serviceConfigs.serviceUrl+'>'+result.serviceConfigs.govAgencyName+'</a></li>';
-                                    submitDsier += '<li><a href="/web/cong-tiep-nhan/register">'+result.serviceConfigs.govAgencyName+'</a></li>';
+                                     submitDsier += '<li><a href="/web${(Request.layoutfriendurl)!}/dich-vu-cong#/add-dvc/' + result.serviceConfigs.serviceConfigId + '">'+result.serviceConfigs.govAgencyName+'</a></li>';
                                 }else{
+                                    submitDsier = '<div class="dropdown"><button class="btn btn-active btn-small dropdown-toggle" type="button" data-toggle="dropdown">Xem hướng dẫn<span class="caret"></span></button><ul class="dropdown-menu">';
                                     submitDsier += '<li><a href="javascript:;" class="showInstruction" serviceInstruction='+result.serviceConfigs.serviceInstruction+'>'+result.serviceConfigs.govAgencyName+'</a></li>';
                                 }
                             }

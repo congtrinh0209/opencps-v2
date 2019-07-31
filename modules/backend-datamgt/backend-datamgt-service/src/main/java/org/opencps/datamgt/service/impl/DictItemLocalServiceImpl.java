@@ -14,29 +14,15 @@
 
 package org.opencps.datamgt.service.impl;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import org.opencps.auth.api.BackendAuthImpl;
-import org.opencps.auth.api.exception.NotFoundException;
-import org.opencps.auth.api.exception.UnauthenticationException;
-import org.opencps.auth.api.exception.UnauthorizationException;
-import org.opencps.auth.api.keys.ActionKeys;
-import org.opencps.auth.api.keys.ModelNameKeys;
-import org.opencps.datamgt.constants.DictItemTerm;
-import org.opencps.datamgt.exception.NoSuchDictItemException;
-import org.opencps.datamgt.model.DictItem;
-import org.opencps.datamgt.model.DictItemGroup;
-import org.opencps.datamgt.model.impl.DictItemImpl;
-import org.opencps.datamgt.service.DictCollectionLocalServiceUtil;
-import org.opencps.datamgt.service.base.DictItemLocalServiceBaseImpl;
-
 import com.liferay.asset.kernel.exception.DuplicateCategoryException;
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCachable;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
@@ -62,9 +48,26 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.opencps.auth.api.BackendAuthImpl;
+import org.opencps.auth.api.exception.NotFoundException;
+import org.opencps.auth.api.exception.UnauthenticationException;
+import org.opencps.auth.api.exception.UnauthorizationException;
+import org.opencps.auth.api.keys.ActionKeys;
+import org.opencps.auth.api.keys.ModelNameKeys;
+import org.opencps.datamgt.constants.DictItemTerm;
+import org.opencps.datamgt.exception.NoSuchDictItemException;
+import org.opencps.datamgt.model.DictItem;
+import org.opencps.datamgt.model.DictItemGroup;
+import org.opencps.datamgt.model.impl.DictItemImpl;
+import org.opencps.datamgt.service.DictCollectionLocalServiceUtil;
+import org.opencps.datamgt.service.base.DictItemLocalServiceBaseImpl;
 
 import aQute.bnd.annotation.ProviderType;
 
@@ -226,9 +229,8 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 		dictItem.setExpandoBridgeAttributes(baseModel);
 		// dictItem.setExpandoBridgeAttributes(serviceContext);
 
-		dictItemPersistence.update(dictItem);
-
-		return dictItem;
+		return dictItemPersistence.update(dictItem);
+		//return dictItem;
 	}
 
 	/**
@@ -253,10 +255,11 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 
 		DictItem dictItem = dictItemPersistence.fetchByF_parentItemId_level_Last(groupId, dictCollectionId,
 				parentItemId, level, null);
-		if ((Validator.isNotNull(dictItem) && sibling.equals("0")) || sibling.equals("0")) {
+		if ((Validator.isNotNull(dictItem) && "0".equals(sibling)) || "0".equals(sibling)) {
 			try {
 				sibling = GetterUtil.getInteger(dictItem.getSibling(), 1) + 1 + StringPool.BLANK;
 			} catch (Exception e) {
+				_log.error(e);
 				sibling = String.valueOf(1);
 			}
 		}
@@ -325,7 +328,7 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 		if (!hasPermission) {
 			throw new UnauthorizationException();
 		}
-		DictItem dictItem;
+		DictItem dictItem = null;
 
 		try {
 
@@ -340,7 +343,8 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 			}
 
 		} catch (NoSuchDictItemException e) {
-			throw new NotFoundException();
+			_log.error(e);
+			//throw new NotFoundException();
 		}
 
 		return dictItem;
@@ -365,23 +369,31 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 			throw new UnauthorizationException();
 		}
 		DictItem dictItem = dictItemPersistence.fetchByF_dictItemCode(itemCode, groupId);
-		
-		List<DictItemGroup> lsDictItem = dictItemGroupPersistence.findByF_dictItemId(groupId, dictItem.getPrimaryKey());
-		
-		_log.info("DictItemGroupSize_" + dictItem.getPrimaryKey() + "_" + groupId + "_" + lsDictItem.size());
-		
-		try {
-
-			dictItem = dictItemLocalService.deleteDictItem(dictItem.getDictItemId());
-			
-			//remove DictItem
-			for (DictItemGroup dig : lsDictItem) {
-				dictItemGroupPersistence.remove(dig);
+		if (dictItem != null) {
+			List<DictItemGroup> lsDictItemGroup = dictItemGroupPersistence.findByF_dictItemId(groupId, dictItem.getPrimaryKey());
+			//_log.info("DictItemGroupSize_" + dictItem.getPrimaryKey() + "_" + groupId + "_" + lsDictItemGroup.size());
+			//
+			dictItemLocalService.deleteDictItem(dictItem);
+			//remove DictItemGroup
+			if (lsDictItemGroup != null && lsDictItemGroup.size() > 0) {
+				for (DictItemGroup dig : lsDictItemGroup) {
+					dictItemGroupPersistence.remove(dig);
+				}
 			}
-
-		} catch (NoSuchDictItemException e) {
-			throw new NotFoundException();
 		}
+		
+//		List<DictItemGroup> lsDictItemGroup = dictItemGroupPersistence.findByF_dictItemId(groupId, dictItem.getPrimaryKey());
+//		_log.info("DictItemGroupSize_" + dictItem.getPrimaryKey() + "_" + groupId + "_" + lsDictItem.size());
+		
+//		try {
+//			dictItemLocalService.deleteDictItem(dictItem.getDictItemId());
+//			//remove DictItem
+//			for (DictItemGroup dig : lsDictItem) {
+//				dictItemGroupPersistence.remove(dig);
+//			}
+//		} catch (NoSuchDictItemException e) {
+//			throw new NotFoundException();
+//		}
 
 	}
 
@@ -470,9 +482,8 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 		dictItem.setExpandoBridgeAttributes(baseModel);
 		// dictItem.setExpandoBridgeAttributes(serviceContext);
 
-		dictItemPersistence.update(dictItem);
-
-		return dictItem;
+		return dictItemPersistence.update(dictItem);
+		//return dictItem;
 	}
 
 	public Hits luceneSearchEngine(LinkedHashMap<String, Object> params, Sort[] sorts, int start, int end,
@@ -575,7 +586,7 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 			booleanQuery.add(query, BooleanClauseOccur.MUST);
 		}
 
-		if (Validator.isNotNull(groupId)) {
+		if (Validator.isNotNull(groupId) && !"0".equals(groupId)) {
 			BooleanQuery categoryQuery = Validator.isNotNull((String) keywords)
 					? BooleanQueryFactoryUtil.create((SearchContext) searchContext)
 					: indexer.getFullQuery(searchContext);
@@ -630,9 +641,9 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 		String dictItemParentId = String.valueOf(params.get(DictItemTerm.PARENT_ITEM_ID));
 		String parentItemCode = (String) params.get(DictItemTerm.PARENT_ITEM_CODE);
 
-		if (Validator.isNull(parentItemCode)) {
-			parentItemCode = "0";
-		}
+//		if (Validator.isNull(parentItemCode)) {
+//			parentItemCode = "0";
+//		}
 
 		String dictItemCode = (String) params.get(DictItemTerm.ITEM_CODE);
 		String keywords = (String) params.get("keywords");
@@ -704,7 +715,7 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 			booleanQuery.add(query, BooleanClauseOccur.MUST);
 		}
 
-		if (Validator.isNotNull(groupId)) {
+		if (Validator.isNotNull(groupId) && !"0".equals(groupId)) {
 			BooleanQuery categoryQuery = Validator.isNotNull((String) keywords)
 					? BooleanQueryFactoryUtil.create((SearchContext) searchContext)
 					: indexer.getFullQuery(searchContext);
@@ -772,6 +783,7 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 
 	}
 
+	@ThreadLocalCachable
 	public DictItem fetchByF_dictItemCode(String itemCode, long dictCollectionId, long groupId) {
 
 		return dictItemPersistence.fetchByIC_DCI(itemCode, dictCollectionId);
@@ -798,5 +810,122 @@ public class DictItemLocalServiceImpl extends DictItemLocalServiceBaseImpl {
 	public long countByOlderThanDate(Date date, long groupId) {
 		return dictItemPersistence.countByF_dictItemNewerThan(date, groupId);
 	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public DictItem updateDictItemDB(long userId, long groupId, long dictCollectionId, String itemCode, String itemName,
+			String itemNameEN, String itemDescription, long dictItemParentId, Integer level, String sibling,
+			String metadata) throws NoSuchUserException {
+
+			Date now = new Date();
+			User user = userPersistence.findByPrimaryKey(userId);
+	//		DictItem dictItemParent = dictItemPersistence.fetchByIC_DCI(parent, dictCollectionId);
+	//		String sibling = StringPool.BLANK;
+	//		if (dictItemParent != null) {
+	//			long parentItemId = dictItemParent.getDictItemId();
+	//			sibling = getSibling(groupId, dictCollectionId, parentItemId, sibling, level);
+	//			String treeIndex = getTreeIndex(dictItemId, parentItemId, sibling);
+	//		}
+	
+			long dictItemId = counterLocalService.increment(DictItem.class.getName());
+			DictItem dictItem = dictItemPersistence.create(dictItemId);
+	
+			// Group instance
+			dictItem.setGroupId(groupId);
+	
+			// Audit fields
+	//		dictItem.setUuid(serviceContext.getUuid());
+			dictItem.setCompanyId(user.getCompanyId());
+			dictItem.setUserId(user.getUserId());
+			dictItem.setUserName(user.getFullName());
+			dictItem.setCreateDate(now);
+			dictItem.setModifiedDate(now);
+	
+			// Other fields
+			dictItem.setDictCollectionId(dictCollectionId);
+			dictItem.setItemCode(itemCode);
+			dictItem.setItemName(itemName);
+			dictItem.setItemNameEN(itemNameEN);
+			dictItem.setItemDescription(itemDescription);
+			dictItem.setParentItemId(dictItemParentId);
+			dictItem.setSibling(sibling);
+	//		dictItem.setTreeIndex(treeIndex);
+			dictItem.setLevel(level);
+			dictItem.setMetaData(metadata);
+	
+			// referent dictcollection
+	//		BaseModel<?> baseModel = DictCollectionLocalServiceUtil.fetchDictCollection(dictCollectionId);
+	//
+	//		dictItem.setExpandoBridgeAttributes(baseModel);
+	
+			return dictItemPersistence.update(dictItem);
+
+	}
+
+
+	// super_admin Generators
+	@Indexable(type = IndexableType.DELETE)
+	public DictItem adminProcessDelete(Long id) {
+
+		DictItem object = dictItemPersistence.fetchByPrimaryKey(id);
+
+		if (Validator.isNull(object)) {
+			return null;
+		} else {
+			dictItemPersistence.remove(object);
+		}
+
+		return object;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public DictItem adminProcessData(JSONObject objectData) {
+
+		DictItem object = null;
+
+		if (objectData.getLong("dictItemId") > 0) {
+
+			object = dictItemPersistence.fetchByPrimaryKey(objectData.getLong("dictItemId"));
+
+			object.setModifiedDate(new Date());
+
+		} else {
+
+			long id = CounterLocalServiceUtil.increment(DictItem.class.getName());
+
+			object = dictItemPersistence.create(id);
+
+			object.setGroupId(objectData.getLong("groupId"));
+			object.setCompanyId(objectData.getLong("companyId"));
+			object.setCreateDate(new Date());
+
+		}
+
+		object.setUserId(objectData.getLong("userId"));
+
+		object.setDictCollectionId(objectData.getLong("dictCollectionId"));
+		object.setItemCode(objectData.getString("itemCode"));
+		object.setItemName(objectData.getString("itemName"));
+		object.setItemNameEN(objectData.getString("itemNameEN"));
+		object.setItemDescription(objectData.getString("itemDescription"));
+		object.setParentItemId(objectData.getLong("parentItemId"));
+		object.setSibling(objectData.getString("sibling"));
+		object.setMetaData(objectData.getString("metaData"));
+
+		String treeIndex;
+		try {
+			
+			treeIndex = getTreeIndex(objectData.getLong("dictItemId"), objectData.getLong("parentItemId"), objectData.getString("sibling"));
+			object.setTreeIndex(treeIndex);
+			object.setLevel(StringUtil.count(treeIndex, StringPool.PERIOD));
+			
+		} catch (NoSuchDictItemException e) {
+			_log.error(e);
+		}
+
+		dictItemPersistence.update(object);
+
+		return object;
+	}
+	
 	private static final Log _log = LogFactoryUtil.getLog(DictItemLocalServiceImpl.class);
 }

@@ -17,7 +17,7 @@ public interface DossierTemplateActions {
 			throws PortalException;
 
 	public DossierTemplate updateDossierTemplate(long groupId, long dossierTemplateId, String templateName,
-			String templateNo, String description, ServiceContext context) throws PortalException;
+			String templateNo, String description, String newFormScript, ServiceContext context) throws PortalException;
 
 	public DossierTemplate getDossierTemplate(long dossierTemplateId) throws PortalException;
 
@@ -57,5 +57,16 @@ public interface DossierTemplateActions {
 			ServiceContext context) throws PortalException;
 
 	public String getSample(long groupId, long dossierTemplateId, String partNo) throws PortalException;
+
+	public void updateDossierTemplateDB(long userId, long groupId, String templateNo, String templateName, String description,
+			String newFormScript,
+			ServiceContext serviceContext) throws PortalException;
+
+	public void updateDossierPartDB(long userId, long groupId, String templateNo, String partNo, String partName,
+			String partTip, Integer partType, boolean multiple, String formScript, String formReport, boolean required,
+			boolean esign, String fileTemplateNo, String deliverableType, Integer deliverableAction, boolean eForm,
+			String sampleData, Integer fileMark, ServiceContext serviceContext) throws PortalException;
+
+	public boolean deleteAllDossierPart(long userId, long groupId, String templateNo, ServiceContext serviceContext);
 
 }

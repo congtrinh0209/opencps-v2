@@ -31,9 +31,9 @@ import com.liferay.portal.kernel.service.persistence.CompanyProvider;
 import com.liferay.portal.kernel.service.persistence.CompanyProviderWrapper;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
@@ -46,6 +46,9 @@ import org.opencps.datamgt.model.impl.DictItemGroupModelImpl;
 import org.opencps.datamgt.service.persistence.DictItemGroupPersistence;
 
 import java.io.Serializable;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 
 import java.sql.Timestamp;
 
@@ -231,7 +234,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 			if (uuid == null) {
 				query.append(_FINDER_COLUMN_UUID_UUID_1);
 			}
-			else if (uuid.equals(StringPool.BLANK)) {
+			else if (uuid.equals("")) {
 				query.append(_FINDER_COLUMN_UUID_UUID_3);
 			}
 			else {
@@ -319,7 +322,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append("uuid=");
 		msg.append(uuid);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -368,7 +371,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append("uuid=");
 		msg.append(uuid);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -460,7 +463,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		if (uuid == null) {
 			query.append(_FINDER_COLUMN_UUID_UUID_1);
 		}
-		else if (uuid.equals(StringPool.BLANK)) {
+		else if (uuid.equals("")) {
 			query.append(_FINDER_COLUMN_UUID_UUID_3);
 		}
 		else {
@@ -596,7 +599,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 			if (uuid == null) {
 				query.append(_FINDER_COLUMN_UUID_UUID_1);
 			}
-			else if (uuid.equals(StringPool.BLANK)) {
+			else if (uuid.equals("")) {
 				query.append(_FINDER_COLUMN_UUID_UUID_3);
 			}
 			else {
@@ -675,7 +678,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 			msg.append(", groupId=");
 			msg.append(groupId);
 
-			msg.append(StringPool.CLOSE_CURLY_BRACE);
+			msg.append("}");
 
 			if (_log.isDebugEnabled()) {
 				_log.debug(msg.toString());
@@ -738,7 +741,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 			if (uuid == null) {
 				query.append(_FINDER_COLUMN_UUID_G_UUID_1);
 			}
-			else if (uuid.equals(StringPool.BLANK)) {
+			else if (uuid.equals("")) {
 				query.append(_FINDER_COLUMN_UUID_G_UUID_3);
 			}
 			else {
@@ -778,13 +781,6 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 					result = dictItemGroup;
 
 					cacheResult(dictItemGroup);
-
-					if ((dictItemGroup.getUuid() == null) ||
-							!dictItemGroup.getUuid().equals(uuid) ||
-							(dictItemGroup.getGroupId() != groupId)) {
-						finderCache.putResult(FINDER_PATH_FETCH_BY_UUID_G,
-							finderArgs, dictItemGroup);
-					}
 				}
 			}
 			catch (Exception e) {
@@ -845,7 +841,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 			if (uuid == null) {
 				query.append(_FINDER_COLUMN_UUID_G_UUID_1);
 			}
-			else if (uuid.equals(StringPool.BLANK)) {
+			else if (uuid.equals("")) {
 				query.append(_FINDER_COLUMN_UUID_G_UUID_3);
 			}
 			else {
@@ -1044,7 +1040,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 			if (uuid == null) {
 				query.append(_FINDER_COLUMN_UUID_C_UUID_1);
 			}
-			else if (uuid.equals(StringPool.BLANK)) {
+			else if (uuid.equals("")) {
 				query.append(_FINDER_COLUMN_UUID_C_UUID_3);
 			}
 			else {
@@ -1141,7 +1137,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append(", companyId=");
 		msg.append(companyId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -1197,7 +1193,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append(", companyId=");
 		msg.append(companyId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -1292,7 +1288,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		if (uuid == null) {
 			query.append(_FINDER_COLUMN_UUID_C_UUID_1);
 		}
-		else if (uuid.equals(StringPool.BLANK)) {
+		else if (uuid.equals("")) {
 			query.append(_FINDER_COLUMN_UUID_C_UUID_3);
 		}
 		else {
@@ -1434,7 +1430,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 			if (uuid == null) {
 				query.append(_FINDER_COLUMN_UUID_C_UUID_1);
 			}
-			else if (uuid.equals(StringPool.BLANK)) {
+			else if (uuid.equals("")) {
 				query.append(_FINDER_COLUMN_UUID_C_UUID_3);
 			}
 			else {
@@ -1532,7 +1528,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 			msg.append(", dictItemId=");
 			msg.append(dictItemId);
 
-			msg.append(StringPool.CLOSE_CURLY_BRACE);
+			msg.append("}");
 
 			if (_log.isDebugEnabled()) {
 				_log.debug(msg.toString());
@@ -1641,13 +1637,6 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 					result = dictItemGroup;
 
 					cacheResult(dictItemGroup);
-
-					if ((dictItemGroup.getGroupId() != groupId) ||
-							(dictItemGroup.getDictGroupId() != dictGroupId) ||
-							(dictItemGroup.getDictItemId() != dictItemId)) {
-						finderCache.putResult(FINDER_PATH_FETCH_BY_F_DICTITEMID_DICTGROUPID,
-							finderArgs, dictItemGroup);
-					}
 				}
 			}
 			catch (Exception e) {
@@ -1991,7 +1980,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append(", dictGroupId=");
 		msg.append(dictGroupId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -2047,7 +2036,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append(", dictGroupId=");
 		msg.append(dictGroupId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -2540,7 +2529,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append(", dictItemId=");
 		msg.append(dictItemId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -2596,7 +2585,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append(", dictItemId=");
 		msg.append(dictItemId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -2949,7 +2938,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 
 		finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_F_NEWERTHAN;
 		finderArgs = new Object[] {
-				modifiedDate, groupId,
+				_getTime(modifiedDate), groupId,
 				
 				start, end, orderByComparator
 			};
@@ -3085,7 +3074,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append(", groupId=");
 		msg.append(groupId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -3141,7 +3130,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		msg.append(", groupId=");
 		msg.append(groupId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchDictItemGroupException(msg.toString());
 	}
@@ -3361,7 +3350,7 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 	public int countByF_newerThan(Date modifiedDate, long groupId) {
 		FinderPath finderPath = FINDER_PATH_WITH_PAGINATION_COUNT_BY_F_NEWERTHAN;
 
-		Object[] finderArgs = new Object[] { modifiedDate, groupId };
+		Object[] finderArgs = new Object[] { _getTime(modifiedDate), groupId };
 
 		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
@@ -3423,6 +3412,24 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 
 	public DictItemGroupPersistenceImpl() {
 		setModelClass(DictItemGroup.class);
+
+		try {
+			Field field = BasePersistenceImpl.class.getDeclaredField(
+					"_dbColumnNames");
+
+			field.setAccessible(true);
+
+			Map<String, String> dbColumnNames = new HashMap<String, String>();
+
+			dbColumnNames.put("uuid", "uuid_");
+
+			field.set(this, dbColumnNames);
+		}
+		catch (Exception e) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(e, e);
+			}
+		}
 	}
 
 	/**
@@ -3667,8 +3674,6 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 
 	@Override
 	protected DictItemGroup removeImpl(DictItemGroup dictItemGroup) {
-		dictItemGroup = toUnwrappedModel(dictItemGroup);
-
 		Session session = null;
 
 		try {
@@ -3699,9 +3704,23 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 
 	@Override
 	public DictItemGroup updateImpl(DictItemGroup dictItemGroup) {
-		dictItemGroup = toUnwrappedModel(dictItemGroup);
-
 		boolean isNew = dictItemGroup.isNew();
+
+		if (!(dictItemGroup instanceof DictItemGroupModelImpl)) {
+			InvocationHandler invocationHandler = null;
+
+			if (ProxyUtil.isProxyClass(dictItemGroup.getClass())) {
+				invocationHandler = ProxyUtil.getInvocationHandler(dictItemGroup);
+
+				throw new IllegalArgumentException(
+					"Implement ModelWrapper in dictItemGroup proxy " +
+					invocationHandler.getClass());
+			}
+
+			throw new IllegalArgumentException(
+				"Implement ModelWrapper in custom DictItemGroup implementation " +
+				dictItemGroup.getClass());
+		}
 
 		DictItemGroupModelImpl dictItemGroupModelImpl = (DictItemGroupModelImpl)dictItemGroup;
 
@@ -3757,8 +3776,47 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 
 		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
-		if (isNew || !DictItemGroupModelImpl.COLUMN_BITMASK_ENABLED) {
+		if (!DictItemGroupModelImpl.COLUMN_BITMASK_ENABLED) {
 			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		}
+		else
+		 if (isNew) {
+			Object[] args = new Object[] { dictItemGroupModelImpl.getUuid() };
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
+				args);
+
+			args = new Object[] {
+					dictItemGroupModelImpl.getUuid(),
+					dictItemGroupModelImpl.getCompanyId()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID_C, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C,
+				args);
+
+			args = new Object[] {
+					dictItemGroupModelImpl.getGroupId(),
+					dictItemGroupModelImpl.getDictGroupId()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_F_DICTGROUPID, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_F_DICTGROUPID,
+				args);
+
+			args = new Object[] {
+					dictItemGroupModelImpl.getGroupId(),
+					dictItemGroupModelImpl.getDictItemId()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_F_DICTITEMID, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_F_DICTITEMID,
+				args);
+
+			finderCache.removeResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL,
+				FINDER_ARGS_EMPTY);
 		}
 
 		else {
@@ -3855,31 +3913,6 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		dictItemGroup.resetOriginalValues();
 
 		return dictItemGroup;
-	}
-
-	protected DictItemGroup toUnwrappedModel(DictItemGroup dictItemGroup) {
-		if (dictItemGroup instanceof DictItemGroupImpl) {
-			return dictItemGroup;
-		}
-
-		DictItemGroupImpl dictItemGroupImpl = new DictItemGroupImpl();
-
-		dictItemGroupImpl.setNew(dictItemGroup.isNew());
-		dictItemGroupImpl.setPrimaryKey(dictItemGroup.getPrimaryKey());
-
-		dictItemGroupImpl.setUuid(dictItemGroup.getUuid());
-		dictItemGroupImpl.setDictItemGroupId(dictItemGroup.getDictItemGroupId());
-		dictItemGroupImpl.setCompanyId(dictItemGroup.getCompanyId());
-		dictItemGroupImpl.setGroupId(dictItemGroup.getGroupId());
-		dictItemGroupImpl.setUserId(dictItemGroup.getUserId());
-		dictItemGroupImpl.setUserName(dictItemGroup.getUserName());
-		dictItemGroupImpl.setCreateDate(dictItemGroup.getCreateDate());
-		dictItemGroupImpl.setModifiedDate(dictItemGroup.getModifiedDate());
-		dictItemGroupImpl.setDictGroupId(dictItemGroup.getDictGroupId());
-		dictItemGroupImpl.setDictItemId(dictItemGroup.getDictItemId());
-		dictItemGroupImpl.setDictGroupName(dictItemGroup.getDictGroupName());
-
-		return dictItemGroupImpl;
 	}
 
 	/**
@@ -4031,14 +4064,14 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 		query.append(_SQL_SELECT_DICTITEMGROUP_WHERE_PKS_IN);
 
 		for (Serializable primaryKey : uncachedPrimaryKeys) {
-			query.append(String.valueOf(primaryKey));
+			query.append((long)primaryKey);
 
-			query.append(StringPool.COMMA);
+			query.append(",");
 		}
 
 		query.setIndex(query.index() - 1);
 
-		query.append(StringPool.CLOSE_PARENTHESIS);
+		query.append(")");
 
 		String sql = query.toString();
 
@@ -4292,6 +4325,15 @@ public class DictItemGroupPersistenceImpl extends BasePersistenceImpl<DictItemGr
 	protected EntityCache entityCache;
 	@ServiceReference(type = FinderCache.class)
 	protected FinderCache finderCache;
+
+	private Long _getTime(Date date) {
+		if (date == null) {
+			return null;
+		}
+
+		return date.getTime();
+	}
+
 	private static final String _SQL_SELECT_DICTITEMGROUP = "SELECT dictItemGroup FROM DictItemGroup dictItemGroup";
 	private static final String _SQL_SELECT_DICTITEMGROUP_WHERE_PKS_IN = "SELECT dictItemGroup FROM DictItemGroup dictItemGroup WHERE dictItemGroupId IN (";
 	private static final String _SQL_SELECT_DICTITEMGROUP_WHERE = "SELECT dictItemGroup FROM DictItemGroup dictItemGroup WHERE ";

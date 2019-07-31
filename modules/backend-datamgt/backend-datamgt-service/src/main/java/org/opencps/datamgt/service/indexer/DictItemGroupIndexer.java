@@ -1,23 +1,6 @@
 package org.opencps.datamgt.service.indexer;
 
-import java.util.LinkedHashMap;
-import java.util.Locale;
-
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-
-import org.opencps.datamgt.constants.DictGroupTerm;
-import org.opencps.datamgt.constants.DictItemGroupTerm;
-import org.opencps.datamgt.constants.DictItemTerm;
-import org.opencps.datamgt.model.DictCollection;
-import org.opencps.datamgt.model.DictGroup;
-import org.opencps.datamgt.model.DictItem;
-import org.opencps.datamgt.model.DictItemGroup;
-import org.opencps.datamgt.service.DictCollectionLocalServiceUtil;
-import org.opencps.datamgt.service.DictGroupLocalServiceUtil;
-import org.opencps.datamgt.service.DictItemGroupLocalServiceUtil;
-import org.opencps.datamgt.service.DictItemLocalServiceUtil;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -33,9 +16,29 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.Locale;
+
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
+
+import org.opencps.datamgt.constants.DictGroupTerm;
+import org.opencps.datamgt.constants.DictItemGroupTerm;
+import org.opencps.datamgt.model.DictCollection;
+import org.opencps.datamgt.model.DictGroup;
+import org.opencps.datamgt.model.DictItem;
+import org.opencps.datamgt.model.DictItemGroup;
+import org.opencps.datamgt.service.DictCollectionLocalServiceUtil;
+import org.opencps.datamgt.service.DictGroupLocalServiceUtil;
+import org.opencps.datamgt.service.DictItemGroupLocalServiceUtil;
+import org.opencps.datamgt.service.DictItemLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
+
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class DictItemGroupIndexer extends BaseIndexer<DictItemGroup> {
 
 	public static final String CLASS_NAME = DictItemGroup.class.getName();
@@ -88,7 +91,7 @@ public class DictItemGroupIndexer extends BaseIndexer<DictItemGroup> {
 			document.addTextSortable(DictGroupTerm.DICT_COLLECTION_CODE, collectionCode);
 			document.addTextSortable(DictGroupTerm.GROUP_CODE, dictGroup.getGroupCode());
 			
-			_log.info(dictGroup.getGroupCode());
+			//_log.info(dictGroup.getGroupCode());
 			document.addTextSortable(DictGroupTerm.GROUP_NAME, dictGroup.getGroupName());
 			document.addTextSortable(DictGroupTerm.GROUP_NAME_EN, dictGroup.getGroupNameEN());
 			document.addTextSortable(DictGroupTerm.GROUP_DESCRIPTION, dictGroup.getGroupDescription());
@@ -161,8 +164,10 @@ public class DictItemGroupIndexer extends BaseIndexer<DictItemGroup> {
 
 							indexableActionableDynamicQuery.addDocuments(document);
 						} catch (PortalException pe) {
+							_log.debug(pe);
+							//_log.error(e);
 							if (_log.isWarnEnabled()) {
-								_log.warn("Unable to index DictItemGroupIndexer " + dictItemGroup.getDictItemGroupId(), pe);
+								_log.warn("Unable to index DictItemGroupIndexer " + dictItemGroup.getDictItemGroupId());
 							}
 						}
 					}

@@ -6,13 +6,13 @@
   <div class="col-xs-12 col-sm-12 panel P0">
     <div class="row-header align-middle">
       <div class="background-triangle-big">DANH SÁCH THỦ TỤC HÀNH CHÍNH</div>
-      <span>Hiển thị <span id="numPerPage"></span> trên <span id="totalItem"></span> tổng số bản ghi được tìm thấy</span>
+      <span>Hiển thị <span id="numPerPage"></span> trên <span id="totalItem"></span> tổng số thủ tục được tìm thấy</span>
       <span class="show-per-page">Hiển thị
         <span class="select-wrapper">
          <select class="ML5" id="slPageSize">
-           <option value="5" selected="">5</option>
+           <option value="5">5</option>
            <option value="10">10</option>
-           <option value="15">15</option>
+           <option value="15" selected="">15</option>
            <option value="25">25</option>
            <option value="50">50</option>
          </select>
@@ -99,13 +99,13 @@
      <div class="col-sm-6 item-serviceinfo text-hover-blue hover-pointer align-middle-lg" data-pk="#: id #">
       #: serviceName #
     </div>
-    <div class="col-sm-2 align-middle-lg text-center">
+    <div class="col-sm-2 align-middle-lg text-left">
       #: domainName #
     </div>
-    <div class="col-sm-1 align-middle-lg text-center">
+    <div class="col-sm-1 align-middle-lg text-left">
       Mức độ #: maxLevel #
     </div>
-    <div class="col-sm-2 text-center">
+    <div class="col-sm-2 center-all">
       #if((typeof  serviceConfigs !== 'undefined') ){
           var govAgencyCode = "";
           var govAgencyName = "";
@@ -159,7 +159,7 @@
             } else if(serviceLevel2.length > 0){
                 #
                   <div class="dropdown">
-                    <button class="btn btn-active btn-small dropdown-toggle" type="button" data-toggle="dropdown">Xem hướng dân
+                    <button class="btn btn-active btn-small dropdown-toggle" type="button" data-toggle="dropdown">Xem hướng dẫn
                       <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-right">
@@ -182,6 +182,7 @@
               serviceInstruction =  serviceConfigs.serviceInstruction;
               serviceLevel =  serviceConfigs.serviceLevel;
               serviceUrl =  serviceConfigs.serviceUrl;
+              var serviceConfigId =  serviceConfigs.serviceConfigId;
               if(serviceLevel>=3){
                 #
                  <div class="dropdown">
@@ -190,14 +191,14 @@
                   </button>
                   <ul class="dropdown-menu dropdown-menu-right">
                       <#-- <li><a href="#:serviceUrl#">#:govAgencyName#</a></li> -->
-                      <li><a href="/group/cong-tiep-nhan/quan-ly-ho-so\#/taohosomoi">#:govAgencyName#</a></li>
+                      <li><a href="/web${(Request.layoutfriendurl)!}/dich-vu-cong\#/add-dvc/#:serviceConfigId#">#:govAgencyName#</a></li>
                   </ul>
                   </div>
                 #
               } else {
                 #
                   <div class="dropdown">
-                  <button class="btn btn-active btn-small dropdown-toggle" type="button" data-toggle="dropdown">Xem hướng dân
+                  <button class="btn btn-active btn-small dropdown-toggle" type="button" data-toggle="dropdown">Xem hướng dẫn
                     <span class="caret"></span>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-right">
@@ -226,6 +227,15 @@
     var serviceInfoDataSource = new kendo.data.DataSource({
      transport: {
       read: function(options) {
+        var page = options.data.page;
+        var pageSize = options.data.pageSize;
+        var start = (page - 1) * pageSize;
+        var end = (page - 1) * pageSize + pageSize;
+        var level = 0;
+        console.log('options.data.level-------', options.data.level)
+        if ($("#levelSearch").val()) {
+          level = $("#levelSearch").data('kendoComboBox').value();
+        }
        $.ajax({
         url: "${api.server}" + "/serviceinfos",
         type: "GET",
@@ -235,12 +245,12 @@
           req.setRequestHeader('groupId', ${groupId});
         },
         data: {
-          keyword: options.data.keywords,
-          page: options.data.page,
-          pageSize: options.data.pageSize,
-          administration: options.data.administration,
-          domain: options.data.domain,
-          level: options.data.level
+          keyword: options.data.keywords ? options.data.keywords : $("#input_search_service_info").val(),
+          administration: options.data.administration ? options.data.administration : $("#administrationCodeSearch").data('kendoComboBox').value(),
+          domain: options.data.domain ? options.data.domain : $("#domainCodeSearch").data('kendoComboBox').value(),
+          level: options.data.level ? options.data.level: level,
+          start: start,
+          end: end
         },
         success: function(result) {
           options.success(result);
@@ -282,16 +292,15 @@
   data: "data",
   model : { id: "serviceInfoId" }
 },
-pageSize: 5,
-serverPaging: false,
-serverSorting: false,
-serverFiltering: false
+pageSize: 15,
+serverPaging: true,
+serverSorting: true,
+serverFiltering: true
 });
 
     $("#service_info_list_view").kendoListView({
      dataSource: serviceInfoDataSource,
      template: kendo.template($("#service_info_template").html()),
-     selectable: true,
      template: function(data){
 
       var _pageSize = serviceInfoDataSource.pageSize();
@@ -315,7 +324,6 @@ serverFiltering: false
       localIndex=0;
       var listView = e.sender;
       var firstItem = listView.element.children().first();
-      listView.select(firstItem);
         //  the first select dossier template
         //  onSelectDossiertemplate(firstItem.attr("data-pk"));
       },
@@ -353,6 +361,22 @@ serverFiltering: false
           data : "data",
           total : "total"
         }
+      },
+      change: function (e) {
+        console.log('administrationCodeSearch-------', this.value())
+        $("#domainCodeSearch").data('kendoComboBox').select(-1)
+        var url = "";
+        if (this.value()) {
+          url = "${api.server}/serviceconfigs/pubish/" + this.value() + "/domains";
+          $("#domainCodeSearch").data('kendoComboBox').dataSource.read({
+            url: url
+          })
+        } else {
+          url = "${api.server}/serviceinfos/statistics/domains";
+          $("#domainCodeSearch").data('kendoComboBox').dataSource.read({
+            url: url
+          })
+        }
       }
     });
 
@@ -362,19 +386,34 @@ serverFiltering: false
       filter: "contains",
       dataSource: {
         transport :{
-          read : {
-            url : "${api.server}/serviceinfos/statistics/domains",
-            dataType : "json",
-            type : "GET",
-            beforeSend: function(req) {
-              req.setRequestHeader('groupId', ${groupId});
-            },
-            success : function(result){
-
-            },
-            error : function(xhr){
-
+          read : function (options) {
+            var url = "";
+            if (!options.data.url) {
+              url = "${api.server}/serviceinfos/statistics/domains";
+            } else {
+              url = options.data.url;
             }
+            $.ajax({
+              url : url,
+              dataType : "json",
+              type : "GET",
+              beforeSend: function(req) {
+                req.setRequestHeader('groupId', ${groupId});
+              },
+              success : function(result){
+                if (result.data) {
+                  options.success(result)
+                } else {
+                  options.success({
+                    data: [],
+                    total: 0
+                  })
+                }
+              },
+              error : function(xhr){
+                options.error(xhr)
+              }
+            })
           }
         },
         schema : {
@@ -478,21 +517,37 @@ serverFiltering: false
     $("#input_search_service_info").kendoAutoComplete({
       dataSource: {
         transport :{
-          read : {
-            url : "${api.server}/serviceinfos",
-            dataType : "json",
-            type : "GET",
-            beforeSend: function(req) {
-              req.setRequestHeader('groupId', ${groupId});
-            },
-            success : function(result){
-
-            },
-            error : function(xhr){
-
-            }
+          read : function (options) {
+            $.ajax({
+              url : "${api.server}/serviceinfos",
+              dataType : "json",
+              type : "GET",
+              beforeSend: function(req) {
+                req.setRequestHeader('groupId', ${groupId});
+              },
+              data: {
+                start: 0,
+                end: 15,
+                keyword: $("#input_search_service_info").val()
+              },
+              success : function(result){
+                if (result.data) {
+                  options.success(result);
+                } else {
+                  console.log('no data')
+                  options.success({
+                    data: [],
+                    total: 0
+                  });
+                }
+              },
+              error : function(xhr){
+                options.error(xhr)
+              }
+            })
           }
         },
+        serverFiltering: true,
         schema : {
           data : "data",
           total : "total"

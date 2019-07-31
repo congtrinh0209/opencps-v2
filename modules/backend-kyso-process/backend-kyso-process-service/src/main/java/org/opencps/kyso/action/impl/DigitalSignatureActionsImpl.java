@@ -3,24 +3,31 @@ package org.opencps.kyso.action.impl;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.security.cert.Certificate;
+import java.util.List;
 
+import org.opencps.communication.model.ServerConfig;
+import org.opencps.communication.service.ServerConfigLocalServiceUtil;
 import org.opencps.kyso.action.DigitalSignatureActions;
+import org.opencps.kyso.model.impl.kysoServerConfigModel;
 import org.opencps.kyso.utils.BCYSignatureUtil;
 import org.opencps.kyso.utils.CertUtil;
 import org.opencps.kyso.utils.ExtractTextLocations;
 import org.opencps.kyso.utils.ImageUtil;
+import org.opencps.kyso.utils.KysoTerm;
 
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfSignatureAppearance;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
 import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
@@ -35,9 +42,57 @@ public class DigitalSignatureActionsImpl implements DigitalSignatureActions{
 //	private static final String TYPE_DONGDAU = "1137, 1160, 1162";
 //	private static final String STEPCODE_KYSO = "300, 301, 105";
 //	private static final String STEPCODE_DONGDAU = "400";
+	
+	
+	public kysoServerConfigModel fromJSONObject(JSONObject configObj) {
+		if (configObj.has(KysoTerm.SERVER_TYPEDONGDAU) && configObj.has(KysoTerm.SERVER_TYPEKYSO)
+				&& configObj.has(KysoTerm.SERVER_ACTIVE)) {
+			return new kysoServerConfigModel(configObj.getString(KysoTerm.SERVER_TYPEDONGDAU),
+					configObj.getString(KysoTerm.SERVER_TYPEKYSO),
+					configObj.getBoolean(KysoTerm.SERVER_ACTIVE));
+		} else {
+			return null;
+		}
+	}
+	
+	public kysoServerConfigModel getServerConfig(long groupId, String protocol) {
+		kysoServerConfigModel config = null;
+
+		List<ServerConfig> lstsc = ServerConfigLocalServiceUtil.getByProtocol(groupId, protocol);
+		if (lstsc == null) {
+			return null;
+		} else {
+			try {
+				for (ServerConfig sc : lstsc) {
+					kysoServerConfigModel check = fromJSONObject(JSONFactoryUtil.createJSONObject(sc.getConfigs()));
+					if (check.getActive()) {
+						config = check;
+					}
+				}
+				return config;
+			} catch (JSONException e) {
+				_log.error(e);
+				return null;
+			}
+		}
+	}
+	
+	private String TYPE_KYSO = ""; //la cac actionCode KYSO
+	private String TYPE_DONGDAU = ""; //la cac actionCode KYSO
 
 	@Override
-	public JSONObject createHashSignature(String email, long fileEntryId, String typeSignature, String postStepCode) {
+	public JSONObject createHashSignature(String email, long fileEntryId, String typeSignature, String postStepCode, long groupId) {
+		
+		kysoServerConfigModel config = getServerConfig(groupId, "KYSO");
+		if(Validator.isNotNull(config)){
+			TYPE_KYSO = config.getType_kyso();
+			TYPE_DONGDAU = config.getType_dongdau();	
+		}else {
+			TYPE_KYSO = "1032,1050,3000,6100,4000";
+			TYPE_DONGDAU = "1032,1050,3000,6100,4000";
+		}
+		
+		
 			byte[] inHash = null;
 			String fieldName = StringPool.BLANK;
 			String fullPathSigned = StringPool.BLANK;
@@ -54,6 +109,7 @@ public class DigitalSignatureActionsImpl implements DigitalSignatureActions{
 
 //			if (typeSignature == TYPE_KYSO) {
 			String realPath = PropsUtil.get(ConfigProps.CER_HOME)+"/";
+//			_log.info("realPath_Kyso: "+realPath);
 			_log.info("realPath_Kyso: "+realPath);
 //			} else {
 //				realPath = PropsUtil.get(ConfigProps.CER_HOME)+"/condau/";
@@ -79,11 +135,11 @@ public class DigitalSignatureActionsImpl implements DigitalSignatureActions{
 				fullPath = file.getAbsolutePath();
 				_log.info("fullPath: "+fullPath);
 
-				String signImagePath = StringPool.BLANK;
+//				String signImagePath = StringPool.BLANK;
 				_log.info("====***typeSignature+===: "+typeSignature);
 				_log.info("====***postStepCode+===: "+postStepCode);
 //				if (TYPE_KYSO.contains(typeSignature) && STEPCODE_KYSO.contains(postStepCode)) {
-				signImagePath = new File(realPath + email + ".png").getAbsolutePath();
+				String signImagePath = new File(realPath + email + ".png").getAbsolutePath();
 				_log.info("signImagePath_Kyso: "+realPath);
 //				} else if (TYPE_DONGDAU.contains(typeSignature) && STEPCODE_DONGDAU.equals(postStepCode)){
 //					signImagePath = PropsUtil.get(ConfigProps.CER_HOME)+"/condau/nguyenadmin.png";
@@ -170,17 +226,32 @@ public class DigitalSignatureActionsImpl implements DigitalSignatureActions{
 //					inHash = signer.computeHash(new Rectangle(llx + 10, lly - 115, urx + 90, ury-95), 1);
 //					_log.info("inHash_Dongdau: "+inHash);
 //				}
+				if (TYPE_KYSO.contains(typeSignature)) {
+					inHash = signer.computeHash(new Rectangle(llx + 10, lly - 15, urx + 90, ury), 1);
+					_log.info("inHash_Kyso: "+inHash);
+				} else if (TYPE_DONGDAU.contains(typeSignature)) {
+					inHash = signer.computeHash(new Rectangle(llx + 10, lly - 115, urx + 90, ury-95), 1);
+					_log.info("inHash_Dongdau: "+inHash);
+				}
+				
+				if (TYPE_KYSO.contains(typeSignature)) {
+					inHash = signer.computeHash(new Rectangle(llx + 10, lly - 15, urx + 90, ury),textLocation.getPageSize());
+					_log.info("inHash_Kyso: "+inHash);
+				} else if (TYPE_DONGDAU.contains(typeSignature)) {
+					inHash = signer.computeHash(new Rectangle(llx + 10, lly - 115, urx + 90, ury-95), textLocation.getPageSize());
+					_log.info("inHash_Dongdau: "+inHash);
+				}
 //				inHash = signer.computeHash(new Rectangle(llx + 10, lly - 15, urx + 90, ury), 1);
 				_log.info("********************************* llx " + llx);
 
 				_log.info("********************************* lly " + lly);
-				
+			
 				_log.info("********************************* urx " + urx);
-				
+			
 				_log.info("********************************* ury " + ury);
-				
+			
 				_log.info("********************************* signatureImageWidth " + signatureImageWidth);
-				
+			
 				_log.info("********************************* signatureImageHeight " + signatureImageHeight);
 
 //							signature = Base64.getDecoder().decode("");
@@ -211,7 +282,6 @@ public class DigitalSignatureActionsImpl implements DigitalSignatureActions{
 				fileNames.put(StringPool.BLANK);
 				fullPathOfSignedFiles.put(StringPool.BLANK);
 				messages.put(e.getClass().getName());
-				
 				_log.error(e);
 			}
 			

@@ -21,6 +21,7 @@ import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.service.DLFolderLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.NoSuchResourcePermissionException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
@@ -43,7 +44,6 @@ import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 /**
@@ -99,8 +99,13 @@ public class DLFolderUtil {
 			userId, groupId, repositoryId, mountPoint, parentFolderId, name,
 			description, hidden, serviceContext);
 
+		long folderId = 0;
+		if (dlFolder != null) {
+			folderId = dlFolder.getFolderId();
+		}
+
 		return getFolder(
-			userId, groupId, repositoryId, mountPoint, dlFolder.getFolderId(),
+			userId, groupId, repositoryId, mountPoint, folderId,
 			name, description, hidden, serviceContext);
 
 	}
@@ -115,7 +120,8 @@ public class DLFolderUtil {
 				groupId, parentFolderId, name);
 		}
 		catch (SystemException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		return dlFolder;
@@ -136,18 +142,20 @@ public class DLFolderUtil {
 			dlFolder = makeFolder(
 				userId, groupId, repositoryId, mountPoint, parentFolderId, name,
 				description, hidden, serviceContext);
-			
-			setFolderPermissions(dlFolder);
-			
-			folderNames = ArrayUtil.remove(folderNames, name);
-			if (folderNames.length > 0) {
-				dlFolder = getTargetFolder(
-					userId, groupId, repositoryId, mountPoint,
-					dlFolder.getFolderId(),
-					StringUtil.merge(folderNames, StringPool.FORWARD_SLASH),
-					description, hidden, serviceContext);
-			}
 
+			//LamTV_Fix sonarqube
+			if (dlFolder != null) {
+				setFolderPermissions(dlFolder);
+
+				folderNames = ArrayUtil.remove(folderNames, name);
+				if (folderNames.length > 0) {
+					dlFolder = getTargetFolder(
+						userId, groupId, repositoryId, mountPoint,
+						dlFolder.getFolderId(),
+						StringUtil.merge(folderNames, StringPool.FORWARD_SLASH),
+						description, hidden, serviceContext);
+				}
+			}
 		}
 
 		return dlFolder;
@@ -165,7 +173,7 @@ public class DLFolderUtil {
 			String name = folderNames[0];
 			dlFolder = getFolder(groupId, parentFolderId, name);
 			folderNames = ArrayUtil.remove(folderNames, name);
-			if (folderNames.length > 0) {
+			if (folderNames.length > 0 && dlFolder != null) {
 				dlFolder = getTargetFolder(
 					groupId, dlFolder.getFolderId(),
 					StringUtil.merge(folderNames, StringPool.FORWARD_SLASH));
@@ -188,7 +196,8 @@ public class DLFolderUtil {
 				groupId, parentFolderId, name);
 		}
 		catch (SystemException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		result = dlFolder != null ? true : false;
@@ -224,7 +233,7 @@ public class DLFolderUtil {
 			ActionKeys.VIEW, ActionKeys.ACCESS
 		};
 		try {
-			resourcePermission =
+//			resourcePermission =
 				ResourcePermissionLocalServiceUtil.getResourcePermission(
 					fileEntry.getCompanyId(), DLFileEntry.class.getName(),
 					ResourceConstants.SCOPE_INDIVIDUAL,
@@ -243,6 +252,8 @@ public class DLFolderUtil {
 			// }
 		}
 		catch (NoSuchResourcePermissionException e) {
+			_log.debug(e);
+			//_log.error(e);
 			resourcePermission =
 				ResourcePermissionLocalServiceUtil.createResourcePermission(
 					CounterLocalServiceUtil.increment());
@@ -290,6 +301,8 @@ public class DLFolderUtil {
 				siteMemberRole.getRoleId(), actionIds);
 		}
 		catch (NoSuchResourcePermissionException e) {
+			_log.debug(e);
+			//_log.error(e);
 			resourcePermission =
 				ResourcePermissionLocalServiceUtil.createResourcePermission(
 					CounterLocalServiceUtil.increment());
@@ -337,6 +350,8 @@ public class DLFolderUtil {
 				siteMemberRole.getRoleId(), actionIds);
 		}
 		catch (NoSuchResourcePermissionException e) {
+			_log.debug(e);
+			//_log.error(e);
 			resourcePermission =
 				ResourcePermissionLocalServiceUtil.createResourcePermission(
 					CounterLocalServiceUtil.increment());

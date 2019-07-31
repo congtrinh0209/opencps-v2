@@ -1,12 +1,6 @@
 package org.opencps.dossiermgt.action.util;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.regex.Pattern;
-
-import org.opencps.dossiermgt.model.Dossier;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
@@ -18,10 +12,14 @@ import com.liferay.portal.kernel.search.ParseException;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.TermQuery;
 import com.liferay.portal.kernel.search.TermQueryFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.opencps.dossiermgt.model.Dossier;
 
 /**
  * @author trungnt
@@ -178,7 +176,7 @@ public class LuceneQueryUtil {
 								* terms.length + t;
 						// String term = terms[t].trim().toLowerCase();
 						String term = terms[t].trim();
-						String key = StringPool.BLANK;
+						String key;
 						if (term.contains((StringPool.EQUAL.toLowerCase()))) {
 							key = term
 									.substring(
@@ -339,11 +337,11 @@ public class LuceneQueryUtil {
 
 		if (conditions != null && conditions.length > 0) {
 			for (int c = 0; c < conditions.length; c++) {
-				if (conditions[c].equalsIgnoreCase("and")) {
+				if ("and".equalsIgnoreCase(conditions[c])) {
 					booleanClauseOccurs.add(BooleanClauseOccur.MUST);
-				} else if (conditions[c].equalsIgnoreCase("or")) {
+				} else if ("or".equalsIgnoreCase(conditions[c])) {
 					booleanClauseOccurs.add(BooleanClauseOccur.SHOULD);
-				} else if (conditions[c].equalsIgnoreCase("not")) {
+				} else if ("not".equalsIgnoreCase(conditions[c])) {
 					booleanClauseOccurs.add(BooleanClauseOccur.MUST_NOT);
 				}
 			}

@@ -8,6 +8,7 @@ import javax.portlet.PortletResponse;
 import org.opencps.usermgt.constants.ApplicantTerm;
 import org.opencps.usermgt.model.Applicant;
 import org.opencps.usermgt.service.ApplicantLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
@@ -24,6 +25,10 @@ import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class ApplicantIndexer extends BaseIndexer<Applicant> {
 
 	public static final String CLASS_NAME = Applicant.class.getName();
@@ -62,12 +67,20 @@ public class ApplicantIndexer extends BaseIndexer<Applicant> {
 		document.addTextSortable(ApplicantTerm.CONTACTTELNO, object.getContactTelNo());
 		document.addTextSortable(ApplicantTerm.CONTACTEMAIL, object.getContactEmail());
 		document.addNumberSortable(ApplicantTerm.MAPPINGUSERID, object.getMappingUserId());
+		document.addTextSortable(ApplicantTerm.CITYCODE, object.getCityCode());
+		document.addTextSortable(ApplicantTerm.CITYNAME, object.getCityName());
+		document.addTextSortable(ApplicantTerm.DISTRICTCODE, object.getDistrictCode());
+		document.addTextSortable(ApplicantTerm.DISTRICTNAME, object.getDistrictName());
+		document.addTextSortable(ApplicantTerm.WARDCODE, object.getWardCode());
+		document.addTextSortable(ApplicantTerm.WARDNAME, object.getWardName());
 
 		try {
-			User user = UserLocalServiceUtil.getUser(object.getMappingUserId());
-			document.addTextSortable(ApplicantTerm.LOCK, Boolean.toString(user.getLockout()));
+			if (object.getMappingUserId() > 0) {
+				User user = UserLocalServiceUtil.getUser(object.getMappingUserId());
+				document.addTextSortable(ApplicantTerm.LOCK, Boolean.toString(user.getLockout()));
+			}
 		} catch (Exception e) {
-			// TODO: handle exception
+			_log.debug(e);
 		}
 
 		return document;

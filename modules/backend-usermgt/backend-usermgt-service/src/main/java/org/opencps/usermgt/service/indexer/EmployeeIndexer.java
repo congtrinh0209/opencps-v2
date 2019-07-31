@@ -1,22 +1,6 @@
 package org.opencps.usermgt.service.indexer;
 
-import java.util.Calendar;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-
-import org.opencps.usermgt.constants.EmployeeTerm;
-import org.opencps.usermgt.model.Employee;
-import org.opencps.usermgt.model.EmployeeJobPos;
-import org.opencps.usermgt.model.JobPos;
-import org.opencps.usermgt.model.WorkingUnit;
-import org.opencps.usermgt.service.EmployeeJobPosLocalServiceUtil;
-import org.opencps.usermgt.service.EmployeeLocalServiceUtil;
-import org.opencps.usermgt.service.JobPosLocalServiceUtil;
-import org.opencps.usermgt.service.WorkingUnitLocalServiceUtil;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -34,10 +18,32 @@ import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
+
+import org.opencps.usermgt.constants.EmployeeTerm;
+import org.opencps.usermgt.model.Employee;
+import org.opencps.usermgt.model.EmployeeJobPos;
+import org.opencps.usermgt.model.JobPos;
+import org.opencps.usermgt.model.WorkingUnit;
+import org.opencps.usermgt.service.EmployeeJobPosLocalServiceUtil;
+import org.opencps.usermgt.service.EmployeeLocalServiceUtil;
+import org.opencps.usermgt.service.JobPosLocalServiceUtil;
+import org.opencps.usermgt.service.WorkingUnitLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
+
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class EmployeeIndexer extends BaseIndexer<Employee> {
 
 	public static final String CLASS_NAME = Employee.class.getName();
@@ -108,19 +114,25 @@ public class EmployeeIndexer extends BaseIndexer<Employee> {
 			workingUnitName = Validator.isNotNull(workingUnit)?workingUnit.getName():StringPool.BLANK;
 			
 		}
-		
-		long emJobposId = Validator.isNotNull(employeeJobPos)?employeeJobPos.getJobPostId():0;
-		
-		
-		JobPos jobPos = JobPosLocalServiceUtil.fetchJobPos(emJobposId);
-		
-		String jobPosTitle = Validator.isNotNull(jobPos)?jobPos.getTitle():StringPool.BLANK;
+
+		JobPos jobPos = Validator.isNotNull(employeeJobPos)
+				? JobPosLocalServiceUtil.fetchJobPos(employeeJobPos.getJobPostId())
+				: null;
+		String jobPosTitle = jobPos != null ? jobPos.getTitle():StringPool.BLANK;
+		String jobPosCode = jobPos != null ? jobPos.getJobPosCode():StringPool.BLANK;
 		
 		document.addTextSortable(EmployeeTerm.WORKING_UNIT_NAME, workingUnitName);
 		document.addNumberSortable(EmployeeTerm.WORKING_UNIT_ID, workingUnitId);
 		
 		document.addTextSortable(EmployeeTerm.JOB_POS_TITLE, jobPosTitle);
-		document.addNumberSortable(EmployeeTerm.JOB_POS_ID, emJobposId);
+
+		document.addTextSortable(EmployeeTerm.JOB_POS_CODE, jobPosCode);
+		if (Validator.isNotNull(jobPosCode)) {
+			String jobPosCodeSearch = splitSpecial(jobPosCode);
+			document.addTextSortable(EmployeeTerm.JOB_POS_CODE_SEARCH, jobPosCodeSearch);
+		}
+
+		document.addNumberSortable(EmployeeTerm.JOB_POS_ID, employee.getMainJobPostId());
 		
 		Calendar cal = Calendar.getInstance();
 
@@ -205,6 +217,28 @@ public class EmployeeIndexer extends BaseIndexer<Employee> {
 		indexableActionableDynamicQuery.setSearchEngineId(getSearchEngineId());
 
 		indexableActionableDynamicQuery.performActions();
+	}
+
+	private static String splitSpecial(String value) {
+		String[] charSpecialArr = new String[] { "+", "-", "=", "&&", "||", ">", "<", "!", "(", ")", "{", "}", "[", "]",
+				"^", "~", "?", ":", "\\", "/", ".", "," };
+		String valueSplit = StringPool.BLANK;
+		for (int i = 0; i < charSpecialArr.length; i++) {
+			String specialCharacter = charSpecialArr[i];
+			if (i == 0) {
+				if (value.contains(specialCharacter)) {
+					valueSplit = value.replaceAll(Pattern.quote(specialCharacter), StringPool.UNDERLINE);
+				} else {
+					valueSplit = value;
+				}
+			} else {
+				if (value.contains(specialCharacter)) {
+					valueSplit = valueSplit.replaceAll(Pattern.quote(specialCharacter), StringPool.UNDERLINE);
+				}
+			}
+		}
+
+		return valueSplit;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(EmployeeIndexer.class);

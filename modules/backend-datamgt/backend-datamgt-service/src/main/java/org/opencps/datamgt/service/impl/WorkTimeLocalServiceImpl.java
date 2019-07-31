@@ -14,16 +14,9 @@
 
 package org.opencps.datamgt.service.impl;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-
-import org.opencps.datamgt.constants.WorkTimeTerm;
-import org.opencps.datamgt.exception.NoSuchWorkTimeException;
-import org.opencps.datamgt.model.Holiday;
-import org.opencps.datamgt.model.WorkTime;
-import org.opencps.datamgt.service.base.WorkTimeLocalServiceBaseImpl;
-
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
 import com.liferay.portal.kernel.exception.NoSuchUserException;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -43,16 +36,25 @@ import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.generic.MultiMatchQuery;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
-import aQute.bnd.annotation.ProviderType;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+
 import org.opencps.auth.api.BackendAuthImpl;
 import org.opencps.auth.api.exception.NotFoundException;
 import org.opencps.auth.api.exception.UnauthenticationException;
 import org.opencps.auth.api.exception.UnauthorizationException;
 import org.opencps.auth.api.keys.ActionKeys;
 import org.opencps.auth.api.keys.ModelNameKeys;
+import org.opencps.datamgt.constants.WorkTimeTerm;
+import org.opencps.datamgt.exception.NoSuchWorkTimeException;
+import org.opencps.datamgt.model.Holiday;
+import org.opencps.datamgt.model.WorkTime;
+import org.opencps.datamgt.service.base.WorkTimeLocalServiceBaseImpl;
+
+import aQute.bnd.annotation.ProviderType;
 
 /**
  * The implementation of the work time local service.
@@ -124,9 +126,8 @@ public class WorkTimeLocalServiceImpl extends WorkTimeLocalServiceBaseImpl {
 
 		workTime.setExpandoBridgeAttributes(serviceContext);
 
-		workTimePersistence.update(workTime);
-
-		return workTime;
+		return workTimePersistence.update(workTime);
+		//return workTime;
 	}
 
 	/**
@@ -155,18 +156,15 @@ public class WorkTimeLocalServiceImpl extends WorkTimeLocalServiceBaseImpl {
 			throw new UnauthorizationException();
 		}
 
-		WorkTime WorkTime;
+		WorkTime workTime = null;
 
 		try {
-
-			WorkTime = workTimePersistence.remove(workTimeId);
-
+			workTime = workTimePersistence.remove(workTimeId);
 		} catch (NoSuchWorkTimeException e) {
-			// TODO Auto-generated catch block
-			throw new NotFoundException();
+			_log.error(e);
 		}
 
-		return WorkTime;
+		return workTime;
 
 	}
 
@@ -320,6 +318,95 @@ public class WorkTimeLocalServiceImpl extends WorkTimeLocalServiceBaseImpl {
 
 		return IndexSearcherHelperUtil.searchCount(searchContext, booleanQuery);
 
+	}
+
+	//Add find by groupId
+	public List<WorkTime> getByGroupId(long groupId) {
+		return workTimePersistence.findByF_GID(groupId);
+	}
+
+
+	// super_admin Generators
+	@Indexable(type = IndexableType.DELETE)
+	public WorkTime adminProcessDelete(Long id) {
+
+		WorkTime object = workTimePersistence.fetchByPrimaryKey(id);
+
+		if (Validator.isNull(object)) {
+			return null;
+		} else {
+			workTimePersistence.remove(object);
+		}
+
+		return object;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public WorkTime adminProcessData(JSONObject objectData) {
+
+		WorkTime object = null;
+
+		if (objectData.getLong("workTimeId") > 0) {
+
+			object = workTimePersistence.fetchByPrimaryKey(objectData.getLong("workTimeId"));
+
+			object.setModifiedDate(new Date());
+
+		} else {
+
+			long id = CounterLocalServiceUtil.increment(WorkTime.class.getName());
+
+			object = workTimePersistence.create(id);
+
+			object.setGroupId(objectData.getLong("groupId"));
+			object.setCompanyId(objectData.getLong("companyId"));
+			object.setCreateDate(new Date());
+
+		}
+
+		object.setUserId(objectData.getLong("userId"));
+
+		object.setDay(objectData.getInt("day"));
+		object.setHours(objectData.getString("hours"));
+		
+		workTimePersistence.update(object);
+
+		return object;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public WorkTime updateWorkTimeDB(long userId, long groupId, int workTimeDay, String workTimeHours)
+			throws NoSuchUserException {
+
+		Date now = new Date();
+		User user = userPersistence.findByPrimaryKey(userId);
+		WorkTime workTime = workTimePersistence.fetchByF_day(groupId, workTimeDay);
+
+		if (workTime == null) {
+			long workTimeId = counterLocalService.increment(WorkTime.class.getName());
+			workTime = workTimePersistence.create(workTimeId);
+
+			// Group instance
+			workTime.setGroupId(groupId);
+			// Audit fields
+			workTime.setCompanyId(user.getCompanyId());
+			workTime.setUserId(user.getUserId());
+			workTime.setUserName(user.getFullName());
+			workTime.setCreateDate(now);
+			workTime.setModifiedDate(now);
+
+			// Other fields
+			workTime.setDay(workTimeDay);
+			workTime.setHours(workTimeHours);
+		} else {
+			workTime.setModifiedDate(now);
+			if (Validator.isNotNull(workTimeDay))
+				workTime.setDay(workTimeDay);
+			if (Validator.isNotNull(workTimeHours))
+				workTime.setHours(workTimeHours);
+		}
+
+		return workTimePersistence.update(workTime);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(WorkTimeLocalServiceImpl.class);

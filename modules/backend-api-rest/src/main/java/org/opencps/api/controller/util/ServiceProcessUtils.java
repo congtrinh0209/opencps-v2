@@ -1,5 +1,19 @@
 package org.opencps.api.controller.util;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,18 +39,6 @@ import org.opencps.dossiermgt.model.ServiceProcess;
 import org.opencps.dossiermgt.model.ServiceProcessRole;
 import org.opencps.dossiermgt.service.ProcessActionLocalServiceUtil;
 
-import com.liferay.portal.kernel.model.Role;
-import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
-import com.liferay.portal.kernel.service.UserLocalServiceUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
-
 public class ServiceProcessUtils {
 
 	public static List<ServiceProcessDataModel> mappingToServiceProcessData(List<Document> documents) {
@@ -52,17 +54,18 @@ public class ServiceProcessUtils {
 			model.setProcessNo(doc.get(ServiceProcessTerm.PROCESS_NO));
 			model.setProcessName(doc.get(ServiceProcessTerm.PROCESS_NAME));
 			model.setDescription(doc.get(ServiceProcessTerm.DESCRIPTION));
-			model.setDurationCount(GetterUtil.getInteger(doc.get(ServiceProcessTerm.DURATION_COUNT)));
+			model.setDurationCount(GetterUtil.getDouble(doc.get(ServiceProcessTerm.DURATION_COUNT)));
 			model.setDurationUnit(GetterUtil.getInteger(doc.get(ServiceProcessTerm.DURATION_UNIT)));
 			model.setCounter(GetterUtil.getInteger(doc.get(ServiceProcessTerm.COUNTER)));
 			model.setGenerateDossierNo(doc.get(ServiceProcessTerm.GENERATE_DOSSIER_NO));
 			model.setDossierNoPattern(doc.get(ServiceProcessTerm.DOSSIER_NO_PATTERN));
 			model.setGenerateDueDate(doc.get(ServiceProcessTerm.GENERATE_DUE_DATE));
 			model.setDueDatePattern(doc.get(ServiceProcessTerm.DUEDATE_PATTERN));
-			model.setGeneratePassword(doc.get(ServiceProcessTerm.GENERATE_PASSWORD));
+			model.setGeneratePassword(doc.get(ServiceProcessTerm.GENERATE_SECRET));
 			model.setDirectNotification(doc.get(ServiceProcessTerm.DIRECT_NOTIFICATION));
 			model.setServerNo(doc.get(ServiceProcessTerm.SERVER_NO));
 			model.setServerName(doc.get(ServiceProcessTerm.SERVER_NAME));
+			model.setPaymentFee(doc.get(ServiceProcessTerm.PAYMENT_FEE));
 
 			outputs.add(model);
 		}
@@ -113,6 +116,7 @@ public class ServiceProcessUtils {
 		output.setGeneratePassword(Boolean.toString(serviceProcess.getGeneratePassword()));
 		output.setDirectNotification(Boolean.toString(serviceProcess.getDirectNotification()));
 		output.setServerNo(serviceProcess.getServerNo());
+		output.setPaymentFee(serviceProcess.getPaymentFee());
 		
 		ServerConfig server = ServerConfigLocalServiceUtil.getByCode(serviceProcess.getServerNo());
 		
@@ -137,9 +141,11 @@ public class ServiceProcessUtils {
 
 			model.setRoleId(GetterUtil.getInteger(role.getRoleId()));
 			model.setRoleName(_getRoleName(role.getRoleId()));
+//			model.setRoleName(role.getRoleName());
 			model.setCondition(role.getCondition());
 			model.setModerator(Boolean.toString(role.getModerator()));
-
+			model.setRoleCode(role.getRoleCode());
+			
 			outputs.add(model);
 		}
 
@@ -155,9 +161,11 @@ public class ServiceProcessUtils {
 
 			model.setRoleId(GetterUtil.getInteger(role.getRoleId()));
 			model.setRoleName(_getRoleName(role.getRoleId()));
+//			model.setRoleName(role.getRoleName());
 			model.setCondition(role.getCondition());
 			model.setModerator(Boolean.toString(role.getModerator()));
-
+			model.setRoleCode(role.getRoleCode());
+			
 			outputs.add(model);
 		}
 
@@ -172,7 +180,8 @@ public class ServiceProcessUtils {
 		model.setRoleName(_getRoleName(processRole.getRoleId()));
 		model.setCondition(processRole.getCondition());
 		model.setModerator(Boolean.toString(processRole.getModerator()));
-
+		model.setRoleCode(processRole.getRoleCode());
+		
 		return model;
 	}
 
@@ -184,6 +193,7 @@ public class ServiceProcessUtils {
 		model.setRoleName(_getRoleName(stepRole.getRoleId()));
 		model.setCondition(stepRole.getCondition());
 		model.setModerator(Boolean.toString(stepRole.getModerator()));
+		model.setRoleCode(stepRole.getRoleCode());
 
 		return model;
 	}
@@ -209,6 +219,9 @@ public class ServiceProcessUtils {
 			model.setCustomProcessUrl(doc.get(ProcessStepTerm.CUSTOM_PROCESS_URL));
 			model.setEditable(doc.get(ProcessStepTerm.EDITABLE));
 			model.setLockState(doc.get(ProcessStepTerm.LOCK_STATE));
+			if (Validator.isNotNull(doc.get(ProcessStepTerm.CHECK_INPUT))) {
+				model.setCheckInput(Integer.valueOf(doc.get(ProcessStepTerm.CHECK_INPUT)));
+			}
 
 			outputs.add(model);
 		}
@@ -246,6 +259,8 @@ public class ServiceProcessUtils {
 			model.setRollbackable(doc.get(ProcessActionTerm.ROLLBACKABLE));
 			model.setCreateDossierNo(Boolean.valueOf(doc.get(ProcessActionTerm.CREATE_DOSSIER_NO)));
 			model.seteSignature(Boolean.valueOf(doc.get(ProcessActionTerm.ESIGNATURE)));
+			model.setPaymentFee(doc.get(ProcessActionTerm.PAYMENT_FEE));
+			model.setCreateDossiers(doc.get(ProcessActionTerm.CREATE_DOSSIERS));
 			
 			if (Validator.isNull(doc.get(ProcessActionTerm.CONFIG_NOTE))) {
 				ProcessAction action = ProcessActionLocalServiceUtil.fetchProcessAction(GetterUtil.getLong(doc.get(Field.ENTRY_CLASS_PK)));
@@ -285,6 +300,7 @@ public class ServiceProcessUtils {
 		model.setBriefNote(step.getBriefNote());
 		model.setCustomProcessUrl(step.getCustomProcessUrl());
 		model.setEditable(Boolean.toString(step.getEditable()));
+		model.setCheckInput(step.getCheckInput());
 
 		return model;
 	}
@@ -300,7 +316,7 @@ public class ServiceProcessUtils {
 		model.setPostStepCode(action.getPostStepCode());
 		model.setAutoEvent(action.getAutoEvent());
 		model.setPreCondition(action.getPreCondition());
-		model.setAllowAssignUser(Boolean.toString(action.getAllowAssignUser()));
+		model.setAllowAssignUser(String.valueOf(action.getAllowAssignUser()));
 		model.setAssignUserId(String.valueOf(action.getAssignUserId()));
 
 		String assignName = StringPool.BLANK;
@@ -315,7 +331,7 @@ public class ServiceProcessUtils {
 		}
 
 		model.setAssignUserName(assignName);
-		model.setRequestPayment(Boolean.toString(action.getRequestPayment()));
+		model.setRequestPayment(String.valueOf(action.getRequestPayment()));
 		model.setPaymentFee(action.getPaymentFee());
 		model.setMakeBriefNote(action.getMakeBriefNote());
 		model.setSyncActionCode(action.getSyncActionCode());
@@ -329,7 +345,11 @@ public class ServiceProcessUtils {
 		
 		model.setCreateDossierNo(action.getCreateDossierNo());
 		model.seteSignature(action.getESignature());
+		model.setSignatureType(action.getSignatureType());
 		model.setConfigNote(action.getConfigNote());
+		model.setPaymentFee(action.getPaymentFee());
+		model.setCreateDossiers(action.getCreateDossiers());
+		model.setDossierTemplateNo(action.getDossierTemplateNo());
 		
 		return model;
 	}
@@ -341,6 +361,7 @@ public class ServiceProcessUtils {
 			roleName = role.getName();
 
 		} catch (Exception e) {
+			_log.error(e);
 		}
 		return roleName;
 	}
@@ -352,4 +373,5 @@ public class ServiceProcessUtils {
 
 		return statusText;
 	}
+	private static Log _log = LogFactoryUtil.getLog(ServiceProcessUtils.class);
 }

@@ -1,8 +1,6 @@
 package org.opencps.usermgt.scheduler;
 
-import org.opencps.usermgt.scheduler.utils.SchedulerUtilProcessing;
 import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
@@ -18,7 +16,7 @@ import com.liferay.portal.kernel.scheduler.TimeUnit;
 import com.liferay.portal.kernel.scheduler.TriggerFactory;
 import com.liferay.portal.kernel.scheduler.TriggerFactoryUtil;
 
-@Component(immediate = true, service = OneMinute.class)
+//@Component(immediate = true, service = OneMinute.class)
 public class OneMinute extends BaseSchedulerEntryMessageListener {
 
 	@Override
@@ -26,11 +24,11 @@ public class OneMinute extends BaseSchedulerEntryMessageListener {
 		try {
 			doProcessNotification(message);
 
-			String[] notificationTypeList = { "USER-01", "USER-02", "USER-03", "USER-04" };
-			SchedulerUtilProcessing.notificationByType(notificationTypeList);
+//			String[] notificationTypeList = { "USER-01", "USER-02", "USER-03", "USER-04" };
+//			SchedulerUtilProcessing.notificationByType(notificationTypeList);
 
 		} catch (Exception e) {
-			// TODO: handle exception
+			_log.error(e);
 		}
 
 	}

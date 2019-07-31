@@ -1,5 +1,21 @@
 package org.opencps.dossiermgt.service.indexer;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.search.BaseIndexer;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
+import com.liferay.portal.kernel.search.Summary;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -14,23 +30,12 @@ import org.opencps.dossiermgt.model.ServiceProcess;
 import org.opencps.dossiermgt.model.ServiceProcessRole;
 import org.opencps.dossiermgt.service.ServiceProcessLocalServiceUtil;
 import org.opencps.dossiermgt.service.ServiceProcessRoleLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
-import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
-import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
-import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.search.BaseIndexer;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
-import com.liferay.portal.kernel.search.Summary;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
-
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class ServiceProcessIndexer extends BaseIndexer<ServiceProcess> {
 	public static final String CLASS_NAME = ServiceProcess.class.getName();
 
@@ -84,7 +89,7 @@ public class ServiceProcessIndexer extends BaseIndexer<ServiceProcess> {
 		document.addTextSortable(ServiceProcessTerm.GENERATE_DOSSIER_NO,
 				Boolean.toString(object.getGenerateDossierNo()));
 		document.addTextSortable(ServiceProcessTerm.GENERATE_DUE_DATE, Boolean.toString(object.getGenerateDueDate()));
-		document.addTextSortable(ServiceProcessTerm.GENERATE_PASSWORD, Boolean.toString(object.getGeneratePassword()));
+		document.addTextSortable(ServiceProcessTerm.GENERATE_SECRET, Boolean.toString(object.getGeneratePassword()));
 		document.addTextSortable(ServiceProcessTerm.DIRECT_NOTIFICATION,
 				Boolean.toString(object.getDirectNotification()));
 		

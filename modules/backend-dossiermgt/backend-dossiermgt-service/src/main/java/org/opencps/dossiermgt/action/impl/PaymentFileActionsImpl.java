@@ -1,20 +1,13 @@
 package org.opencps.dossiermgt.action.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.opencps.dossiermgt.action.PaymentFileActions;
-import org.opencps.dossiermgt.action.util.PaymentUrlGenerator;
 import org.opencps.dossiermgt.constants.DossierTerm;
 import org.opencps.dossiermgt.constants.PaymentFileTerm;
-import org.opencps.dossiermgt.model.Dossier;
-import org.opencps.dossiermgt.model.PaymentConfig;
 import org.opencps.dossiermgt.model.PaymentFile;
-import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierSyncLocalServiceUtil;
-import org.opencps.dossiermgt.service.PaymentConfigLocalServiceUtil;
 import org.opencps.dossiermgt.service.PaymentFileLocalServiceUtil;
 
 import com.liferay.portal.kernel.exception.PortalException;
@@ -29,7 +22,6 @@ import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
@@ -83,10 +75,11 @@ public class PaymentFileActionsImpl implements PaymentFileActions {
 	 */
 	@Override
 	public PaymentFile createPaymentFile(long userId, long groupId, long dossierId, String referenceUid,
-			String govAgencyCode, String govAgencyName, String applicantName, String applicantIdNo, String paymentFee,
+			String paymentFee, long advanceAmount, long feeAmount, long serviceAmount, long shipAmount,
 			long paymentAmount, String paymentNote, String epaymentProfile, String bankInfo,
+			int paymentStatus, String paymentMethod,
 			ServiceContext serviceContext) throws PortalException {
-		_log.info("boom boom");
+		//_log.info("boom boom");
 		if (Validator.isNull(referenceUid)) {
 			referenceUid = PortalUUIDUtil.generate();
 		}
@@ -94,16 +87,16 @@ public class PaymentFileActionsImpl implements PaymentFileActions {
 		try {
 
 			PaymentFile result = PaymentFileLocalServiceUtil.createPaymentFiles(userId, groupId, dossierId,
-					referenceUid, govAgencyCode, govAgencyName, applicantName, applicantIdNo, paymentFee, paymentAmount,
-					paymentNote, epaymentProfile, bankInfo, serviceContext);
+					referenceUid, paymentFee, advanceAmount, feeAmount, serviceAmount, shipAmount,
+					paymentAmount, paymentNote, epaymentProfile, bankInfo,
+					paymentStatus, paymentMethod, serviceContext);
 
 			return result;
 
 		} catch (PortalException e) {
-			// TODO Auto-generated catch block
-			_log.info("boom boom");
-			_log.info(e);
-			e.printStackTrace();
+			_log.debug(e);
+			//_log.error(e);
+//			e.printStackTrace();
 			throw new PortalException();
 		}
 
@@ -240,11 +233,11 @@ public class PaymentFileActionsImpl implements PaymentFileActions {
 
 		if (!isSync) {
 		// Add PaymentFileSync
-		Dossier dossier = DossierLocalServiceUtil.getDossier(paymentFile.getDossierId());
+//		Dossier dossier = DossierLocalServiceUtil.getDossier(paymentFile.getDossierId());
 		// TODO review serverNo on this
-		DossierSyncLocalServiceUtil.updateDossierSync(groupId, serviceContext.getUserId(), paymentFile.getDossierId(),
-				dossier.getReferenceUid(), false, 3, paymentFile.getPrimaryKey(), paymentFile.getReferenceUid(),
-				StringPool.BLANK);
+//		DossierSyncLocalServiceUtil.updateDossierSync(groupId, serviceContext.getUserId(), paymentFile.getDossierId(),
+//				dossier.getReferenceUid(), false, 3, paymentFile.getPrimaryKey(), paymentFile.getReferenceUid(),
+//				StringPool.BLANK);
 		}
 
 		return paymentFile;
@@ -295,8 +288,8 @@ public class PaymentFileActionsImpl implements PaymentFileActions {
 	}
 
 	@Override
-	public List<PaymentFile> getPaymentFiles(long dossierId) {
-		return PaymentFileLocalServiceUtil.getByDossierId(dossierId);
+	public PaymentFile getPaymentFiles(long groupId, long dossierId) {
+		return PaymentFileLocalServiceUtil.getByDossierId(groupId, dossierId);
 	}
 
 }

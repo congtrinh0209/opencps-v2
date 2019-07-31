@@ -1,5 +1,18 @@
 package org.opencps.dossiermgt.action.util;
 
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -17,26 +30,14 @@ import javax.script.ScriptException;
 
 import org.opencps.dossiermgt.action.PaymentFileActions;
 import org.opencps.dossiermgt.action.impl.PaymentFileActionsImpl;
+import org.opencps.dossiermgt.constants.PaymentFileTerm;
 import org.opencps.dossiermgt.model.Dossier;
 import org.opencps.dossiermgt.model.PaymentConfig;
 import org.opencps.dossiermgt.model.PaymentFile;
+import org.opencps.dossiermgt.model.ProcessAction;
 import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierSyncLocalServiceUtil;
 import org.opencps.dossiermgt.service.PaymentConfigLocalServiceUtil;
 import org.opencps.dossiermgt.service.PaymentFileLocalServiceUtil;
-
-import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONException;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
 
 public class DossierPaymentUtils {
 
@@ -46,9 +47,9 @@ public class DossierPaymentUtils {
 		Pattern patternName = null;
 		Matcher matcherName = null;
 
-		ScriptEngineManager manager = new ScriptEngineManager();
+		ScriptEngineManager manager;
 
-		ScriptEngine engine = manager.getEngineByExtension("js");
+		ScriptEngine engine;
 
 		patternName = Pattern.compile("net=\\[(.*?)\\]");
 
@@ -68,14 +69,14 @@ public class DossierPaymentUtils {
 				_log.info("NAMES___" + ft.getNames());
 			}
 
-			for (ScriptEngineFactory se : new ScriptEngineManager().getEngineFactories()) {
-				System.out.println("se = " + se.getEngineName());
-				System.out.println("se = " + se.getEngineVersion());
-				System.out.println("se = " + se.getLanguageName());
-				System.out.println("se = " + se.getLanguageVersion());
-				System.out.println("se = " + se.getNames());
-				System.out.println("se = " + se.getExtensions());
-			}
+//			for (ScriptEngineFactory se : new ScriptEngineManager().getEngineFactories()) {
+//				System.out.println("se = " + se.getEngineName());
+//				System.out.println("se = " + se.getEngineVersion());
+//				System.out.println("se = " + se.getLanguageName());
+//				System.out.println("se = " + se.getLanguageVersion());
+//				System.out.println("se = " + se.getNames());
+//				System.out.println("se = " + se.getExtensions());
+//			}
 
 			String netScript = matcherName.group(1);
 
@@ -83,10 +84,11 @@ public class DossierPaymentUtils {
 
 				engine.eval(netScript);
 
-				long net = GetterUtil.getInteger(engine.get("payment"));
-				System.out.println("DossierPaymentUtils.main()" + net);
+//				long net = GetterUtil.getInteger(engine.get("payment"));
+//				System.out.println("DossierPaymentUtils.main()" + net);
 			} catch (ScriptException e) {
-				e.printStackTrace();
+//				e.printStackTrace();
+				_log.error(e);
 			}
 
 		}
@@ -94,23 +96,22 @@ public class DossierPaymentUtils {
 	}
 
 	// call processPaymentFile create paymentFile
-	public static void processPaymentFile(String pattern, long groupId, long dossierId, long userId,
+	public static void processPaymentFile(ProcessAction processAction, String pattern, long groupId, long dossierId, long userId,
 			ServiceContext serviceContext, String serverNo) throws JSONException {
 
 		// get total payment amount
-
-		int payment = getTotalPayment(pattern, dossierId, userId, serviceContext);
+		JSONObject patternObj = JSONFactoryUtil.createJSONObject(pattern);
+		
+//		int payment = getTotalPayment(pattern, dossierId, userId, serviceContext);
 
 		// get PaymentFee
-		List<String> messages = getMessagePayment(pattern);
+//		List<String> messages = getMessagePayment(pattern);
 
-		// TODO paymentNote
 		String paymentNote = StringPool.BLANK;
-		String paymentFee = StringPool.BLANK;
 
-		if (messages.size() > 0) {
-			paymentFee = messages.get(0);
-		}
+//		if (messages.size() > 0) {
+//			paymentFee = messages.get(0);
+//		}
 
 		// create paymentFile
 		PaymentFileActions actions = new PaymentFileActionsImpl();
@@ -120,17 +121,45 @@ public class DossierPaymentUtils {
 
 		PaymentConfig paymentConfig = PaymentConfigLocalServiceUtil.getPaymentConfigByGovAgencyCode(groupId,
 				dossier.getGovAgencyCode());
-
+		String paymentFee = StringPool.BLANK;
+		long advanceAmount = 0;
+		
+		if (patternObj.has(PaymentFileTerm.PAYMENT_FEE)) {
+			paymentFee = patternObj.getString(PaymentFileTerm.PAYMENT_FEE);			
+		}
+		if (patternObj.has(PaymentFileTerm.ADVANCE_AMOUNT)) {
+			advanceAmount = patternObj.getLong(PaymentFileTerm.ADVANCE_AMOUNT);
+		}
+		
 		try {
 
 			// generator epaymentProfile
-			JSONObject epaymentConfigJSON = JSONFactoryUtil.createJSONObject(paymentConfig.getEpaymentConfig());
-
-			PaymentFile paymentFile = actions.createPaymentFile(userId, groupId, dossierId, null,
-					dossier.getGovAgencyCode(), dossier.getGovAgencyName(), dossier.getApplicantName(),
-					dossier.getApplicantIdNo(), paymentFee, payment, paymentNote, null, paymentConfig.getBankInfo(),
-					serviceContext);
+			JSONObject epaymentConfigJSON = paymentConfig != null ? JSONFactoryUtil.createJSONObject(paymentConfig.getEpaymentConfig()) : JSONFactoryUtil.createJSONObject();
 			
+			PaymentFile paymentFile = actions.createPaymentFile(
+					userId, 
+					groupId, 
+					dossierId, 
+					null, 
+					paymentFee, 
+					advanceAmount, 
+					0, 
+					0, 
+					0, 
+					0, 
+					paymentNote, 
+					StringPool.BLANK, 
+					StringPool.BLANK, 
+					processAction.getRequestPayment(), 
+					StringPool.BLANK, 
+					serviceContext);
+
+			
+//			PaymentFile paymentFile = actions.createPaymentFile(userId, groupId, dossierId, null,
+//					dossier.getGovAgencyCode(), dossier.getGovAgencyName(), dossier.getApplicantName(),
+//					dossier.getApplicantIdNo(), paymentFee, payment, paymentNote, null, paymentConfig.getBankInfo(),
+//					serviceContext);
+//			
 			long counterPaymentFile = CounterLocalServiceUtil.increment(PaymentFile.class.getName()+"paymentFileNo");
 			
 			Calendar cal = Calendar.getInstance();
@@ -179,20 +208,22 @@ public class DossierPaymentUtils {
 
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+//					e.printStackTrace();
+					_log.error(e);
 				}
 
 			}
-
-			// Create paymentfile sync
-			if (Validator.isNotNull(serverNo)) {
-				DossierSyncLocalServiceUtil.updateDossierSync(groupId, userId, dossierId, dossier.getReferenceUid(),
-						false, 2, paymentFile.getPrimaryKey(), paymentFile.getReferenceUid(), serverNo);
-			}
+//
+//			// Create paymentfile sync
+//			if (Validator.isNotNull(serverNo)) {
+////				DossierSyncLocalServiceUtil.updateDossierSync(groupId, userId, dossierId, dossier.getReferenceUid(),
+////						false, 2, paymentFile.getPrimaryKey(), paymentFile.getReferenceUid(), serverNo);
+//			}
 
 		} catch (PortalException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+//			e.printStackTrace();
+			_log.error(e);
 		}
 	}
 
@@ -304,7 +335,8 @@ public class DossierPaymentUtils {
 				}
 			}
 		} catch (Exception e) {
-
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		return msgPayments;
@@ -320,6 +352,7 @@ public class DossierPaymentUtils {
 	 * @param content
 	 * @return
 	 */
+	@SuppressWarnings("deprecation")
 	private static boolean _checkcontains(String pattern, String content) {
 
 		boolean isContains = false;
@@ -413,7 +446,7 @@ public class DossierPaymentUtils {
 			Map<String, Object> jsonMap = AutoFillFormData.jsonToMap(jsonObject);
 
 			for (Map.Entry<String, Object> entry : jsonMap.entrySet()) {
-				String valReplace = StringPool.BLANK;
+				String valReplace;
 
 				if (Validator.isNumber(String.valueOf(entry.getValue()))) {
 
@@ -472,7 +505,8 @@ public class DossierPaymentUtils {
 				_log.info("net__________" + net);
 
 			} catch (Exception e) {
-				_log.info(e);
+				_log.debug(e);
+				//_log.error(e);
 			}
 
 		}

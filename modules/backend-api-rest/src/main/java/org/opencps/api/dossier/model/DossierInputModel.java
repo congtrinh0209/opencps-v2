@@ -8,6 +8,7 @@
 
 package org.opencps.api.dossier.model;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -42,6 +43,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="contactEmail" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="password" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="online" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="serverNo" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -75,6 +77,44 @@ import javax.xml.bind.annotation.XmlType;
     "postalAddress",
     "postalCityCode",
     "postalTelNo",
+    "originality",
+    "dossierNo",
+    "submitDate",
+    "receiveDate",
+    "dueDate",
+    "dossierStatus",
+    "dossierStatusText",
+    "dossierSubStatus",
+    "dossierSubStatusText",
+    "isSameAsApplicant",
+    "delegateName",
+    "delegateIdNo",
+    "delegateTelNo",
+    "delegateEmail",
+	"delegateAddress",
+	"delegateCityCode",
+	"delegateCityName",	
+	"delegateDistrictCode",
+	"delegateDistrictName",
+	"delegateWardCode",
+	"delegateWardName",
+	"sampleCount",
+	"serviceName",
+	"dossierName",
+	"postalCityName",
+	"postalServiceCode",
+	"postalServiceName",
+	"postalDistrictCode",
+	"postalDistrictName",
+	"postalWardCode",
+	"postalWardName",
+	"dossierMarkArr",
+	"dossierFileArr",
+	"dossiers",
+	"payment",
+	"importing",
+	"serverNo",
+	"metaData"
 })
 @XmlRootElement(name = "DossierInputModel")
 public class DossierInputModel {
@@ -117,20 +157,101 @@ public class DossierInputModel {
 	@FormParam(value = "applicantNote")
     protected String applicantNote;
 	@FormParam(value = "viaPostal")
-	protected int viaPostal;
+	protected Integer viaPostal;
 	@FormParam(value = "postalAddress")
 	protected String postalAddress;
 	@FormParam(value = "postalCityCode")
 	protected String postalCityCode;
 	@FormParam(value = "postalTelNo")
 	protected String postalTelNo;
+	@FormParam(value = "originality")
+	protected String originality;
+	@FormParam(value = "dossierNo")
+	protected String dossierNo;
+	@FormParam(value = "submitDate")
+	protected String submitDate;
+	@FormParam(value = "receiveDate")
+	protected String receiveDate;
+	@FormParam(value = "dueDate")
+	protected String dueDate;
+	@FormParam(value = "dossierStatus")
+	protected String dossierStatus;
+	@FormParam(value = "dossierStatusText")
+	protected String dossierStatusText;
+	@FormParam(value = "dossierSubStatus")
+	protected String dossierSubStatus;
+	@FormParam(value = "dossierSubStatusText")
+	protected String dossierSubStatusText;
+	@FormParam(value = "isSameAsApplicant")
+	private boolean isSameAsApplicant;
+	@FormParam(value = "delegateName")
+	private String delegateName;
+	@FormParam(value = "delegateIdNo")
+	private String delegateIdNo;
+	@FormParam(value = "delegateTelNo")
+	private String delegateTelNo;
+	@FormParam(value = "delegateEmail")
+	private String delegateEmail;
+	@FormParam(value = "delegateAddress")
+	private String delegateAddress;
+	@FormParam(value = "delegateCityCode")
+	private String delegateCityCode;
+	@FormParam(value = "delegateCityName")
+	private String delegateCityName;
+	@FormParam(value = "delegateDistrictCode")
+	private String delegateDistrictCode;
+	@FormParam(value = "delegateDistrictName")
+	private String delegateDistrictName;
+	@FormParam(value = "delegateWardCode")
+	private String delegateWardCode;
+	@FormParam(value = "delegateWardName")
+	private String delegateWardName;
+	@FormParam(value = "sampleCount")
+	private Long sampleCount;
+	@FormParam(value = "briefNote")
+	private String briefNote;
+	@FormParam(value = "serviceName")
+	private String serviceName;
+	@FormParam(value = "dossierName")
+	private String dossierName;
+	@FormParam(value = "postalCityName")
+	private String postalCityName;
+	@FormParam(value = "postalServiceCode")
+	private String postalServiceCode;
+	@FormParam(value = "postalServiceName")
+	private String postalServiceName;
+	@FormParam(value = "postalDistrictCode")
+	private String postalDistrictCode;
+	@FormParam(value = "postalDistrictName")
+	private String postalDistrictName;
+	@FormParam(value = "postalWardCode")
+	private String postalWardCode;
+	@FormParam(value = "postalWardName")
+	private String postalWardName;
+	@FormParam(value = "originDossierNo")
+	private String originDossierNo;
+	@FormParam(value = "dossierMarkArr")
+	private String dossierMarkArr;
+	@FormParam(value = "importing")
+	@DefaultValue("false")
+	private String importing;
+	@FormParam(value = "dossierFileArr")
+	private String dossierFileArr;
+	@FormParam(value = "dossiers")
+	private String dossiers;
+	@FormParam(value = "payment")
+	private String payment;
+	@FormParam(value = "serverNo")
+	private String serverNo;
+	
+	@FormParam(value = "metaData")
+	private String metaData;
 
-
-	public int getViaPostal() {
+	public Integer getViaPostal() {
 		return viaPostal;
 	}
 
-	public void setViaPostal(int viaPostal) {
+	public void setViaPostal(Integer viaPostal) {
 		this.viaPostal = viaPostal;
 	}
 
@@ -581,5 +702,404 @@ public class DossierInputModel {
     public void setOnline(String value) {
         this.online = value;
     }
+
+    /**
+     * Gets the value of the originality property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getOriginality() {
+        return originality;
+    }
+
+    /**
+     * Sets the value of the originality property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setOriginality(String value) {
+        this.originality = value;
+    } 
+
+    /**
+     * Gets the value of the dossierNo property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getDossierNo() {
+        return dossierNo;
+    }
+
+    /**
+     * Sets the value of the dossierNo property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setDossierNo(String value) {
+        this.dossierNo = value;
+    } 
+
+    /**
+     * Gets the value of the submitDate property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getSubmitDate() {
+        return submitDate;
+    }
+
+    /**
+     * Sets the value of the submitDate property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setSubmitDate(String value) {
+        this.submitDate = value;
+    } 
+
+    /**
+     * Gets the value of the receiveDate property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getReceiveDate() {
+        return receiveDate;
+    }
+
+    /**
+     * Sets the value of the receiveDate property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setReceiveDate(String value) {
+        this.receiveDate = value;
+    } 
+
+    /**
+     * Gets the value of the dueDate property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getDueDate() {
+        return dueDate;
+    }
+
+    /**
+     * Sets the value of the dueDate property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setDueDate(String value) {
+        this.dueDate = value;
+    }
+
+	public String getDossierStatus() {
+		return dossierStatus;
+	}
+
+	public void setDossierStatus(String dossierStatus) {
+		this.dossierStatus = dossierStatus;
+	}
+
+	public String getDossierStatusText() {
+		return dossierStatusText;
+	}
+
+	public void setDossierStatusText(String dossierStatusText) {
+		this.dossierStatusText = dossierStatusText;
+	}
+
+	public String getDossierSubStatus() {
+		return dossierSubStatus;
+	}
+
+	public void setDossierSubStatus(String dossierSubStatus) {
+		this.dossierSubStatus = dossierSubStatus;
+	}
+
+	public String getDossierSubStatusText() {
+		return dossierSubStatusText;
+	}
+
+	public void setDossierSubStatusText(String dossierSubStatusText) {
+		this.dossierSubStatusText = dossierSubStatusText;
+	}
+
+	public boolean isSameAsApplicant() {
+		return isSameAsApplicant;
+	}
+
+	public void setSameAsApplicant(boolean isSameAsApplicant) {
+		this.isSameAsApplicant = isSameAsApplicant;
+	}
+
+	public String getDelegateName() {
+		return delegateName;
+	}
+
+	public void setDelegateName(String delegateName) {
+		this.delegateName = delegateName;
+	}
+
+	public String getDelegateIdNo() {
+		return delegateIdNo;
+	}
+
+	public void setDelegateIdNo(String delegateIdNo) {
+		this.delegateIdNo = delegateIdNo;
+	}
+
+	public String getDelegateTelNo() {
+		return delegateTelNo;
+	}
+
+	public void setDelegateTelNo(String delegateTelNo) {
+		this.delegateTelNo = delegateTelNo;
+	}
+
+	public String getDelegateEmail() {
+		return delegateEmail;
+	}
+
+	public void setDelegateEmail(String delegateEmail) {
+		this.delegateEmail = delegateEmail;
+	}
+
+	public String getDelegateAddress() {
+		return delegateAddress;
+	}
+
+	public void setDelegateAddress(String delegateAddress) {
+		this.delegateAddress = delegateAddress;
+	}
+
+	public String getDelegateCityCode() {
+		return delegateCityCode;
+	}
+
+	public void setDelegateCityCode(String delegateCityCode) {
+		this.delegateCityCode = delegateCityCode;
+	}
+
+	public String getDelegateCityName() {
+		return delegateCityName;
+	}
+
+	public void setDelegateCityName(String delegateCityName) {
+		this.delegateCityName = delegateCityName;
+	}
+	
+	public String getDelegateDistrictCode() {
+		return delegateDistrictCode;
+	}
+
+	public void setDelegateDistrictCode(String delegateDistrictCode) {
+		this.delegateDistrictCode = delegateDistrictCode;
+	}
+
+	public String getDelegateDistrictName() {
+		return delegateDistrictName;
+	}
+
+	public void setDelegateDistrictName(String delegateDistrictName) {
+		this.delegateDistrictName = delegateDistrictName;
+	}
+	
+	public String getDelegateWardCode() {
+		return delegateWardCode;
+	}
+
+	public void setDelegateWardCode(String delegateWardCode) {
+		this.delegateWardCode = delegateWardCode;
+	}
+
+	public String getDelegateWardName() {
+		return delegateWardName;
+	}
+
+	public void setDelegateWardName(String delegateWardName) {
+		this.delegateWardName = delegateWardName;
+	}
+	
+	public Long getSampleCount() {
+		return sampleCount;
+	}
+
+	public void setSampleCount(Long sampleCount) {
+		this.sampleCount = sampleCount;
+	} 
+
+	public String getBriefNote() {
+		return briefNote;
+	}
+	
+	public void setBriefNote(String value) {
+		this.briefNote = value;
+	}
+
+	public String getServiceName() {
+		return serviceName;
+	}
+
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
+	}
+
+	public String getDossierName() {
+		return dossierName;
+	}
+
+	public void setDossierName(String dossierName) {
+		this.dossierName = dossierName;
+	}
+
+	public String getPostalCityName() {
+		return postalCityName;
+	}
+	
+	public void setPostalCityName(String value) {
+		this.postalCityName = value;
+	}
+
+	public String getPostalServiceCode() {
+		return postalServiceCode;
+	}
+	
+	public void setPostalServiceCode(String value) {
+		this.postalServiceCode = value;
+	}
+
+	public String getPostalServiceName() {
+		return postalServiceName;
+	}
+	
+	public void setPostalServiceName(String value) {
+		this.postalServiceName = value;
+	}
+
+	public String getPostalDistrictCode() {
+		return postalDistrictCode;
+	}
+	
+	public void setPostalDistrictCode(String value) {
+		this.postalDistrictCode = value;
+	}
+
+	public String getPostalDistrictName() {
+		return postalDistrictName;
+	}
+	
+	public void setPostalDistrictName(String value) {
+		this.postalDistrictName = value;
+	}
+
+	public String getPostalWardCode() {
+		return postalWardCode;
+	}
+	
+	public void setPostalWardCode(String value) {
+		this.postalWardCode = value;
+	}
+
+	public String getPostalWardName() {
+		return postalWardName;
+	}
+	
+	public void setPostalWardName(String value) {
+		this.postalWardName = value;
+	}
+
+	public String getOriginDossierNo() {
+		return originDossierNo;
+	}
+	
+	public void setOriginDossierNo(String value) {
+		this.originDossierNo = value;
+	}
+
+	public String getDossierMarkArr() {
+		return dossierMarkArr;
+	}
+
+	public void setDossierMarkArr(String dossierMarkArr) {
+		this.dossierMarkArr = dossierMarkArr;
+	}
+
+	public String getImporting() {
+		return importing;
+	}
+
+	public void setImporting(String importing) {
+		this.importing = importing;
+	}
+
+	public String getDossierFileArr() {
+		return dossierFileArr;
+	}
+
+	public void setDossierFileArr(String dossierFileArr) {
+		this.dossierFileArr = dossierFileArr;
+	}
+
+	public String getDossiers() {
+		return dossiers;
+	}
+
+	public void setDossiers(String dossiers) {
+		this.dossiers = dossiers;
+	}
+
+	public String getPayment() {
+		return payment;
+	}
+
+	public void setPayment(String payment) {
+		this.payment = payment;
+	}
+
+	public String getServerNo() {
+		return serverNo;
+	}
+
+	public void setServerNo(String serverNo) {
+		this.serverNo = serverNo;
+	}
+	public String getMetaData() {
+		return metaData;
+	}
+
+	public void setMetaData(String metaData) {
+		this.metaData = metaData;
+	}
 
 }

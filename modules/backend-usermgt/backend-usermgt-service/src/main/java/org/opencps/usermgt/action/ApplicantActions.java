@@ -1,5 +1,6 @@
 package org.opencps.usermgt.action;
 
+import java.util.Date;
 import java.util.LinkedHashMap;
 
 import org.opencps.usermgt.model.Applicant;
@@ -49,5 +50,12 @@ public interface ApplicantActions {
 			throws PortalException;
 
 	public Applicant getApplicantByMappingUserId(long userId) throws PortalException;
+
+	public void updateApplicantDB(long userId, long groupId, String applicantIdNo, String appliantName,
+			String applicantIdType, Date applicantIdDate, String contactEmail, String contactTelNo,
+			ServiceContext serviceContext) throws PortalException;
+
+	public JSONObject createApplicantAccount(long userId, long companyId, long groupId, long id, String screenName,
+			String email, boolean exist, ServiceContext serviceContext) throws PortalException;
 
 }

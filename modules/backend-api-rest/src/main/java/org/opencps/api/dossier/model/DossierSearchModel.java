@@ -12,7 +12,6 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
@@ -92,7 +91,32 @@ import javax.xml.bind.annotation.XmlType;
     "notState",
     "statusReg",
     "notStatusReg",
-    "keywordSearchLike"
+    "keywordSearchLike",
+    "online",
+    "specialKey",
+    "assigned",
+    "domain",
+    "domainName",
+    "applicantName",
+    "applicantIdNo",
+    "serviceName",
+    "fromReleaseDate",
+    "toReleaseDate",
+    "originality",
+    "fromFinishDate",
+    "toFinishDate",
+    "fromReceiveNotDoneDate",
+    "toReceiveNotDoneDate",
+    "fromStatisticDate",
+    "toStatisticDate",
+    "origin",
+    "originDossierId",
+    "time",
+    "register",
+    "day",
+    "paymentStatus",
+    "groupDossierId",
+    "permission"
 })
 @XmlRootElement(name = "DossierSearchModel")
 public class DossierSearchModel {
@@ -168,6 +192,78 @@ public class DossierSearchModel {
     protected String notStatusReg;
     @QueryParam(value = "keywordSearchLike")
     protected String keywordSearchLike;
+    @QueryParam(value = "specialKey")
+    protected String specialKey;
+    @QueryParam(value = "online")
+    protected String online;
+    @QueryParam(value = "assigned")
+    protected Integer assigned;
+    @QueryParam(value = "domain")
+    protected String domain;
+    @QueryParam(value = "domainName")
+    protected String domainName;
+    @QueryParam(value = "applicantName")
+    protected String applicantName;
+    @QueryParam(value = "serviceName")
+    protected String serviceName;
+    @QueryParam(value = "fromReleaseDate")
+    protected String fromReleaseDate;
+    @QueryParam(value = "toReleaseDate")
+    protected String toReleaseDate;
+    @QueryParam(value = "originality")
+    protected String originality;
+    @QueryParam(value = "fromFinishDate")
+    protected String fromFinishDate;
+    @QueryParam(value = "toFinishDate")
+    protected String toFinishDate;
+    @QueryParam(value = "fromReceiveNotDoneDate")
+    protected String fromReceiveNotDoneDate;
+    @QueryParam(value = "toReceiveNotDoneDate")
+    protected String toReceiveNotDoneDate;
+    @QueryParam(value = "paymentStatus")
+    protected String paymentStatus;
+    @QueryParam(value = "fromStatisticDate")
+    protected String fromStatisticDate;
+    @QueryParam(value = "toStatisticDate")
+    protected String toStatisticDate;
+    @QueryParam(value = "origin")
+    protected String origin;
+    @QueryParam(value = "originDossierId")
+    protected Integer originDossierId;
+    @QueryParam(value = "time")
+    protected String time;
+    @QueryParam(value = "register")
+    protected String register;
+	@QueryParam(value = "day")
+    protected int day;
+	@QueryParam(value = "groupDossierId")
+    protected Long groupDossierId;
+    @QueryParam(value = "permission")
+    protected String permission;
+
+    public Integer getAssigned() {
+		return assigned;
+	}
+
+	public void setAssigned(Integer assigned) {
+		this.assigned = assigned;
+	}
+
+	public String getSpecialKey() {
+		return specialKey;
+	}
+
+	public void setSpecialKey(String specialKey) {
+		this.specialKey = specialKey;
+	}
+
+	public String getOnline() {
+		return online;
+	}
+
+	public void setOnline(String online) {
+		this.online = online;
+	}
 
     public String getKeywordSearchLike() {
 		return keywordSearchLike;
@@ -799,6 +895,171 @@ public class DossierSearchModel {
 
 	public void setPendding(String pendding) {
 		this.pendding = pendding;
+	}
+
+	public String getDomain() {
+		return domain;
+	}
+
+	public void setDomain(String domain) {
+		this.domain = domain;
+	}
+
+	public String getApplicantName() {
+		return applicantName;
+	}
+
+	public void setApplicantName(String applicantName) {
+		this.applicantName = applicantName;
+	}
+
+	public String getDomainName() {
+		return domainName;
+	}
+
+	public void setDomainName(String domainName) {
+		this.domainName = domainName;
+	}
+
+	public String getServiceName() {
+		return serviceName;
+	}
+
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
+	}
+
+	public String getFromReleaseDate() {
+		return fromReleaseDate;
+	}
+
+	public void setFromReleaseDate(String fromReleaseDate) {
+		this.fromReleaseDate = fromReleaseDate;
+	}
+
+	public String getToReleaseDate() {
+		return toReleaseDate;
+	}
+
+	public void setToReleaseDate(String toReleaseDate) {
+		this.toReleaseDate = toReleaseDate;
+	}
+
+	public String getOriginality() {
+		return originality;
+	}
+
+	public void setOriginality(String originality) {
+		this.originality = originality;
+	}
+
+	public String getFromReceiveNotDoneDate() {
+		return fromReceiveNotDoneDate;
+	}
+
+	public void setFromReceiveNotDoneDate(String fromReceiveNotDoneDate) {
+		this.fromReceiveNotDoneDate = fromReceiveNotDoneDate;
+	}
+
+	public String getToReceiveNotDoneDate() {
+		return toReceiveNotDoneDate;
+	}
+
+	public void setToReceiveNotDoneDate(String toReceiveNotDoneDate) {
+		this.toReceiveNotDoneDate = toReceiveNotDoneDate;
+	}
+
+	public String getFromFinishDate() {
+		return fromFinishDate;
+	}
+
+	public void setFromFinishDate(String fromFinishDate) {
+		this.fromFinishDate = fromFinishDate;
+	}
+
+	public String getToFinishDate() {
+		return toFinishDate;
+	}
+
+	public void setToFinishDate(String toFinishDate) {
+		this.toFinishDate = toFinishDate;
+	}
+
+	public String getPaymentStatus() {
+		return paymentStatus;
+	}
+
+	public void setPaymentStatus(String value) {
+		this.paymentStatus = value;
+	}
+
+	public String getFromStatisticDate() {
+		return fromStatisticDate;
+	}
+
+	public void setFromStatisticDate(String fromStatisticDate) {
+		this.fromStatisticDate = fromStatisticDate;
+	}
+
+	public String getToStatisticDate() {
+		return toStatisticDate;
+	}
+
+	public void setToStatisticDate(String toStatisticDate) {
+		this.toStatisticDate = toStatisticDate;
+	}
+
+	public String getOrigin() {
+		return origin;
+	}
+
+	public void setOrigin(String value) {
+		this.origin = value;
+	}
+
+	public Integer getOriginDossierId() {
+		return originDossierId;
+	}
+
+	public void setOriginDossierId(Integer originDossierId) {
+		this.originDossierId = originDossierId;
+	}
+
+	public String getTime() {
+		return time;
+	}
+
+	public void setTime(String time) {
+		this.time = time;
+	}
+	public String getRegister() {
+		return register;
+	}
+
+	public void setRegister(String value) {
+		this.register = value;
+	}
+	public int getDay() {
+		return day;
+	}
+	public void setDay(int value) {
+		this.day = value;
+	}
+
+	public Long getGroupDossierId() {
+		return groupDossierId;
+	}
+
+	public void setGroupDossierId(Long groupDossierId) {
+		this.groupDossierId = groupDossierId;
+	}
+
+	public String getPermission() {
+		return permission;
+	}
+
+	public void setPermission(String permission) {
+		this.permission = permission;
 	}
 
 }

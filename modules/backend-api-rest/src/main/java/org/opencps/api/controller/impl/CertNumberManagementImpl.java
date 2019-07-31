@@ -1,5 +1,24 @@
 package org.opencps.api.controller.impl;
 
+import com.liferay.counter.kernel.model.Counter;
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
+
+import java.net.HttpURLConnection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -12,28 +31,16 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 
 import org.opencps.api.controller.CertNumberManagement;
+import org.opencps.auth.api.exception.UnauthenticationException;
 import org.opencps.dossiermgt.constants.ConstantsUtils;
+import org.opencps.dossiermgt.model.ServiceProcess;
+import org.opencps.dossiermgt.service.ServiceProcessLocalServiceUtil;
 
-import com.liferay.counter.kernel.model.Counter;
-import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
-import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.json.JSONArray;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
+import backend.auth.api.BackendAuth;
+import backend.auth.api.BackendAuthImpl;
+import backend.auth.api.exception.BusinessExceptionImpl;
 
 public class CertNumberManagementImpl implements CertNumberManagement{
-
-//	public static final String PRE_FIX_CERT = "TCDB_CERT@";
-//	public static final String PRE_FIX_CERT_CURR = "TCDB_CERT_CURR@";
-//	public static final String PRE_FIX_CERT_ELM = "TCDB_CERT_ELM@";
 
 	Log _log = LogFactoryUtil.getLog(CertNumberManagementImpl.class);
 
@@ -41,27 +48,44 @@ public class CertNumberManagementImpl implements CertNumberManagement{
 	public Response getCertNumbers(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext) {
 
-		// long groupId =
-		// GetterUtil.getLong(header.getHeaderString(Field.GROUP_ID));
+		long groupId = GetterUtil.getLong(header.getHeaderString(Field.GROUP_ID));
+//		BackendAuth auth = new BackendAuthImpl();
 
 		try {
+//			if (!auth.isAdmin(serviceContext, "admin")) {
+//				return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED)
+//						.entity("User not permission process action!!!").build();
+//			}
+			List<Role> userRoles = user.getRoles();
+			boolean isAdmin = false;
+			for (Role r : userRoles) {
+				if (r.getName().startsWith("Administrator")) {
+					isAdmin = true;
+					break;
+				}
+			}
+			
+			if (!isAdmin) {
+				throw new UnauthenticationException();
+			}
+
 			List<Counter> counters = CounterLocalServiceUtil.getCounters(QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 			JSONObject jsObj = JSONFactoryUtil.createJSONObject();
 
 			JSONArray jsArr = JSONFactoryUtil.createJSONArray();
 
-
 			for (Counter cnt : counters) {
 				JSONObject elm = JSONFactoryUtil.createJSONObject();
 
-				if (cnt.getName().contains(ConstantsUtils.PRE_FIX_CERT)) {
+				String valueCheck = StringPool.AT + groupId;
+				if (cnt.getName().contains(valueCheck)) {
 
 					String[] splitPattern = StringUtil.split(cnt.getName(), StringPool.AT);
 
 					elm.put("certId", cnt.getName());
 					elm.put("pattern", splitPattern[1]);
-					elm.put("year", splitPattern[2]);
+					elm.put("groupId", splitPattern[2]);
 					elm.put("initNumber", cnt.getCurrentId());
 
 					jsArr.put(elm);
@@ -74,7 +98,7 @@ public class CertNumberManagementImpl implements CertNumberManagement{
 
 			return Response.status(200).entity(jsObj.toString()).build();
 		} catch (Exception e) {
-			return Response.status(500).entity("error").build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -85,7 +109,25 @@ public class CertNumberManagementImpl implements CertNumberManagement{
 		// long groupId =
 		// GetterUtil.getLong(header.getHeaderString(Field.GROUP_ID));
 
+//		BackendAuth auth = new BackendAuthImpl();
+
 		try {
+//			if (!auth.isAdmin(serviceContext, "admin")) {
+//				return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED)
+//						.entity("User not permission process action!!!").build();
+//			}
+			List<Role> userRoles = user.getRoles();
+			boolean isAdmin = false;
+			for (Role r : userRoles) {
+				if (r.getName().startsWith("Administrator")) {
+					isAdmin = true;
+					break;
+				}
+			}
+			
+			if (!isAdmin) {
+				throw new UnauthenticationException();
+			}
 			Counter counter = CounterLocalServiceUtil.getCounter(certid);
 			String[] splitPattern = StringUtil.split(counter.getName(), StringPool.AT);
 
@@ -99,33 +141,95 @@ public class CertNumberManagementImpl implements CertNumberManagement{
 			return Response.status(200).entity(elm.toString()).build();
 
 		} catch (Exception e) {
-			return Response.status(500).entity("error").build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
 	@Override
 	public Response addCertNumbers(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
-			User user, ServiceContext serviceContext, String pattern, int year, int initNumber) {
+			User user, ServiceContext serviceContext, String pattern, int initNumber) {
 
-		// long groupId =
-		// GetterUtil.getLong(header.getHeaderString(Field.GROUP_ID));
-		// CounterLocalServiceUtil.increment();
+		long groupId = GetterUtil.getLong(header.getHeaderString(Field.GROUP_ID));
 		
 		JSONObject jsObj = JSONFactoryUtil.createJSONObject();
 		
+//		BackendAuth auth = new BackendAuthImpl();
+
 		try {
+//			if (!auth.isAdmin(serviceContext, "admin")) {
+//				return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED)
+//						.entity("User not permission process action!!!").build();
+//			}
 
-			String certId = ConstantsUtils.PRE_FIX_CERT + pattern + StringPool.AT + year;
+			List<Role> userRoles = user.getRoles();
+			boolean isAdmin = false;
+			for (Role r : userRoles) {
+				if (r.getName().startsWith("Administrator")) {
+					isAdmin = true;
+					break;
+				}
+			}
 			
-			Counter counterInit = CounterLocalServiceUtil.createCounter(certId);
-			counterInit.setCurrentId(initNumber);
+			if (!isAdmin) {
+				throw new UnauthenticationException();
+			}
+			
+			if (Validator.isNotNull(pattern)) {
+				String[] patternArr = StringUtil.split(pattern);
+				_log.info("pattern: "+pattern);
+				_log.info("patternArr: "+patternArr);
+				if (patternArr != null && patternArr.length > 0) {
+					for (String strPattern : patternArr) {
+						_log.info("strPattern: "+strPattern);
+						String certId = ConstantsUtils.PRE_FIX_CERT + strPattern + StringPool.AT + groupId;
+						_log.info("strPattern: "+strPattern);
+						Counter counter = null;
+						try {
+							counter = CounterLocalServiceUtil.getCounter(certId);
+						} catch (Exception e) {
+							_log.error(e);
+						}
+						if (counter != null) {
+							String contentError = certId + "đã tồn tại trong hệ thống";
+							return Response.status(HttpURLConnection.HTTP_CONFLICT).entity(contentError).build(); 
+						}
+						_log.info("counter: "+counter);
+						Counter counterInit = CounterLocalServiceUtil.createCounter(certId);
+						counterInit.setCurrentId(initNumber);
 
-			CounterLocalServiceUtil.updateCounter(counterInit);
-			
-			jsObj.put("status", "done");
+						CounterLocalServiceUtil.updateCounter(counterInit);
+					}
+					jsObj.put("status", "done");
+				}
+			} else {
+				if (initNumber == 0) {
+					List<ServiceProcess> processList = ServiceProcessLocalServiceUtil.getByG_ID(groupId);
+					if (processList != null && processList.size() > 0) {
+						for (ServiceProcess serviceProcess : processList) {
+							String servicePattern = serviceProcess.getProcessNo();
+							if (Validator.isNotNull(servicePattern)) {
+								String certId = ConstantsUtils.PRE_FIX_CERT + servicePattern + StringPool.AT + groupId;
+								Counter counter = null;
+								try {
+									counter = CounterLocalServiceUtil.getCounter(certId);
+								} catch (Exception e) {
+									_log.error(e);
+								}
+								if (counter != null) continue;
+								Counter counterInit = CounterLocalServiceUtil.createCounter(certId);
+								counterInit.setCurrentId(1);
+
+								CounterLocalServiceUtil.updateCounter(counterInit);
+							}
+						}
+						jsObj.put("status", "done");
+					}
+				}
+			}
 
 			return Response.status(200).entity(jsObj.toString()).build();
 		} catch (Exception e) {
+			_log.error(e);
 			jsObj.put("status", "error");
 
 			return Response.status(500).entity(jsObj.toString()).build();
@@ -134,14 +238,31 @@ public class CertNumberManagementImpl implements CertNumberManagement{
 
 	@Override
 	public Response updateSertNumbers(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
-			User user, ServiceContext serviceContext, long certid, String pattern, int year, int initNumber) {
+			User user, ServiceContext serviceContext, long certid, String pattern, int initNumber) {
 
-		// long groupId =
-		// GetterUtil.getLong(header.getHeaderString(Field.GROUP_ID));
+		long groupId = GetterUtil.getLong(header.getHeaderString(Field.GROUP_ID));
 		JSONObject jsObj = JSONFactoryUtil.createJSONObject();
 
+//		BackendAuth auth = new BackendAuthImpl();
+
 		try {
-			String certId = ConstantsUtils.PRE_FIX_CERT + pattern + StringPool.AT + year;
+//			if (!auth.isAdmin(serviceContext, "admin")) {
+//				return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED)
+//						.entity("User not permission process action!!!").build();
+//			}
+			List<Role> userRoles = user.getRoles();
+			boolean isAdmin = false;
+			for (Role r : userRoles) {
+				if (r.getName().startsWith("Administrator")) {
+					isAdmin = true;
+					break;
+				}
+			}
+			
+			if (!isAdmin) {
+				throw new UnauthenticationException();
+			}
+			String certId = ConstantsUtils.PRE_FIX_CERT + pattern + StringPool.AT + groupId;
 
 			Counter counter = CounterLocalServiceUtil.getCounter(certId);
 
@@ -152,6 +273,7 @@ public class CertNumberManagementImpl implements CertNumberManagement{
 			jsObj.put("status", "done");
 			return Response.status(200).entity(jsObj.toString()).build();
 		} catch (Exception e) {
+			_log.error(e);
 			jsObj.put("status", "error");
 
 			return Response.status(500).entity(jsObj.toString()).build();
@@ -167,7 +289,13 @@ public class CertNumberManagementImpl implements CertNumberManagement{
 		
 		String certNumber;
 
+		BackendAuth auth = new BackendAuthImpl();
+
 		try {
+			if (!auth.isAdmin(serviceContext, "admin")) {
+				return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED)
+						.entity("User not permission process action!!!").build();
+			}
 
 			long _counterNumber = 0;
 
@@ -260,8 +388,7 @@ public class CertNumberManagementImpl implements CertNumberManagement{
 			return Response.status(200).entity(certNumber).build();
 
 		} catch (Exception e) {
-			
-			return Response.status(500).entity(e.getMessage()).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -271,16 +398,81 @@ public class CertNumberManagementImpl implements CertNumberManagement{
 		// long groupId =
 		// GetterUtil.getLong(header.getHeaderString(Field.GROUP_ID));
 		JSONObject jsObj = JSONFactoryUtil.createJSONObject();
-		_log.info("certId: "+certId);
+//		_log.info("certId: "+certId);
+
+//		BackendAuth auth = new BackendAuthImpl();
 
 		try {
+//			if (!auth.isAdmin(serviceContext, "admin")) {
+//				return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED)
+//						.entity("User not permission process action!!!").build();
+//			}
 //			String nameCounter = ConstantsUtils.PRE_FIX_CERT + pattern + StringPool.AT + year;
-
+			List<Role> userRoles = user.getRoles();
+			boolean isAdmin = false;
+			for (Role r : userRoles) {
+				if (r.getName().startsWith("Administrator")) {
+					isAdmin = true;
+					break;
+				}
+			}
+			
+			if (!isAdmin) {
+				throw new UnauthenticationException();
+			}
 			CounterLocalServiceUtil.deleteCounter(certId);
 
 			jsObj.put("status", "done");
 			return Response.status(200).entity(jsObj.toString()).build();
 		} catch (Exception e) {
+			_log.error(e);
+			jsObj.put("status", "error");
+
+			return Response.status(500).entity(jsObj.toString()).build();
+		}
+	}
+
+	@Override
+	public Response removeAllCertNumbers(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
+			User user, ServiceContext serviceContext) {
+		long groupId = GetterUtil.getLong(header.getHeaderString(Field.GROUP_ID));
+		JSONObject jsObj = JSONFactoryUtil.createJSONObject();
+
+//		BackendAuth auth = new BackendAuthImpl();
+
+		try {
+//			if (!auth.isAdmin(serviceContext, "admin")) {
+//				return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED)
+//						.entity("User not permission process action!!!").build();
+//			}
+			List<Role> userRoles = user.getRoles();
+			boolean isAdmin = false;
+			for (Role r : userRoles) {
+				if (r.getName().startsWith("Administrator")) {
+					isAdmin = true;
+					break;
+				}
+			}
+			
+			if (!isAdmin) {
+				throw new UnauthenticationException();
+			}
+			List<Counter> counters = CounterLocalServiceUtil.getCounters(QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+
+			String counterCheck = StringPool.AT + groupId;
+			if (counters != null && counters.size() > 0) {
+				for (Counter counter : counters) {
+					String certName = counter.getName();
+					if (Validator.isNotNull(certName) && certName.contains(counterCheck)) {
+						CounterLocalServiceUtil.deleteCounter(certName);
+					}
+				}
+				jsObj.put("status", "done");
+			}
+
+			return Response.status(200).entity(jsObj.toString()).build();
+		} catch (Exception e) {
+			_log.error(e);
 			jsObj.put("status", "error");
 
 			return Response.status(500).entity(jsObj.toString()).build();

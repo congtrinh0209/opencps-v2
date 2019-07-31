@@ -1,19 +1,17 @@
 package org.opencps.api.controller.util;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.opencps.api.holiday.model.HolidayModel;
 import org.opencps.datamgt.constants.HolidayTerm;
 import org.opencps.datamgt.model.Holiday;
-
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
-
-import org.opencps.auth.utils.APIDateTimeUtils;
 
 public class HolidayUtils {
 
@@ -28,8 +26,8 @@ public class HolidayUtils {
 			for (Document document : listDocument) {
 				ett = new HolidayModel();
 
-				ett.setHolidayDate(Validator.isNotNull(document.getDate(HolidayTerm.HOLIDAY_DATE)) ? APIDateTimeUtils
-						.convertDateToString(document.getDate(HolidayTerm.HOLIDAY_DATE), APIDateTimeUtils._TIMESTAMP)
+				ett.setHolidayDate(Validator.isNotNull(document.getDate(HolidayTerm.HOLIDAY_DATE)) ? 
+						String.valueOf(document.getDate(HolidayTerm.HOLIDAY_DATE).getTime())
 						: StringPool.BLANK);
 				ett.setDescription(document.get(HolidayTerm.DESCRIPTION));
 
@@ -49,8 +47,8 @@ public class HolidayUtils {
 
 		try {
 
-			ett.setHolidayDate(Validator.isNotNull(holiday.getHolidayDate()) ? APIDateTimeUtils
-					.convertDateToString(holiday.getHolidayDate(), APIDateTimeUtils._TIMESTAMP)
+			ett.setHolidayDate(Validator.isNotNull(holiday.getHolidayDate()) ? 
+					String.valueOf(holiday.getHolidayDate().getTime())
 					: StringPool.BLANK);
 			ett.setDescription(holiday.getDescription());
 

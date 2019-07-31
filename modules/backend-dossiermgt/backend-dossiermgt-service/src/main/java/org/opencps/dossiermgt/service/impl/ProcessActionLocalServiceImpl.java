@@ -14,21 +14,10 @@
 
 package org.opencps.dossiermgt.service.impl;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import org.opencps.dossiermgt.constants.ProcessActionTerm;
-import org.opencps.dossiermgt.constants.ProcessStepTerm;
-import org.opencps.dossiermgt.exception.InvalidPostStepCodeException;
-import org.opencps.dossiermgt.exception.InvalidPreStepCodeException;
-import org.opencps.dossiermgt.exception.RequiredAssignUserIdException;
-import org.opencps.dossiermgt.exception.RequiredPaymentFeeException;
-import org.opencps.dossiermgt.model.ProcessAction;
-import org.opencps.dossiermgt.model.ProcessStep;
-import org.opencps.dossiermgt.service.base.ProcessActionLocalServiceBaseImpl;
-
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -48,9 +37,19 @@ import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.generic.MultiMatchQuery;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.opencps.dossiermgt.constants.ProcessActionTerm;
+import org.opencps.dossiermgt.exception.InvalidPostStepCodeException;
+import org.opencps.dossiermgt.exception.InvalidPreStepCodeException;
+import org.opencps.dossiermgt.exception.RequiredPaymentFeeException;
+import org.opencps.dossiermgt.model.ProcessAction;
+import org.opencps.dossiermgt.model.ProcessStep;
+import org.opencps.dossiermgt.service.base.ProcessActionLocalServiceBaseImpl;
 
 import aQute.bnd.annotation.ProviderType;
 
@@ -78,23 +77,25 @@ public class ProcessActionLocalServiceImpl extends ProcessActionLocalServiceBase
 	 * NOTE FOR DEVELOPERS:
 	 *
 	 * Never reference this class directly. Always use {@link
-	 * org.opencps.dossiermgt.service.ProcessActionLocalServiceUtil} to access
-	 * the process action local service.
+	 * org.opencps.dossiermgt.service.ProcessActionLocalServiceUtil} to access the
+	 * process action local service.
 	 */
-	
+
 	Log _log = LogFactoryUtil.getLog(ProcessActionLocalServiceImpl.class);
-	
+
 	@Indexable(type = IndexableType.REINDEX)
 	public ProcessAction updateProcessAction(long groupId, long processActionId, long serviceProcessId,
 			String preStepCode, String postStepCode, String autoEvent, String preCondition, String actionCode,
-			String actionName, boolean allowAssignUser, long assignUserId, boolean requestPayment, String paymentFee,
+			String actionName, int allowAssignUser, long assignUserId, Integer requestPayment, String paymentFee,
 			String createDossierFiles, String returnDossierFiles, String makeBriefNote, String syncActionCode,
-			boolean rollbackable, boolean createDossierNo, boolean eSignature, String configNote,
+			boolean rollbackable, boolean createDossierNo, boolean eSignature, 
+			String signatureType,
+			String configNote,
 			String dossierTemplateNo, ServiceContext context) throws PortalException {
 
 		Date now = new Date();
-		
-		_log.info("##########ConfigNote"+configNote);
+
+		_log.info("##########ConfigNote" + configNote);
 
 		User userAction = userLocalService.getUser(context.getUserId());
 
@@ -136,6 +137,7 @@ public class ProcessActionLocalServiceImpl extends ProcessActionLocalServiceBase
 			object.setRollbackable(rollbackable);
 			object.setCreateDossierNo(createDossierNo);
 			object.setESignature(eSignature);
+			object.setSignatureType(signatureType);
 			object.setConfigNote(configNote);
 			object.setDossierTemplateNo(dossierTemplateNo);
 
@@ -165,6 +167,7 @@ public class ProcessActionLocalServiceImpl extends ProcessActionLocalServiceBase
 			object.setRollbackable(rollbackable);
 			object.setCreateDossierNo(createDossierNo);
 			object.setESignature(eSignature);
+			object.setSignatureType(signatureType);
 			object.setConfigNote(configNote);
 			object.setDossierTemplateNo(dossierTemplateNo);
 
@@ -179,7 +182,7 @@ public class ProcessActionLocalServiceImpl extends ProcessActionLocalServiceBase
 	@Indexable(type = IndexableType.REINDEX)
 	public ProcessAction updateProcessAction(long groupId, long processActionId, long serviceProcessId,
 			String preStepCode, String postStepCode, String autoEvent, String preCondition, String actionCode,
-			String actionName, boolean allowAssignUser, long assignUserId, boolean requestPayment, String paymentFee,
+			String actionName, int allowAssignUser, long assignUserId, Integer requestPayment, String paymentFee,
 			String createDossierFiles, String returnDossierFiles, String makeBriefNote, String syncActionCode,
 			boolean rollbackable, boolean createDossierNo, boolean eSignature, ServiceContext context)
 			throws PortalException {
@@ -260,12 +263,12 @@ public class ProcessActionLocalServiceImpl extends ProcessActionLocalServiceBase
 
 		return object;
 	}
-	
+
 	@Deprecated
 	@Indexable(type = IndexableType.REINDEX)
 	public ProcessAction updateProcessAction(long groupId, long processActionId, long serviceProcessId,
 			String preStepCode, String postStepCode, String autoEvent, String preCondition, String actionCode,
-			String actionName, boolean allowAssignUser, long assignUserId, boolean requestPayment, String paymentFee,
+			String actionName, int allowAssignUser, long assignUserId, Integer requestPayment, String paymentFee,
 			String createDossierFiles, String returnDossierFiles, String makeBriefNote, String syncActionCode,
 			boolean rollbackable, ServiceContext context) throws PortalException {
 
@@ -522,8 +525,8 @@ public class ProcessActionLocalServiceImpl extends ProcessActionLocalServiceBase
 	}
 
 	private void validateAdd(long groupId, long serviceProcessId, String preStepCode, String postStepCode,
-			String autoEvent, String preCondition, String actionCode, String actionName, boolean allowAssignUser,
-			long assignUserId, boolean requestPayment, String paymentFee, String createDossierFiles,
+			String autoEvent, String preCondition, String actionCode, String actionName, int allowAssignUser,
+			long assignUserId, Integer requestPayment, String paymentFee, String createDossierFiles,
 			String returnDossierFiles, String makeBriefNote, String syncActionCode, boolean rollbackable)
 			throws PortalException {
 
@@ -538,14 +541,14 @@ public class ProcessActionLocalServiceImpl extends ProcessActionLocalServiceBase
 			throw new InvalidPostStepCodeException("InvalidPostStepCodeException");
 		}
 
-		if (requestPayment && Validator.isNull(paymentFee)) {
+		if (Validator.isNull(requestPayment) && requestPayment > 0 && Validator.isNull(paymentFee)) {
 			throw new RequiredPaymentFeeException("RequiredPaymentFeeException");
 		}
 
-/*		if (allowAssignUser && Validator.isNull(assignUserId)) {
-			throw new RequiredAssignUserIdException("RequiredAssignUserIdException");
-		}
-*/
+		/*
+		 * if (allowAssignUser && Validator.isNull(assignUserId)) { throw new
+		 * RequiredAssignUserIdException("RequiredAssignUserIdException"); }
+		 */
 		// TODO add more validate for actionCode, actionName, createDossierFiles
 		// returnDossierFiles, makeBriefNote in here
 
@@ -554,11 +557,11 @@ public class ProcessActionLocalServiceImpl extends ProcessActionLocalServiceBase
 	public List<ProcessAction> getByActionCode(long groupId, String actionCode) throws PortalException {
 		return processActionPersistence.findByGI_AC(groupId, actionCode);
 	}
-	
-	public List<ProcessAction> getByActionCode(long groupId, String actionCode, long serviceProcessId) throws PortalException {
+
+	public List<ProcessAction> getByActionCode(long groupId, String actionCode, long serviceProcessId)
+			throws PortalException {
 		return processActionPersistence.findByGI_AC_SP(groupId, actionCode, serviceProcessId);
 	}
-
 
 	public ProcessAction fetchBySPI_PRESC_AEV(long serviceProcessId, String preStepCode, String autoEvent) {
 		return processActionPersistence.fetchBySPI_PRESC_AEV(serviceProcessId, preStepCode, autoEvent);
@@ -576,17 +579,148 @@ public class ProcessActionLocalServiceImpl extends ProcessActionLocalServiceBase
 			throws PortalException {
 		return processActionPersistence.findByG_SPID_PRESC(groupId, serviceProcessId, preStepCode);
 	}
-	
+
 	public List<ProcessAction> getByGroupAndAutoEvent(long groupId, String autoEvent, int start, int end) {
-		
+
 		if (groupId == 0)
 			return processActionPersistence.findByPSC_AEV(autoEvent, start, end);
-		else 
-			return processActionPersistence.findByPSC_AEV_GI(groupId,autoEvent, start, end);
+		else
+			return processActionPersistence.findByPSC_AEV_GI(groupId, autoEvent, start, end);
 
 	}
-	
+
 	public ProcessAction getByNameActionNo(long serviceProcessId, String actionCode, String actionName) {
 		return processActionPersistence.fetchBySPID_AC_AN(serviceProcessId, actionCode, actionName);
+	}
+
+	// LamTV_process
+	public ProcessAction getByServiceProcess(long serviceProcessId, String actionCode) {
+		return processActionPersistence.fetchBySPID_AC(serviceProcessId, actionCode);
+	}
+
+	// LamTV_Process output ProcessAction to DB
+	@Indexable(type = IndexableType.REINDEX)
+	public ProcessAction updateProcessActionDB(long userId, long groupId, long serviceProcessId, String actionCode,
+			String actionName, String preStepCode, String postStepCode, String autoEvent, String preCondition,
+			int allowAssignUser, long assignUserId, String assignUserName, Integer requestPayment, String paymentFee,
+			String createDossierFiles, String returnDossierFiles, boolean eSignature, String signatureType,
+			String createDossiers, ServiceContext serviceContext) throws PortalException {
+
+		Date now = new Date();
+		User userAction = userLocalService.getUser(userId);
+
+		long processActionId = counterLocalService.increment(ProcessAction.class.getName());
+		ProcessAction object = processActionPersistence.create(processActionId);
+
+		// Add audit fields
+		object.setCompanyId(serviceContext.getCompanyId());
+		object.setGroupId(groupId);
+		object.setCreateDate(now);
+		object.setModifiedDate(now);
+		object.setUserId(userAction.getUserId());
+		object.setUserName(userAction.getFullName());
+
+		object.setServiceProcessId(serviceProcessId);
+		object.setPreStepCode(preStepCode);
+		object.setPostStepCode(postStepCode);
+		object.setAutoEvent(autoEvent);
+		object.setPreCondition(preCondition);
+		object.setActionCode(actionCode);
+		object.setActionName(actionName);
+		object.setAllowAssignUser(allowAssignUser);
+		object.setAssignUserId(assignUserId);
+		// object.setAssignUserName(assignUserName);
+		object.setRequestPayment(requestPayment);
+		object.setPaymentFee(paymentFee);
+		object.setCreateDossierFiles(createDossierFiles);
+		object.setReturnDossierFiles(returnDossierFiles);
+		object.setESignature(eSignature);
+		object.setSignatureType(signatureType);
+		object.setCreateDossiers(createDossiers);
+
+		return processActionPersistence.update(object);
+
+	}
+
+	public List<ProcessAction> getByServiceStepCode(long groupId, long serviceProcessId, String preStepCode) {
+		return processActionPersistence.findByF_GID_SID_PRE(groupId, serviceProcessId, preStepCode);
+	}
+
+	// super_admin Generators
+	@Indexable(type = IndexableType.DELETE)
+	public ProcessAction adminProcessDelete(Long id) {
+
+		ProcessAction object = processActionPersistence.fetchByPrimaryKey(id);
+
+		if (Validator.isNull(object)) {
+			return null;
+		} else {
+			processActionPersistence.remove(object);
+		}
+
+		return object;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public ProcessAction adminProcessData(JSONObject objectData) {
+
+		ProcessAction object = null;
+
+		if (objectData.getLong("processActionId") > 0) {
+
+			object = processActionPersistence.fetchByPrimaryKey(objectData.getLong("processActionId"));
+
+			object.setModifiedDate(new Date());
+
+		} else {
+
+			long id = CounterLocalServiceUtil.increment(ProcessAction.class.getName());
+
+			object = processActionPersistence.create(id);
+
+			object.setGroupId(objectData.getLong("groupId"));
+			object.setCompanyId(objectData.getLong("companyId"));
+			object.setCreateDate(new Date());
+
+		}
+
+		object.setUserId(objectData.getLong("userId"));
+		object.setUserName(objectData.getString("userName"));
+
+		object.setServiceProcessId(objectData.getLong("serviceProcessId"));
+		object.setPreStepCode(objectData.getString("preStepCode"));
+		object.setPostStepCode(objectData.getString("postStepCode"));
+		object.setAutoEvent(objectData.getString("autoEvent"));
+		object.setPreCondition(objectData.getString("preCondition"));
+		object.setActionCode(objectData.getString("actionCode"));
+		object.setActionName(objectData.getString("actionName"));
+		object.setAllowAssignUser(objectData.getInt("allowAssignUser"));
+		object.setAssignUserId(objectData.getLong("assignUserId"));
+		object.setRequestPayment(objectData.getInt("requestPayment"));
+		object.setPaymentFee(objectData.getString("paymentFee"));
+		object.setCreateDossierFiles(objectData.getString("createDossierFiles"));
+		object.setReturnDossierFiles(objectData.getString("returnDossierFiles"));
+		object.setMakeBriefNote(objectData.getString("makeBriefNote"));
+		object.setSyncActionCode(objectData.getString("syncActionCode"));
+		object.setRollbackable(objectData.getBoolean("rollbackable"));
+		object.setCreateDossierNo(objectData.getBoolean("createDossierNo"));
+		object.setESignature(objectData.getBoolean("eSignature"));
+		object.setConfigNote(objectData.getString("configNote"));
+		object.setDossierTemplateNo(objectData.getString("dossierTemplateNo"));
+		object.setSignatureType(objectData.getString("signatureType"));
+		object.setCreateDossiers(objectData.getString("createDossiers"));
+		object.setCheckInput(objectData.getInt("checkInput"));
+
+		processActionPersistence.update(object);
+
+		return object;
+	}
+
+	public ProcessAction fetchByF_GID_SID_AC_PRE_POST(long groupId, long serviceProcessId, String actionCode, String preStepCode, String postStepCode) {
+		return processActionPersistence.fetchByF_GID_SID_AC_PRE_POST(groupId, serviceProcessId, actionCode, preStepCode, postStepCode);
+	}
+	
+	public List<ProcessAction> getByG_SID_ACS(long groupId, long serviceProcessId, String[] actionCodes) {
+		return processActionPersistence.findByF_GID_SID_ACS(groupId, serviceProcessId, actionCodes);
 	}
 }

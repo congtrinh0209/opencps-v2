@@ -5,16 +5,14 @@ import java.util.List;
 
 import org.opencps.dossiermgt.exception.NoSuchDeliverableException;
 import org.opencps.dossiermgt.model.Deliverable;
-import org.opencps.dossiermgt.model.impl.DeliverableImpl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.service.ServiceContext;
 
 public interface DeliverableActions {
-	public JSONObject getListDeliverable(String state, String agency, String type, String applicant);
+	public JSONObject getListDeliverable(int state, String agency, String type, String applicant);
 
 	//4
 	public Deliverable updateDeliverable(long groupId, long id, String subject, String issueDate, String expireDate,
@@ -48,5 +46,5 @@ public interface DeliverableActions {
 			int end, ServiceContext serviceContext);
 
 	//
-	public List<Deliverable> getDeliverableByState(String strDeliverableCode, String state);
+	public List<Deliverable> getDeliverableByState(String strDeliverableCode, int state);
 }

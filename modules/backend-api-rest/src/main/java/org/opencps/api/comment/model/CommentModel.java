@@ -11,7 +11,6 @@ package org.opencps.api.comment.model;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.datatype.XMLGregorianCalendar;
 
@@ -82,6 +81,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "isNew",
     "upvoteCount",
     "userHasUpvoted",
+    "opinion",
     "createdByCurrentUser",
     "isAdmin"
 })
@@ -109,7 +109,8 @@ public class CommentModel {
     protected Boolean userHasUpvoted;
     protected Boolean createdByCurrentUser;
     protected Boolean isAdmin;
-
+    protected Boolean opinion;
+    
     /**
      * Gets the value of the commentId property.
      * 
@@ -614,4 +615,11 @@ public class CommentModel {
         this.isAdmin = value;
     }
 
+    public Boolean isOpinion() {
+    	return opinion;
+    }
+    
+    public void setOpinion(Boolean value) {
+    	this.opinion = value;
+    }
 }

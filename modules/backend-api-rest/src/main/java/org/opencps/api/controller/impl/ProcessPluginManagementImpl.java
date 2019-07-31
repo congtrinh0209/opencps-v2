@@ -1,5 +1,22 @@
 package org.opencps.api.controller.impl;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.messaging.Message;
+import com.liferay.portal.kernel.messaging.MessageBusException;
+import com.liferay.portal.kernel.messaging.MessageBusUtil;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
+
 import java.io.File;
 import java.util.Date;
 import java.util.Iterator;
@@ -13,11 +30,9 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.apache.commons.httpclient.util.HttpURLConnection;
 import org.opencps.api.controller.ProcessPluginManagement;
-import org.opencps.api.controller.exception.ErrorMsg;
 import org.opencps.auth.api.BackendAuth;
 import org.opencps.auth.api.BackendAuthImpl;
 import org.opencps.auth.api.exception.UnauthenticationException;
-import org.opencps.auth.api.exception.UnauthorizationException;
 import org.opencps.dossiermgt.action.DossierFileActions;
 import org.opencps.dossiermgt.action.impl.DossierFileActionsImpl;
 import org.opencps.dossiermgt.action.util.AutoFillFormData;
@@ -36,22 +51,7 @@ import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
 import org.opencps.dossiermgt.service.ProcessPluginLocalServiceUtil;
 import org.opencps.dossiermgt.service.comparator.DossierFileComparator;
 
-import com.liferay.portal.kernel.json.JSONArray;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.messaging.Message;
-import com.liferay.portal.kernel.messaging.MessageBusException;
-import com.liferay.portal.kernel.messaging.MessageBusUtil;
-import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
+import backend.auth.api.exception.BusinessExceptionImpl;
 
 public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 
@@ -71,7 +71,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 
 			Dossier dossier = getDossier(id, groupId);
 
-			if (Validator.isNotNull(dossier)) {
+			if (dossier != null) {
 
 				long dossierActionId = dossier.getDossierActionId();
 
@@ -80,8 +80,8 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 					DossierAction dossierAction = DossierActionLocalServiceUtil.getDossierAction(dossierActionId);
 
 					String stepCode = dossierAction.getStepCode();
-					_log.info("STEP CODE: " + stepCode);
-					_log.info("SERVICE PROCESS ID: " + dossierAction.getServiceProcessId());
+					_log.debug("STEP CODE: " + stepCode);
+					_log.debug("SERVICE PROCESS ID: " + dossierAction.getServiceProcessId());
 					List<ProcessPlugin> plugins = ProcessPluginLocalServiceUtil
 							.getProcessPlugins(dossierAction.getServiceProcessId(), stepCode);
 
@@ -115,34 +115,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 			}
 
 		} catch (Exception e) {
-			_log.error(e);
-
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -163,7 +136,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 
 			Dossier dossier = getDossier(id, groupId);
 
-			if (Validator.isNotNull(dossier)) {
+			if (dossier != null) {
 
 				long dossierActionId = dossier.getDossierActionId();
 
@@ -192,34 +165,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 			}
 
 		} catch (Exception e) {
-			_log.error(e);
-
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -239,7 +185,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 
 			Dossier dossier = getDossier(id, groupId);
 
-			if (Validator.isNotNull(dossier)) {
+			if (dossier != null) {
 
 				long dossierActionId = dossier.getDossierActionId();
 
@@ -268,34 +214,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 			}
 
 		} catch (Exception e) {
-			_log.error(e);
-
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -312,7 +231,8 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 				dossier = DossierLocalServiceUtil.getByRef(groupId, id);
 			}
 		} catch (Exception e) {
-			_log.info("Cant get dossier_" + id);
+			_log.error(e);
+//			_log.info("Cant get dossier_" + id);
 		}
 
 		return dossier;
@@ -334,7 +254,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 
 			Dossier dossier = getDossier(id, groupId);
 
-			if (Validator.isNotNull(dossier)) {
+			if (dossier != null) {
 
 				long dossierActionId = dossier.getDossierActionId();
 
@@ -403,6 +323,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 						return responseBuilder.build();
 
 					} catch (MessageBusException e) {
+						_log.error(e);
 						throw new Exception("Preview rendering not avariable");
 					}
 
@@ -415,34 +336,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 			}
 
 		} catch (Exception e) {
-			_log.error(e);
-
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -455,17 +349,22 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 		String formData = StringPool.BLANK;
 
 		fileTemplateNo = StringUtil.replaceFirst(fileTemplateNo, "#", StringPool.BLANK);
-
+		Dossier dossier = DossierLocalServiceUtil.fetchDossier(dossierId);
+		
 		try {
 			// Dossier dossier = DossierLocalServiceUtil.getDossier(dossierId);
 
 			DossierFile dossierFile = DossierFileLocalServiceUtil.getDossierFileByDID_FTNO_First(dossierId,
 					fileTemplateNo, false, new DossierFileComparator(false, "createDate", Date.class));
 
-			DossierPart dossierPart = DossierPartLocalServiceUtil.getByFileTemplateNo(groupId, fileTemplateNo);
-
-			formData = AutoFillFormData.sampleDataBinding(dossierPart.getSampleData(), dossierId, context);
-
+//			DossierPart dossierPart = DossierPartLocalServiceUtil.getByFileTemplateNo(groupId, fileTemplateNo);
+			DossierPart dossierPart = DossierPartLocalServiceUtil.getByTempAndFileTempNo(groupId, dossier != null ? dossier.getDossierTemplateNo() : StringPool.BLANK,  fileTemplateNo);
+			if (!original) {
+				formData = AutoFillFormData.sampleDataBinding(dossierPart.getSampleData(), dossierId, context);
+			}
+			else {
+				formData = dossierFile.getFormData();
+			}
 			_log.info(formData);
 			_log.info("ORIGINAL PLUGIN: " + original);
 			if (Validator.isNotNull(dossierPart.getDeliverableType())) {
@@ -568,7 +467,8 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 			}
 
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			_log.error(e);
 			_log.info("Cant get formdata with fileTemplateNo_" + fileTemplateNo);
 		}
 
@@ -584,11 +484,13 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 
 			Dossier dossier = DossierLocalServiceUtil.getDossier(dossierId);
 
-			DossierPart part = DossierPartLocalServiceUtil.getByFileTemplateNo(dossier.getGroupId(), fileTemplateNo);
+//			DossierPart part = DossierPartLocalServiceUtil.getByFileTemplateNo(dossier.getGroupId(), fileTemplateNo);
+			DossierPart part = DossierPartLocalServiceUtil.getByTempAndFileTempNo(dossier.getGroupId(), dossier.getDossierTemplateNo(), fileTemplateNo);
 
 			formData = part.getFormReport();
 
 		} catch (Exception e) {
+			_log.error(e);
 			_log.info("Cant get formdata with fileTemplateNo_" + fileTemplateNo);
 		}
 
@@ -600,19 +502,23 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 
 		fileTemplateNo = StringUtil.replaceFirst(fileTemplateNo, "#", StringPool.BLANK);
 
-		try {
+		  try {
 
-			Dossier dossier = DossierLocalServiceUtil.getDossier(dossierId);
+		   //Dossier dossier = DossierLocalServiceUtil.getDossier(dossierId);
+		   
+		   DossierFile dossierFile = DossierFileLocalServiceUtil.getByFileTemplateNo(dossierId, fileTemplateNo);
 
-			DossierPart part = DossierPartLocalServiceUtil.getByFileTemplateNo(dossier.getGroupId(), fileTemplateNo);
+		   //DossierPart part = DossierPartLocalServiceUtil.getByFileTemplateNo(dossier.getGroupId(), fileTemplateNo);
 
-			formData = part.getFormScript();
+		   formData = dossierFile.getFormScript();
 
 		} catch (Exception e) {
+			_log.debug(e);
 			_log.info("Cant get formdata with fileTemplateNo_" + fileTemplateNo);
 		}
 
-		return formData;
+		  return formData;
+
 	}
 
 	Log _log = LogFactoryUtil.getLog(ProcessPluginManagementImpl.class);
@@ -632,7 +538,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 
 			Dossier dossier = getDossier(id, groupId);
 
-			if (Validator.isNotNull(dossier)) {
+			if (dossier != null) {
 
 				long dossierActionId = dossier.getDossierActionId();
 
@@ -704,34 +610,7 @@ public class ProcessPluginManagementImpl implements ProcessPluginManagement {
 			}
 
 		} catch (Exception e) {
-			_log.error(e);
-
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 

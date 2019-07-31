@@ -10,7 +10,6 @@ import java.util.TreeMap;
 
 import org.opencps.auth.utils.APIDateTimeUtils;
 import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
@@ -38,7 +37,7 @@ import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.Validator;
 
-@Component(immediate = true, service = DossierSyncScheduler.class)
+//@Component(immediate = true, service = DossierSyncScheduler.class)
 public class DossierSyncScheduler extends BaseSchedulerEntryMessageListener {
 
 	@Override
@@ -105,7 +104,7 @@ public class DossierSyncScheduler extends BaseSchedulerEntryMessageListener {
 				DossierSyncUtils.orderSync(origin);
 				
 				for (DossierSyncOrderedModel elm : origin) {
-					System.out.println("dossierId_" + elm.getDossierId() + "_method_" + elm.getMethodId());
+//					System.out.println("dossierId_" + elm.getDossierId() + "_method_" + elm.getMethodId());
 					
 					try {
 
@@ -130,7 +129,8 @@ public class DossierSyncScheduler extends BaseSchedulerEntryMessageListener {
 
 					} catch (Exception e) {
 						//e.printStackTrace();
-						
+						_log.debug(e);
+						//_log.error(e);
 						_log.info("Can't Sync DossierSyncId = " + elm.getDossierSyncId());
 					}
 				}
@@ -164,7 +164,8 @@ public class DossierSyncScheduler extends BaseSchedulerEntryMessageListener {
 			}
 
 		} catch (JSONException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			_log.error(e);
 		}
 
 		return lsServer;
@@ -185,6 +186,7 @@ public class DossierSyncScheduler extends BaseSchedulerEntryMessageListener {
 
 		} catch (Exception e) {
 			// TODO: handle exception
+			_log.error(e);
 		}
 
 		return groupId;

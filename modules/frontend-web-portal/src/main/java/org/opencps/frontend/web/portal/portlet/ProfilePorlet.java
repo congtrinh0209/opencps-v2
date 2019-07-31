@@ -65,10 +65,12 @@ public class ProfilePorlet extends FreeMarkerPortlet {
 			Applicant applicant = UserMgtUtils.getApplicant(
 				themeDisplay.getUser().getEmailAddress());
 			
-			Employee employee = EmployeeLocalServiceUtil.fetchByF_mappingUserId( 55301, themeDisplay.getUserId());
-			
+			Employee employee = EmployeeLocalServiceUtil.fetchByF_mappingUserId( themeDisplay.getScopeGroupId(), themeDisplay.getUserId());
+			String layoutFriendlyUrl = themeDisplay.getScopeGroup().getFriendlyURL();
+			_log.info("layoutFriendlyUrl=======" + layoutFriendlyUrl);
+			renderRequest.setAttribute("layoutFriendlyUrl", layoutFriendlyUrl);
 			if(employee != null){
-				JSONObject employeeObj = JSONFactoryUtil.createJSONObject();
+				JSONObject employeeObj;
 				String employeeStr = JSONFactoryUtil.looseSerialize(employee);
 				employeeObj = JSONFactoryUtil.createJSONObject(employeeStr);
 				_log.info("employee===========>"+employeeObj);
@@ -77,7 +79,7 @@ public class ProfilePorlet extends FreeMarkerPortlet {
 			}else {
 				
 				renderRequest.setAttribute("userType", "applicant");
-				JSONObject applicantObj = JSONFactoryUtil.createJSONObject();
+				JSONObject applicantObj;
 				String jsonObj = JSONFactoryUtil.looseSerialize(applicant);
 				applicantObj = JSONFactoryUtil.createJSONObject(jsonObj);
 				if(applicantObj != null){
@@ -90,6 +92,7 @@ public class ProfilePorlet extends FreeMarkerPortlet {
 			
 		}
 		catch (Exception e) {
+			_log.error(e);
 			_log.info(e.getMessage());
 		}
 		

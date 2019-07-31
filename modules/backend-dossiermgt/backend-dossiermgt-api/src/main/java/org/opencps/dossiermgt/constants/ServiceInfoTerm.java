@@ -4,6 +4,7 @@ public class ServiceInfoTerm {
 	public static final String SERVICE_INFO_ID = "serviceinfoId ";
 	public static final String SERVICE_CODE = "serviceCode";
 	public static final String SERVICE_NAME = "serviceName";
+	public static final String SERVICE_NAME_SEARCH = "serviceNameSearch";
 	public static final String PROCESS_TEXT = "processText";
 	public static final String METHOD_TEXT = "methodText";
 	public static final String DOSSIER_EXT = "dossierText";
@@ -21,5 +22,6 @@ public class ServiceInfoTerm {
 	public static final String DOMAIN_INDEX = "domainIndex";
 	public static final String MAX_LEVEL = "maxLevel";
 	public static final String PUBLIC_ = "public";
-	
+	public static final String SERVICE_CODE_SEARCH = "serviceCodeSearch";
+
 }

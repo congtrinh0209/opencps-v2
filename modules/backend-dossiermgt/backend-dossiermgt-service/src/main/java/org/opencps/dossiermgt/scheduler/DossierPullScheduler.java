@@ -1,58 +1,9 @@
 package org.opencps.dossiermgt.scheduler;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.HttpMethod;
-
-import org.opencps.auth.utils.APIDateTimeUtils;
-import org.opencps.dossiermgt.action.DossierActions;
-import org.opencps.dossiermgt.action.PaymentFileActions;
-import org.opencps.dossiermgt.action.impl.DossierActionsImpl;
-import org.opencps.dossiermgt.action.impl.PaymentFileActionsImpl;
-import org.opencps.dossiermgt.action.util.MultipartUtility;
-import org.opencps.dossiermgt.constants.DossierTerm;
-import org.opencps.dossiermgt.model.Dossier;
-import org.opencps.dossiermgt.model.DossierAction;
-import org.opencps.dossiermgt.model.DossierFile;
-import org.opencps.dossiermgt.model.DossierPart;
-import org.opencps.dossiermgt.model.DossierRequestUD;
-import org.opencps.dossiermgt.model.PaymentFile;
-import org.opencps.dossiermgt.model.ProcessAction;
-import org.opencps.dossiermgt.model.ProcessOption;
-import org.opencps.dossiermgt.model.ServiceConfig;
-import org.opencps.dossiermgt.model.ServiceProcess;
-import org.opencps.dossiermgt.service.DossierActionLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierFileLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierRequestUDLocalServiceUtil;
-import org.opencps.dossiermgt.service.PaymentFileLocalServiceUtil;
-import org.opencps.dossiermgt.service.ProcessActionLocalServiceUtil;
-import org.opencps.dossiermgt.service.ProcessOptionLocalServiceUtil;
-import org.opencps.dossiermgt.service.ServiceConfigLocalServiceUtil;
-import org.opencps.dossiermgt.service.ServiceProcessLocalServiceUtil;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Modified;
-import org.osgi.service.component.annotations.Reference;
-
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.service.DLAppLocalServiceUtil;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -77,12 +28,58 @@ import com.liferay.portal.kernel.servlet.HttpMethods;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
-@Component(immediate = true, service = DossierPullScheduler.class)
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.HttpMethod;
+
+import org.opencps.auth.utils.APIDateTimeUtils;
+import org.opencps.dossiermgt.action.DossierActions;
+import org.opencps.dossiermgt.action.impl.DossierActionsImpl;
+import org.opencps.dossiermgt.action.util.MultipartUtility;
+import org.opencps.dossiermgt.constants.DossierTerm;
+import org.opencps.dossiermgt.model.Dossier;
+import org.opencps.dossiermgt.model.DossierAction;
+import org.opencps.dossiermgt.model.DossierFile;
+import org.opencps.dossiermgt.model.DossierPart;
+import org.opencps.dossiermgt.model.DossierRequestUD;
+import org.opencps.dossiermgt.model.PaymentFile;
+import org.opencps.dossiermgt.model.ProcessAction;
+import org.opencps.dossiermgt.model.ProcessOption;
+import org.opencps.dossiermgt.model.ServiceConfig;
+import org.opencps.dossiermgt.model.ServiceProcess;
+import org.opencps.dossiermgt.service.DossierActionLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierFileLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierRequestUDLocalServiceUtil;
+import org.opencps.dossiermgt.service.PaymentFileLocalServiceUtil;
+import org.opencps.dossiermgt.service.ProcessActionLocalServiceUtil;
+import org.opencps.dossiermgt.service.ProcessOptionLocalServiceUtil;
+import org.opencps.dossiermgt.service.ServiceConfigLocalServiceUtil;
+import org.opencps.dossiermgt.service.ServiceProcessLocalServiceUtil;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+
+//@Component(immediate = true, service = DossierPullScheduler.class)
 public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 	private final String serectKey = "OPENCPSV2";
 	private static final int BUFFER_SIZE = 4096;
@@ -132,13 +129,13 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 			}
 
 		} catch (Exception e) {
-
-			e.printStackTrace();
+			_log.error(e);
+//			e.printStackTrace();
 
 		}
 	}
 
-	private void pullDossier(Company company, JSONObject object, User systemUser) throws PortalException {
+	private void pullDossier(Company company, JSONObject object, User systemUser) throws PortalException, Exception {
 		long dossierId = GetterUtil.getLong(object.get(DossierTerm.DOSSIER_ID));
 
 		ServiceContext serviceContext = new ServiceContext();
@@ -186,6 +183,8 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 				}
 
 			} catch (Exception e) {
+				_log.debug(e);
+				//_log.error(e);
 				_log.info("NOProcess");
 			}
 
@@ -218,6 +217,8 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 					_log.info("submitDate: " + submitDate);
 
 				} catch (Exception e) {
+					_log.debug(e);
+					//_log.error(e);
 					_log.info("SUBMITDATE_NOT_VALID");
 				}
 
@@ -243,7 +244,7 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 						object.getString(DossierTerm.DOSSIER_SUB_STATUS_TEXT), 0l, 0l,
 						object.getInt(DossierTerm.VIA_POSTAL), object.getString(DossierTerm.POSTAL_ADDRESS),
 						object.getString(DossierTerm.POSTAL_CITY_CODE), object.getString(DossierTerm.POSTAL_CITY_NAME),
-						object.getString(DossierTerm.POSTAL_TEL_NO), object.getString(DossierTerm.PASSWORD),
+						object.getString(DossierTerm.POSTAL_TEL_NO), object.getString(DossierTerm.SECRET),
 						object.getBoolean(DossierTerm.NOTIFICATION), object.getBoolean(DossierTerm.ONLINE),
 						object.getString(DossierTerm.SERVER_NO), submitDate, serviceContext);
 
@@ -291,6 +292,8 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 							applicantNote, assignedUserId, systemUser.getUserId(), StringPool.BLANK, serviceContext);
 
 				} catch (Exception e) {
+					_log.debug(e);
+					//_log.error(e);
 					_log.info("SyncDossierUnsuccessfuly" + desDossier.getReferenceUid());
 				}
 
@@ -347,6 +350,8 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 
 					} catch (Exception e) {
 						// TODO: handle exception
+						_log.debug(e);
+						//_log.error(e);
 					}
 
 					// TODO add sync DOSSIERFILE and PAYMENTFILE
@@ -380,20 +385,20 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 						// doAction in this case is an Applicant object
 						String applicantNote = object.getString(DossierTerm.APPLICANT_NOTE);
 						String applicantName = object.getString(DossierTerm.APPLICANT_NAME);
-						String actionNote = StringPool.BLANK;
+//						String actionNote = StringPool.BLANK;
 						if (dossierAction != null) {
-							actionNote = dossierAction.getActionNote();
+//							actionNote = dossierAction.getActionNote();
 						}
 
 						// String subUsers = StringPool.BLANK;
-
-						actions.doAction(syncServiceProcess.getGroupId(), desDossier.getDossierId(),
-								desDossier.getReferenceUid(), processAction.getActionCode(),
-								processAction.getProcessActionId(), applicantName, applicantNote,
-
-								processAction.getAssignUserId(), systemUser.getUserId(), StringPool.BLANK,
-								serviceContext);
-
+						if(processAction != null) {
+							actions.doAction(syncServiceProcess.getGroupId(), desDossier.getDossierId(),
+									desDossier.getReferenceUid(), processAction.getActionCode(),
+									processAction.getProcessActionId(), applicantName, applicantNote,
+	
+									processAction.getAssignUserId(), systemUser.getUserId(), StringPool.BLANK,
+									serviceContext);
+						}
 					} else {
 						desDossier.setSubmitting(true);
 
@@ -434,6 +439,7 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 
 		} catch (Exception e) {
 			// TODO: handle exception
+			_log.error(e);
 		}
 	}
 
@@ -476,7 +482,8 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 			}
 
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			_log.error(e);
 		}
 	}
 
@@ -485,20 +492,20 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 		for (JSONObject object : syncPaymentFiles) {
 			// Add paymentFile to CLIENT
 
-			PaymentFileActions actions = new PaymentFileActionsImpl();
+//			PaymentFileActions actions = new PaymentFileActionsImpl();
 
 			// check paymentFile is exist
 			PaymentFile paymentFile = PaymentFileLocalServiceUtil.fectPaymentFile(dossierId,
 					object.getString("referenceUid"));
 
-			if (Validator.isNull(paymentFile)) {
-				paymentFile = actions.createPaymentFile(context.getUserId(), groupId, dossierId,
-						object.getString("referenceUid"), object.getString("govAgencyCode "),
-						object.getString("govAgencyName"), object.getString("applicantName"),
-						object.getString("applicantIdNo"), object.getString("paymentFee"),
-						object.getLong("paymentAmount"), object.getString("paymentNote"),
-						object.getString("epaymentProfile"), object.getString("bankInfo"), context);
-			}
+//			if (Validator.isNull(paymentFile)) {
+//				paymentFile = actions.createPaymentFile(context.getUserId(), groupId, dossierId,
+//						object.getString("referenceUid"), object.getString("govAgencyCode "),
+//						object.getString("govAgencyName"), object.getString("applicantName"),
+//						object.getString("applicantIdNo"), object.getString("paymentFee"),
+//						object.getLong("paymentAmount"), object.getString("paymentNote"),
+//						object.getString("epaymentProfile"), object.getString("bankInfo"), context);
+//			}
 			//
 			// paymentFile.setPaymentStatus(object.getInt("paymentStatus"));
 			paymentFile.setPaymentMethod(object.getString("paymentMethod"));
@@ -560,15 +567,24 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 									StringPool.PERIOD + "tmp");
 						}
 
-						FileOutputStream outStream = new FileOutputStream(tempFile);
-
-						int bytesRead = -1;
-						byte[] buffer = new byte[BUFFER_SIZE];
-						while ((bytesRead = is.read(buffer)) != -1) {
-							outStream.write(buffer, 0, bytesRead);
+						FileOutputStream outStream = null;
+						try {
+							outStream = new FileOutputStream(tempFile);
+	
+							int bytesRead = -1;
+							byte[] buffer = new byte[BUFFER_SIZE];
+							while ((bytesRead = is.read(buffer)) != -1) {
+								outStream.write(buffer, 0, bytesRead);
+							}	
 						}
-
-						outStream.close();
+						catch (Exception e) {
+							_log.debug(e);
+							//_log.error(e);
+						}
+						finally {
+							if (outStream != null)
+								outStream.close();
+						}
 						is.close();
 
 						String requestURL = RESTFulConfiguration.CLIENT_PATH_BASE + "dossiers/" + dossierId
@@ -587,11 +603,11 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 					conn.disconnect();
 
 				} catch (MalformedURLException e) {
-
-					e.printStackTrace();
+					_log.error(e);
+//					e.printStackTrace();
 				} catch (IOException e) {
-
-					e.printStackTrace();
+					_log.error(e);
+//					e.printStackTrace();
 
 				}
 
@@ -667,11 +683,11 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 					conn.disconnect();
 
 				} catch (MalformedURLException e) {
-
-					e.printStackTrace();
+					_log.error(e);
+//					e.printStackTrace();
 				} catch (IOException e) {
-
-					e.printStackTrace();
+					_log.error(e);
+//					e.printStackTrace();
 
 				}
 
@@ -753,7 +769,8 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 			}
 
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			_log.error(e);
 		}
 	}
 
@@ -850,28 +867,29 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 							File tempFile = File.createTempFile(String.valueOf(System.currentTimeMillis()),
 									StringPool.PERIOD + ref.getString("fileType"));
 
-							FileOutputStream outStream = new FileOutputStream(tempFile);
+							try (FileOutputStream outStream = new FileOutputStream(tempFile)) {
 
-							int bytesRead = -1;
-							byte[] buffer = new byte[BUFFER_SIZE];
-							while ((bytesRead = is.read(buffer)) != -1) {
-								outStream.write(buffer, 0, bytesRead);
+								int bytesRead = -1;
+								byte[] buffer = new byte[BUFFER_SIZE];
+								while ((bytesRead = is.read(buffer)) != -1) {
+									outStream.write(buffer, 0, bytesRead);
+								}
+	
+								outStream.close();
+								is.close();
+	
+								String requestURL = RESTFulConfiguration.CLIENT_PATH_BASE + "dossiers/" + dossierId
+										+ "/files";
+	
+								String clientAuthString = new String(
+										Base64.getEncoder().encodeToString((RESTFulConfiguration.CLIENT_USER
+												+ StringPool.COLON + RESTFulConfiguration.CLIENT_PASS).getBytes()));
+	
+								pullDossierFile(requestURL, "UTF-8", desGroupId, dossierId, clientAuthString, tempFile,
+										ref.getString("dossierTemplateNo"), ref.getString("dossierPartNo"),
+										ref.getString("fileTemplateNo"), ref.getString("displayName"),
+										ref.getString("formData"), dossierRef, fileRef, serviceContext);
 							}
-
-							outStream.close();
-							is.close();
-
-							String requestURL = RESTFulConfiguration.CLIENT_PATH_BASE + "dossiers/" + dossierId
-									+ "/files";
-
-							String clientAuthString = new String(
-									Base64.getEncoder().encodeToString((RESTFulConfiguration.CLIENT_USER
-											+ StringPool.COLON + RESTFulConfiguration.CLIENT_PASS).getBytes()));
-
-							pullDossierFile(requestURL, "UTF-8", desGroupId, dossierId, clientAuthString, tempFile,
-									ref.getString("dossierTemplateNo"), ref.getString("dossierPartNo"),
-									ref.getString("fileTemplateNo"), ref.getString("displayName"),
-									ref.getString("formData"), dossierRef, fileRef, serviceContext);
 						} else {
 							// Sync FormData
 
@@ -892,25 +910,26 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 							File tempFile = File.createTempFile(String.valueOf(System.currentTimeMillis()),
 									StringPool.PERIOD + ref.getString("fileType"));
 
-							FileOutputStream outStream = new FileOutputStream(tempFile);
+							try (FileOutputStream outStream = new FileOutputStream(tempFile)) {
 
-							int bytesRead = -1;
-							byte[] buffer = new byte[BUFFER_SIZE];
-							while ((bytesRead = is.read(buffer)) != -1) {
-								outStream.write(buffer, 0, bytesRead);
+								int bytesRead = -1;
+								byte[] buffer = new byte[BUFFER_SIZE];
+								while ((bytesRead = is.read(buffer)) != -1) {
+									outStream.write(buffer, 0, bytesRead);
+								}
+	
+								outStream.close();
+								is.close();
+								// Update file entry
+								_log.info("START UPDATE FILE ENTRY");
+								DLFileEntry dlFileEntry = DLFileEntryLocalServiceUtil
+										.fetchDLFileEntry(dossierFile.getFileEntryId());
+	
+								DLAppLocalServiceUtil.updateFileEntry(userId, dlFileEntry.getFileEntryId(),
+										dlFileEntry.getTitle(), dlFileEntry.getMimeType(), dlFileEntry.getTitle(),
+										dlFileEntry.getDescription(), StringPool.BLANK, true, tempFile, serviceContext);
+								_log.info("END UPDATE FILE ENTRY");
 							}
-
-							outStream.close();
-							is.close();
-							// Update file entry
-							_log.info("START UPDATE FILE ENTRY");
-							DLFileEntry dlFileEntry = DLFileEntryLocalServiceUtil
-									.fetchDLFileEntry(dossierFile.getFileEntryId());
-
-							DLAppLocalServiceUtil.updateFileEntry(userId, dlFileEntry.getFileEntryId(),
-									dlFileEntry.getTitle(), dlFileEntry.getMimeType(), dlFileEntry.getTitle(),
-									dlFileEntry.getDescription(), StringPool.BLANK, true, tempFile, serviceContext);
-							_log.info("END UPDATE FILE ENTRY");
 						}
 
 					}
@@ -918,11 +937,11 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 					conn.disconnect();
 
 				} catch (MalformedURLException e) {
-
-					e.printStackTrace();
+					_log.error(e);
+//					e.printStackTrace();
 				} catch (IOException e) {
-
-					e.printStackTrace();
+					_log.error(e);
+//					e.printStackTrace();
 
 				}
 			}
@@ -944,35 +963,9 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 			multipart.addFormField("paymentMethod", paymentMethod);
 			multipart.addFormField("confirmPayload", confirmPayload);
 
-			JSONObject object = JSONFactoryUtil.createJSONObject();
+//			JSONObject object = JSONFactoryUtil.createJSONObject();
 
-			List<String> response = multipart.finish();
-
-			// resetDossier(desGroupId, dossierRef, false, serviceContext);
-
-		} catch (Exception e) {
-			_log.error(e);
-		}
-
-	}
-
-	private void pullPaymentFileNoAttach(String requestURL, String charset, long desGroupId, long dossierId,
-			String authStringEnc, String confirmNote, String paymentMethod, String confirmPayload,
-			ServiceContext serviceContext) {
-
-		try {
-
-			MultipartUtility multipart = new MultipartUtility(requestURL, charset, desGroupId, authStringEnc,
-					HttpMethod.PUT);
-			// TODO; check logic here, if ref fileId in SERVER equal CLIENT
-
-			multipart.addFormField("confirmNote", confirmNote);
-			multipart.addFormField("paymentMethod", paymentMethod);
-			multipart.addFormField("confirmPayload", confirmPayload);
-
-			JSONObject object = JSONFactoryUtil.createJSONObject();
-
-			List<String> response = multipart.finish();
+//			List<String> response = multipart.finish();
 
 			// resetDossier(desGroupId, dossierRef, false, serviceContext);
 
@@ -981,6 +974,32 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 		}
 
 	}
+
+//	private void pullPaymentFileNoAttach(String requestURL, String charset, long desGroupId, long dossierId,
+//			String authStringEnc, String confirmNote, String paymentMethod, String confirmPayload,
+//			ServiceContext serviceContext) {
+//
+//		try {
+//
+//			MultipartUtility multipart = new MultipartUtility(requestURL, charset, desGroupId, authStringEnc,
+//					HttpMethod.PUT);
+//			// TODO; check logic here, if ref fileId in SERVER equal CLIENT
+//
+//			multipart.addFormField("confirmNote", confirmNote);
+//			multipart.addFormField("paymentMethod", paymentMethod);
+//			multipart.addFormField("confirmPayload", confirmPayload);
+//
+////			JSONObject object = JSONFactoryUtil.createJSONObject();
+//
+////			List<String> response = multipart.finish();
+//
+//			// resetDossier(desGroupId, dossierRef, false, serviceContext);
+//
+//		} catch (Exception e) {
+//			_log.error(e);
+//		}
+//
+//	}
 
 	private void pullDossierFile(String requestURL, String charset, long desGroupId, long dossierId,
 			String authStringEnc, File file, String dossierTemplateNo, String dossierPartNo, String fileTemplateNo,
@@ -1091,7 +1110,7 @@ public class DossierPullScheduler extends BaseSchedulerEntryMessageListener {
 			}
 
 		} catch (Exception e) {
-
+			_log.error(e);
 		}
 	}
 

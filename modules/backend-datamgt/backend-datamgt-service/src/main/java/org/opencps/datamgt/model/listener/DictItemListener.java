@@ -33,7 +33,7 @@ public class DictItemListener extends BaseModelListener<DictItem> {
 	public void onAfterUpdate(DictItem model) throws ModelListenerException {
 		super.onAfterUpdate(model);
 
-		_log.info("onAfterUpdate DictItem" + model);
+		//_log.info("onAfterUpdate DictItem" + model);
 
 		ServiceContext serviceContext = new ServiceContext();
 		serviceContext.setCompanyId(model.getCompanyId());
@@ -43,7 +43,7 @@ public class DictItemListener extends BaseModelListener<DictItem> {
 
 		for (DictItem dictItem : listChilds) {
 
-			_log.info("onAfterUpdate DictItem listChilds" + dictItem.getDictItemId());
+			//_log.info("onAfterUpdate DictItem listChilds" + dictItem.getDictItemId());
 
 			try {
 				dictItem = DictItemLocalServiceUtil.updateDictItemListener(dictItem.getUserId(), dictItem.getDictItemId(),
@@ -56,11 +56,11 @@ public class DictItemListener extends BaseModelListener<DictItem> {
 				try {
 					indexer.reindex(dictItem);
 				} catch (SearchException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					_log.debug(e);
+					//_log.error(e);
 				} catch (NumberFormatException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					_log.debug(e);
+					//_log.error(e);
 				}
 
 			} catch (Exception e) {
@@ -99,7 +99,24 @@ public class DictItemListener extends BaseModelListener<DictItem> {
 
 	@Override
 	public void onBeforeCreate(DictItem model) throws ModelListenerException {
-		super.onBeforeCreate(model);
+//		try {
+//			// Other fields
+//			model.setDictCollectionId(
+//					Integer.valueOf(HtmlUtil.escape(String.valueOf(model.getDictCollectionId()))));
+//			model.setItemCode(HtmlUtil.escape(model.getItemCode()));
+//			model.setItemName(HtmlUtil.escape(model.getItemName()));
+//			model.setItemNameEN(HtmlUtil.escape(model.getItemNameEN()));
+//			model.setItemDescription(HtmlUtil.escape(model.getItemDescription()));
+//			model.setParentItemId(
+//					Integer.valueOf(HtmlUtil.escape(String.valueOf(model.getParentItemId()))));
+//			model.setSibling(HtmlUtil.escape(model.getSibling()));
+//			model.setTreeIndex(HtmlUtil.escape(model.getTreeIndex()));
+//			model.setLevel(Integer.valueOf(HtmlUtil.escape(String.valueOf(model.getLevel()))));
+//			model.setMetaData(HtmlUtil.escape(model.getMetaData()));
+//
+//		} catch (Exception e) {
+//			_log.error(e);
+//		}
 	}
 
 	@Override
@@ -107,10 +124,10 @@ public class DictItemListener extends BaseModelListener<DictItem> {
 		super.onBeforeRemove(model);
 
 		long id = model.getDictItemId();
-		_log.info("id" + id);
+		//_log.info("id" + id);
 
 		try {
-			modelBefore = DictItemLocalServiceUtil.fetchDictItem(id);
+			DictItemLocalServiceUtil.fetchDictItem(id);
 
 		} catch (Exception e) {
 			_log.error(e);
@@ -119,20 +136,27 @@ public class DictItemListener extends BaseModelListener<DictItem> {
 
 	@Override
 	public void onBeforeUpdate(DictItem model) throws ModelListenerException {
-		super.onBeforeUpdate(model);
-
-		long id = model.getDictItemId();
-		_log.info("id" + id);
-
-		try {
-			modelBefore = DictItemLocalServiceUtil.fetchDictItem(id);
-
-		} catch (Exception e) {
-			_log.error(e);
-		}
+//		try {
+//			// Other fields
+//			model.setDictCollectionId(
+//					Integer.valueOf(HtmlUtil.escape(String.valueOf(model.getDictCollectionId()))));
+//			model.setItemCode(HtmlUtil.escape(model.getItemCode()));
+//			model.setItemName(HtmlUtil.escape(model.getItemName()));
+//			model.setItemNameEN(HtmlUtil.escape(model.getItemNameEN()));
+//			model.setItemDescription(HtmlUtil.escape(model.getItemDescription()));
+//			model.setParentItemId(
+//					Integer.valueOf(HtmlUtil.escape(String.valueOf(model.getParentItemId()))));
+//			model.setSibling(HtmlUtil.escape(model.getSibling()));
+//			model.setTreeIndex(HtmlUtil.escape(model.getTreeIndex()));
+//			model.setLevel(Integer.valueOf(HtmlUtil.escape(String.valueOf(model.getLevel()))));
+//			model.setMetaData(HtmlUtil.escape(model.getMetaData()));
+//
+//		} catch (Exception e) {
+//			_log.error(e);
+//		}
 	}
 
-	public static DictItem modelBefore;
+//	private static DictItem modelBefore;
 
 	Log _log = LogFactoryUtil.getLog(DictItemListener.class);
 

@@ -14,28 +14,18 @@
 
 package org.opencps.dossiermgt.service.impl;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import org.opencps.datamgt.constants.DataMGTConstants;
-import org.opencps.datamgt.model.DictItem;
-import org.opencps.datamgt.utils.DictCollectionUtils;
-import org.opencps.dossiermgt.constants.ServiceConfigTerm;
-import org.opencps.dossiermgt.constants.ServiceInfoTerm;
-import org.opencps.dossiermgt.exception.HasExsistException;
-import org.opencps.dossiermgt.exception.RequiredAgencyCodeException;
-import org.opencps.dossiermgt.exception.RequiredServiceCodeException;
-import org.opencps.dossiermgt.exception.ServiceLevelException;
-import org.opencps.dossiermgt.exception.ServiceURLOnlineException;
-import org.opencps.dossiermgt.model.ProcessOption;
-import org.opencps.dossiermgt.model.ServiceConfig;
-import org.opencps.dossiermgt.model.ServiceInfo;
-import org.opencps.dossiermgt.service.base.ServiceConfigLocalServiceBaseImpl;
-
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCachable;
+import com.liferay.portal.kernel.dao.orm.DynamicQuery;
+import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
+import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
@@ -54,8 +44,26 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.generic.MultiMatchQuery;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.opencps.datamgt.constants.DataMGTConstants;
+import org.opencps.datamgt.model.DictItem;
+import org.opencps.datamgt.utils.DictCollectionUtils;
+import org.opencps.dossiermgt.constants.ServiceConfigTerm;
+import org.opencps.dossiermgt.exception.HasExsistException;
+import org.opencps.dossiermgt.exception.RequiredAgencyCodeException;
+import org.opencps.dossiermgt.exception.RequiredServiceCodeException;
+import org.opencps.dossiermgt.exception.ServiceLevelException;
+import org.opencps.dossiermgt.exception.ServiceURLOnlineException;
+import org.opencps.dossiermgt.model.ProcessOption;
+import org.opencps.dossiermgt.model.ServiceConfig;
+import org.opencps.dossiermgt.model.ServiceInfo;
+import org.opencps.dossiermgt.model.impl.ServiceConfigImpl;
+import org.opencps.dossiermgt.service.base.ServiceConfigLocalServiceBaseImpl;
 
 import aQute.bnd.annotation.ProviderType;
 
@@ -83,9 +91,11 @@ public class ServiceConfigLocalServiceImpl extends ServiceConfigLocalServiceBase
 	 * NOTE FOR DEVELOPERS:
 	 *
 	 * Never reference this class directly. Always use {@link
-	 * org.opencps.dossiermgt.service.ServiceConfigLocalServiceUtil} to access
-	 * the service config local service.
+	 * org.opencps.dossiermgt.service.ServiceConfigLocalServiceUtil} to access the
+	 * service config local service.
 	 */
+	private Log _log = LogFactoryUtil.getLog(ServiceConfigLocalServiceImpl.class);
+
 	@Indexable(type = IndexableType.DELETE)
 	public ServiceConfig removeServiceConfigById(long serviceConfigId) throws PortalException {
 
@@ -104,6 +114,13 @@ public class ServiceConfigLocalServiceImpl extends ServiceConfigLocalServiceBase
 		return config;
 	}
 
+	public List<ServiceConfig> getByGroupId(long groupId) throws PortalException, SystemException {
+
+		return serviceConfigPersistence.findByG_(groupId);
+
+	}
+
+	@ThreadLocalCachable
 	public ServiceConfig getBySICodeAndGAC(long groupId, String serviceInfoCode, String govAgencyCode)
 			throws PortalException {
 
@@ -181,8 +198,7 @@ public class ServiceConfigLocalServiceImpl extends ServiceConfigLocalServiceBase
 			serviceConfig.setRegistration(registration);
 
 		}
-		
-		
+
 		serviceConfig.setServiceInfoId(serviceInfoId);
 
 		ServiceInfo si = serviceInfoPersistence.fetchByPrimaryKey(serviceInfoId);
@@ -196,8 +212,8 @@ public class ServiceConfigLocalServiceImpl extends ServiceConfigLocalServiceBase
 		return serviceConfig;
 	}
 
-	private void validate(long groupId, long serviceConfigId, long serviceInfoId, String govAgencyCode, int serviceLevel, String serviceUrl,
-			JSONObject objName) throws PortalException {
+	private void validate(long groupId, long serviceConfigId, long serviceInfoId, String govAgencyCode,
+			int serviceLevel, String serviceUrl, JSONObject objName) throws PortalException {
 
 		DictItem agc = DictCollectionUtils.getDictItemByCode(DataMGTConstants.GOVERNMENT_AGENCY, govAgencyCode,
 				groupId);
@@ -220,24 +236,23 @@ public class ServiceConfigLocalServiceImpl extends ServiceConfigLocalServiceBase
 			serviceInfoPersistence.fetchByPrimaryKey(serviceInfoId);
 
 		} catch (Exception e) {
+			_log.error(e);
 			throw new RequiredServiceCodeException("RequiredServiceCodeException");
 		}
-		
+
 		ServiceConfig config = serviceConfigPersistence.fetchByGID_SI_GAC(groupId, serviceInfoId, govAgencyCode);
 
-		
 		if (serviceConfigId == 0) {
 
 			if (Validator.isNotNull(config)) {
 				throw new HasExsistException("ServiceConfigHasExsist");
 			}
 		} else {
-			
+
 			if (Validator.isNotNull(config) && config.getPrimaryKey() != serviceConfigId) {
 				throw new HasExsistException("ServiceConfigHasExsist");
 			}
 		}
-		
 
 	}
 
@@ -274,7 +289,8 @@ public class ServiceConfigLocalServiceImpl extends ServiceConfigLocalServiceBase
 
 				MultiMatchQuery query = new MultiMatchQuery(string);
 
-				query.addFields(new String[]{ServiceConfigTerm.SERVICE_NAME, ServiceConfigTerm.GOVAGENCY_NAME, ServiceConfigTerm.DOMAIN_NAME});
+				query.addFields(new String[] { ServiceConfigTerm.SERVICE_NAME, ServiceConfigTerm.GOVAGENCY_NAME,
+						ServiceConfigTerm.DOMAIN_NAME });
 
 				booleanQuery.add(query, BooleanClauseOccur.MUST);
 
@@ -381,7 +397,8 @@ public class ServiceConfigLocalServiceImpl extends ServiceConfigLocalServiceBase
 
 				MultiMatchQuery query = new MultiMatchQuery(string);
 
-				query.addFields(new String[]{ServiceConfigTerm.SERVICE_NAME, ServiceConfigTerm.GOVAGENCY_NAME, ServiceConfigTerm.DOMAIN_NAME});
+				query.addFields(new String[] { ServiceConfigTerm.SERVICE_NAME, ServiceConfigTerm.GOVAGENCY_NAME,
+						ServiceConfigTerm.DOMAIN_NAME });
 
 				booleanQuery.add(query, BooleanClauseOccur.MUST);
 
@@ -456,6 +473,135 @@ public class ServiceConfigLocalServiceImpl extends ServiceConfigLocalServiceBase
 		booleanQuery.addRequiredTerm(Field.ENTRY_CLASS_NAME, CLASS_NAME);
 
 		return IndexSearcherHelperUtil.searchCount(searchContext, booleanQuery);
+	}
+
+	// LamTV_ Process output ServiceConfig to DB
+	@Indexable(type = IndexableType.REINDEX)
+	public ServiceConfig updateServiceConfigDB(long userId, long groupId, long serviceInfoId, String govAgencyCode,
+			String govAgencyName, String serviceInstruction, Integer serviceLevel, String serviceUrl,
+			boolean forCitizen, boolean forBusiness, boolean postalService, boolean registration,
+			ServiceContext context) {
+
+		Date now = new Date();
+		User auditUser = userPersistence.fetchByPrimaryKey(userId);
+
+		long serviceConfigId = counterLocalService.increment(ServiceConfig.class.getName());
+		ServiceConfig serviceConfig = serviceConfigPersistence.create(serviceConfigId);
+
+		serviceConfig.setCreateDate(now);
+		serviceConfig.setModifiedDate(now);
+		serviceConfig.setCompanyId(context.getCompanyId());
+		serviceConfig.setGroupId(groupId);
+		serviceConfig.setUserId(userId);
+		serviceConfig.setUserName(auditUser.getFullName());
+
+		serviceConfig.setGovAgencyCode(govAgencyCode);
+		serviceConfig.setGovAgencyName(govAgencyName);
+		serviceConfig.setServiceInstruction(serviceInstruction);
+		serviceConfig.setServiceLevel(serviceLevel);
+		serviceConfig.setServiceUrl(serviceUrl);
+		serviceConfig.setForBusiness(forBusiness);
+		serviceConfig.setForCitizen(forCitizen);
+		serviceConfig.setPostService(postalService);
+		serviceConfig.setRegistration(registration);
+		serviceConfig.setServiceInfoId(serviceInfoId);
+		serviceConfig.setServiceLevel(serviceLevel);
+
+		return serviceConfigPersistence.update(serviceConfig);
+	}
+
+	// LamTV_Process get list ServiceConfig by ServiceInfo
+	public List<ServiceConfig> getByServiceInfo(long groupId, long serviceInfoId) {
+		return serviceConfigPersistence.findByF_GID_SID(groupId, serviceInfoId);
+	}
+
+	public List<ServiceConfig> getByGovAgencyCode(String govAgencyCode) {
+		return serviceConfigPersistence.findByF_GAC(govAgencyCode);
+	}
+
+	public List<ServiceConfig> getByLevel(long groupId, int level) {
+		return serviceConfigPersistence.findByGID_LEVEL(groupId, level);
+	}
+
+	public long countByGovAgency(String keyword, String govAgencyCode, long groupId) {
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(ServiceConfigImpl.class);
+		if (Validator.isNotNull(keyword)) {
+			dynamicQuery.add(RestrictionsFactoryUtil.like(ServiceConfigTerm.GOVAGENCY_NAME, keyword));
+		}
+		dynamicQuery.add(RestrictionsFactoryUtil.eq(ServiceConfigTerm.GOVAGENCY_CODE, govAgencyCode));
+		dynamicQuery.add(RestrictionsFactoryUtil.eq(Field.GROUP_ID, groupId));
+
+		return serviceConfigPersistence.countWithDynamicQuery(dynamicQuery);
+	}
+
+	public List<ServiceConfig> searchByGovAgency(String keyword, String govAgencyCode, long groupId, int start,
+			int end) {
+		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(ServiceConfigImpl.class);
+		if (Validator.isNotNull(keyword)) {
+			dynamicQuery.add(RestrictionsFactoryUtil.like(ServiceConfigTerm.GOVAGENCY_NAME, keyword));
+		}
+		dynamicQuery.add(RestrictionsFactoryUtil.eq(ServiceConfigTerm.GOVAGENCY_CODE, govAgencyCode));
+		dynamicQuery.add(RestrictionsFactoryUtil.eq(Field.GROUP_ID, groupId));
+
+		return serviceConfigPersistence.findWithDynamicQuery(dynamicQuery, start, end);
+	}
+
+	// super_admin Generators
+	@Indexable(type = IndexableType.DELETE)
+	public ServiceConfig adminProcessDelete(Long id) {
+
+		ServiceConfig object = serviceConfigPersistence.fetchByPrimaryKey(id);
+
+		if (Validator.isNull(object)) {
+			return null;
+		} else {
+			serviceConfigPersistence.remove(object);
+		}
+
+		return object;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public ServiceConfig adminProcessData(JSONObject objectData) {
+
+		ServiceConfig object = null;
+
+		if (objectData.getLong("serviceConfigId") > 0) {
+
+			object = serviceConfigPersistence.fetchByPrimaryKey(objectData.getLong("serviceConfigId"));
+
+			object.setModifiedDate(new Date());
+
+		} else {
+
+			long id = CounterLocalServiceUtil.increment(ServiceConfig.class.getName());
+
+			object = serviceConfigPersistence.create(id);
+
+			object.setGroupId(objectData.getLong("groupId"));
+			object.setCompanyId(objectData.getLong("companyId"));
+			object.setCreateDate(new Date());
+
+		}
+
+		object.setUserId(objectData.getLong("userId"));
+		object.setUserName(objectData.getString("userName"));
+
+		object.setGovAgencyCode(objectData.getString("govAgencyCode"));
+		object.setGovAgencyName(objectData.getString("govAgencyName"));
+		object.setServiceInstruction(objectData.getString("serviceInstruction"));
+		object.setServiceLevel(objectData.getInt("serviceLevel"));
+		object.setServiceUrl(objectData.getString("serviceUrl"));
+		object.setForBusiness(objectData.getBoolean("forBusiness"));
+		object.setForCitizen(objectData.getBoolean("forCitizen"));
+		object.setPostService(objectData.getBoolean("postService"));
+		object.setRegistration(objectData.getBoolean("registration"));
+		object.setServiceInfoId(objectData.getLong("serviceInfoId"));
+		object.setServiceLevel(objectData.getInt("serviceLevel"));
+
+		serviceConfigPersistence.update(object);
+
+		return object;
 	}
 
 	public static final String CLASS_NAME = ServiceConfig.class.getName();

@@ -1,5 +1,9 @@
 package org.opencps.dossiermgt.action.util;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -13,17 +17,6 @@ import org.opencps.dossiermgt.action.keypay.util.KPRest;
 import org.opencps.dossiermgt.action.keypay.util.MD5;
 import org.opencps.dossiermgt.model.PaymentConfig;
 import org.opencps.dossiermgt.model.PaymentFile;
-import org.opencps.dossiermgt.service.PaymentConfigLocalServiceUtil;
-import org.opencps.dossiermgt.service.PaymentFileLocalServiceUtil;
-
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
 
 
 public class KeyPay {
@@ -154,6 +147,8 @@ public class KeyPay {
 			}
 			url_redirect += param + "secure_hash=" + secure_hash;
 		} catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
 			_log.error("ERROR Build URL");
 		}
 		return url_redirect;
@@ -186,7 +181,9 @@ public class KeyPay {
 			this.desc_4 = new String(request.getParameter("desc_4").getBytes("ISO-8859-1"), "UTF-8");
 			this.desc_5 = request.getParameter("desc_5");
 		} catch (Exception e) {
-			System.out.println("ERROE get data KeyPay return");
+			_log.debug(e);
+			//_log.error(e);
+//			System.out.println("ERROE get data KeyPay return");
 		}
 	}
 
@@ -202,45 +199,50 @@ public class KeyPay {
 
 		_log.info("=====keyPay.getMerchant_trans_id():" + keyPay.getMerchant_trans_id());
 
-		try {
-
-			if (keyPay.getMerchant_trans_id().trim().length() > 0) {
+//		try {
+//
+//			if (keyPay.getMerchant_trans_id().trim().length() > 0) {
 				// TODO
-				paymentFile = null; // PaymentFileLocalServiceUtil.getByTransactionId(Long.parseLong(keyPay.getMerchant_trans_id()));
+//				paymentFile = null; // PaymentFileLocalServiceUtil.getByTransactionId(Long.parseLong(keyPay.getMerchant_trans_id()));
+//			}
 
-			}
+//			if (Validator.isNotNull(paymentFile)) {
+//
+//				Dossier dossier = DossierLocalServiceUtil.fetchDossier(paymentFile.getDossierId());
+//				String govAgencyCode = StringPool.BLANK;
+//				if (dossier != null) {
+//					govAgencyCode = dossier.getGovAgencyCode();
+//				}
+//				paymentConfig = PaymentConfigLocalServiceUtil.getPaymentConfigByGovAgencyCode(paymentFile.getGroupId(), paymentFile.getGovAgencyCode());
+//				paymentConfig = PaymentConfigLocalServiceUtil.getPaymentConfigByGovAgencyCode(paymentFile.getGroupId(), govAgencyCode);
+//
+//				Map<String, String> fields = new HashMap<String, String>();
+//
+//				fields.put("command", keyPay.getCommand());
+//				fields.put("merchant_trans_id", keyPay.getMerchant_trans_id());
+//				fields.put("merchant_code", keyPay.getMerchant_code());
+//				fields.put("response_code", keyPay.getResponse_code());
+//				fields.put("trans_id", keyPay.getTrans_id());
+//				fields.put("good_code", keyPay.getGood_code());
+//				fields.put("net_cost", keyPay.getNet_cost());
+//				fields.put("ship_fee", keyPay.getShip_fee());
+//				fields.put("tax", keyPay.getTax());
+//				fields.put("service_code", keyPay.getService_code());
+//				fields.put("currency_code", keyPay.getCurrency_code());
+//				fields.put("bank_code", keyPay.getBank_code());
+//
+//				HashFunction hash = new HashFunction();
+//				
+//				JSONObject epaymentConfigJSON = JSONFactoryUtil.createJSONObject(paymentConfig.getEpaymentConfig());
+//				
+//				return hash.hashAllFields(fields, epaymentConfigJSON.getString("paymentMerchantSecureKey"));
 
-			if (Validator.isNotNull(paymentFile)) {
-
-				paymentConfig = PaymentConfigLocalServiceUtil.getPaymentConfigByGovAgencyCode(paymentFile.getGroupId(), paymentFile.getGovAgencyCode());
-
-				Map<String, String> fields = new HashMap<String, String>();
-
-				fields.put("command", keyPay.getCommand());
-				fields.put("merchant_trans_id", keyPay.getMerchant_trans_id());
-				fields.put("merchant_code", keyPay.getMerchant_code());
-				fields.put("response_code", keyPay.getResponse_code());
-				fields.put("trans_id", keyPay.getTrans_id());
-				fields.put("good_code", keyPay.getGood_code());
-				fields.put("net_cost", keyPay.getNet_cost());
-				fields.put("ship_fee", keyPay.getShip_fee());
-				fields.put("tax", keyPay.getTax());
-				fields.put("service_code", keyPay.getService_code());
-				fields.put("currency_code", keyPay.getCurrency_code());
-				fields.put("bank_code", keyPay.getBank_code());
-
-				HashFunction hash = new HashFunction();
-				
-				JSONObject epaymentConfigJSON = JSONFactoryUtil.createJSONObject(paymentConfig.getEpaymentConfig());
-				
-				return hash.hashAllFields(fields, epaymentConfigJSON.getString("paymentMerchantSecureKey"));
-
-			}
-
-		} catch (NumberFormatException | PortalException | SystemException e1) {
-			// TODO Auto-generated catch block
-			_log.error(e1);
-		}
+//			}
+//
+//		} catch (NumberFormatException | PortalException | SystemException e1) {
+//			// TODO Auto-generated catch block
+//			_log.error(e1);
+//		}
 
 		return StringPool.BLANK;
 
@@ -319,7 +321,8 @@ public class KeyPay {
 			MD5 md5 = new MD5();
 			sc_querry = md5.getMD5Hash(merchant_trans_id + good_code + trans_id + merchant_code + merchant_secure_key);
 		} catch (Exception e) {
-			System.out.println("ERROR calculate secure hash Query Bill");
+			_log.error(e);
+//			System.out.println("ERROR calculate secure hash Query Bill");
 		}
 		KPRest kp = new KPRest();
 		return kp.QuerryBillStatus(merchant_trans_id, good_code, trans_id, merchant_code, sc_querry);
@@ -338,6 +341,8 @@ public class KeyPay {
 			MD5 md5 = new MD5();
 			sc_querry = md5.getMD5Hash(merchant_trans_id + good_code + trans_id + merchant_code + merchant_secure_key);
 		} catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
 		}
 		KPJsonRest kpJson = new KPJsonRest();
 		return kpJson.QuerryBillStatus(merchant_trans_id, good_code, trans_id, merchant_code, sc_querry);
@@ -355,7 +360,9 @@ public class KeyPay {
 			MD5 md5 = new MD5();
 			sc_querry = md5.getMD5Hash(merchant_trans_id + good_code + trans_id + merchant_code + merchant_secure_key);
 		} catch (Exception e) {
-			System.out.println("ERROR calculate secure hash Query Bill");
+			_log.debug(e);
+			//_log.error(e);
+//			System.out.println("ERROR calculate secure hash Query Bill");
 		}
 		KPJsonRest kpJson = new KPJsonRest();
 		return kpJson.QuerryBillStatus(merchant_trans_id, good_code, trans_id, merchant_code, sc_querry);

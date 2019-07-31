@@ -21,9 +21,13 @@ import org.opencps.dossiermgt.model.ProcessStepRole;
 import org.opencps.dossiermgt.service.base.ProcessStepRoleLocalServiceBaseImpl;
 import org.opencps.dossiermgt.service.persistence.ProcessStepRolePK;
 
+import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCachable;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.Validator;
 
 import aQute.bnd.annotation.ProviderType;
@@ -48,6 +52,7 @@ import aQute.bnd.annotation.ProviderType;
  */
 @ProviderType
 public class ProcessStepRoleLocalServiceImpl extends ProcessStepRoleLocalServiceBaseImpl {
+	private static final Log _log = LogFactoryUtil.getLog(ProcessStepRoleLocalServiceBaseImpl.class);
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
@@ -56,11 +61,13 @@ public class ProcessStepRoleLocalServiceImpl extends ProcessStepRoleLocalService
 	 * the process step role local service.
 	 */
 
+	@ThreadLocalCachable
 	public List<ProcessStepRole> findByP_S_ID(long processStepId) {
 		return processStepRolePersistence.findByP_S_ID(processStepId);
 	}
 
-	public ProcessStepRole updateProcessStepRole(long processStepId, long roleId, boolean moderator, String condition) {
+	public ProcessStepRole updateProcessStepRole(long processStepId, long roleId, boolean moderator, String condition,
+			String roleCode, String roleName) {
 		ProcessStepRolePK pk = new ProcessStepRolePK(processStepId, roleId);
 
 		ProcessStepRole processStepRole = processStepRolePersistence.fetchByPrimaryKey(pk);
@@ -70,11 +77,15 @@ public class ProcessStepRoleLocalServiceImpl extends ProcessStepRoleLocalService
 
 			processStepRole.setModerator(moderator);
 			processStepRole.setCondition(condition);
+			processStepRole.setRoleCode(roleCode);
+			processStepRole.setRoleName(roleName);
 		} else {
 			processStepRole = processStepRolePersistence.fetchByPrimaryKey(pk);
 			
 			processStepRole.setModerator(moderator);
 			processStepRole.setCondition(condition);
+			processStepRole.setRoleCode(roleCode);
+			processStepRole.setRoleName(roleName);
 		}
 
 		processStepRolePersistence.update(processStepRole);
@@ -88,7 +99,8 @@ public class ProcessStepRoleLocalServiceImpl extends ProcessStepRoleLocalService
 		try {
 			indexer.reindex(processStep);
 		} catch (SearchException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			_log.error(e);
 		}
 
 		return processStepRole;
@@ -111,11 +123,45 @@ public class ProcessStepRoleLocalServiceImpl extends ProcessStepRoleLocalService
 		try {
 			indexer.reindex(processStep);
 		} catch (SearchException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			_log.error(e);
 		}
 
 		return processStepRole;
 
 	}
 
+	public ProcessStepRole updateProcessStepRoleDB(long userId, long groupId, long processStepId, long roleId,
+			String roleCode, String roleName, boolean moderator, String condition, ServiceContext serviceContext) {
+
+		ProcessStepRolePK pk = new ProcessStepRolePK(processStepId, roleId);
+		ProcessStepRole processStepRole = processStepRolePersistence.fetchByPrimaryKey(pk);
+
+		if (Validator.isNull(processStepRole)) {
+			processStepRole = processStepRolePersistence.create(pk);
+
+			processStepRole.setRoleCode(roleCode);
+			processStepRole.setRoleName(roleName);
+			processStepRole.setModerator(moderator);
+			processStepRole.setCondition(condition);
+		} else {
+			processStepRole.setRoleName(roleName);
+			processStepRole.setModerator(moderator);
+			processStepRole.setCondition(condition);
+		}
+
+		return processStepRolePersistence.update(processStepRole);
+	}
+
+	public ProcessStepRole findByStepAndRole(long processStepId, long roleId) {
+		return processStepRolePersistence.fetchByF_STEP_ROLE(processStepId, roleId);
+	}
+
+	public long getByRoleCode(String roleCode) {
+		ProcessStepRole role = processStepRolePersistence.fetchByF_CODE(roleCode);
+		if (role != null) {
+			return role.getRoleId();
+		}
+		return 0;
+	}
 }

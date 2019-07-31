@@ -17,5 +17,9 @@ public class ServiceConfigTerm {
 	public static final String POSTAL_SERVICE = "postalService";
 	public static final String REGISTRATION = "registratio";
 	public static final String APPICATION_TYPE = "registratio";
+	public static final String PROCESSES = "processes";
+	public static final String ACTION_USER = "actionUser";
+	public static final String DOMAIN_INDEX = "domainIndex";
+	public static final String DOSSIER_PART_OPTION = "dossierPartOption";
 
 }

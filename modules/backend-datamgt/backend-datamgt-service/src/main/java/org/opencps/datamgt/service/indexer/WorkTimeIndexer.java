@@ -1,6 +1,5 @@
 package org.opencps.datamgt.service.indexer;
 
-import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import javax.portlet.PortletRequest;
@@ -9,6 +8,7 @@ import javax.portlet.PortletResponse;
 import org.opencps.datamgt.constants.WorkTimeTerm;
 import org.opencps.datamgt.model.WorkTime;
 import org.opencps.datamgt.service.WorkTimeLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
@@ -25,8 +25,11 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.Validator;
 
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class WorkTimeIndexer extends BaseIndexer<WorkTime> {
 
 	public static final String CLASS_NAME = WorkTime.class.getName();

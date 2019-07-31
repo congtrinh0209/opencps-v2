@@ -32,8 +32,9 @@ public interface PaymentFileActions {
 	 * @return PaymentFile
 	 */
 	public PaymentFile createPaymentFile(long userId, long groupId, long dossierId, String referenceUid,
-			String govAgencyCode, String govAgencyName, String applicantName, String applicantIdNo, String paymentFee,
+			String paymentFee, long advanceAmount, long feeAmount, long serviceAmount, long shipAmount,
 			long paymentAmount, String paymentNote, String epaymentProfile, String bankInfo,
+			int paymentStatus, String paymentMethod,
 			ServiceContext serviceContext) throws PortalException;
 
 	/**
@@ -126,6 +127,6 @@ public interface PaymentFileActions {
 			Sort[] sorts, int start, int end, ServiceContext serviceContext);
 	
 	
-	public List<PaymentFile> getPaymentFiles(long dossierId);
+	public PaymentFile getPaymentFiles(long groupId, long dossierId);
 
 }

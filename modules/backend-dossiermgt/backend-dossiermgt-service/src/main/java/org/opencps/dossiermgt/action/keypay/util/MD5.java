@@ -7,13 +7,13 @@ import java.util.logging.Logger;
 
 public class MD5 {
     private Logger log = Logger.getLogger(MD5.class.getName());
-    private Logger logError = Logger.getLogger("ErrorLog");
+//    private Logger logError = Logger.getLogger("ErrorLog");
 
     public String getMD5Hash(String value)
             throws NoSuchAlgorithmException, UnsupportedEncodingException {
         log.info("String input secure : " + value);
         final StringBuilder sbMd5Hash = new StringBuilder();
-        final MessageDigest m = MessageDigest.getInstance("MD5");
+        final MessageDigest m = MessageDigest.getInstance("SHA-256");
         m.update(value.getBytes("UTF-8"));
 
         final byte data[] = m.digest();

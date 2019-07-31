@@ -9,6 +9,7 @@ import javax.portlet.PortletResponse;
 import org.opencps.communication.constants.NotificationTemplateTerm;
 import org.opencps.communication.model.Notificationtemplate;
 import org.opencps.communication.service.NotificationtemplateLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
@@ -27,6 +28,10 @@ import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class NotificationTemplateIndexer extends BaseIndexer<Notificationtemplate> {
 
 	public static final String CLASS_NAME = Notificationtemplate.class.getName();
@@ -36,6 +41,7 @@ public class NotificationTemplateIndexer extends BaseIndexer<Notificationtemplat
 		return CLASS_NAME;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void postProcessSearchQuery(BooleanQuery searchQuery, BooleanFilter fullQueryBooleanFilter,
 			SearchContext searchContext) throws Exception {
@@ -72,7 +78,7 @@ public class NotificationTemplateIndexer extends BaseIndexer<Notificationtemplat
 
 	@Override
 	protected Document doGetDocument(Notificationtemplate notificationtemplates) throws Exception {
-
+		//_log.info("START"+notificationtemplates.getGroupId() +"| "+notificationtemplates.getInterval());
 		Document document = getBaseModelDocument(CLASS_NAME, notificationtemplates);
 
 		document.addNumberSortable(NotificationTemplateTerm.GROUP_ID, notificationtemplates.getGroupId());

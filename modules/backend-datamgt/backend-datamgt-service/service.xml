@@ -28,6 +28,7 @@
 		<column name="dataForm" type="String" />
 
 		<!-- Order -->
+        <column name="status" type="int"></column>
 		<order by="asc">
 			<order-column name="createDate" />
 		</order>
@@ -263,6 +264,9 @@
 			<finder-column name="groupId"></finder-column>
 			<finder-column name="day"></finder-column>
 		</finder>
+		<finder return-type="Collection" name="F_GID">
+			<finder-column name="groupId" />
+		</finder>
 		
 	</entity>
 	
@@ -284,6 +288,7 @@
 
 		<column name="holidayDate" type="Date" />
 		<column name="description" type="String" />
+		<column name="holidayType" type="int" />
 
 		<!-- Order -->
 		<order by="asc">
@@ -294,6 +299,19 @@
 			<finder-column name="groupId"></finder-column>
 			<finder-column name="holidayDate"></finder-column>
 		</finder>
+		<finder return-type="Collection" name="F_GID">
+			<finder-column name="groupId" />
+		</finder>
+		<finder return-type="Collection" name="F_GID_TYPE">
+			<finder-column name="groupId" />
+			<finder-column name="holidayType" />
+		</finder>
+
+		<finder return-type="Collection" name="F_NEWER_THAN">
+			<finder-column name="groupId"></finder-column>
+			<finder-column name="holidayDate" comparator="&gt;="></finder-column>
+		</finder>
+
 	</entity>
 	
 	<entity name="Comment" uuid="true" local-service="true"
@@ -322,15 +340,35 @@
 		<column name="pings" type="String"></column>
 		<column name="upvoteCount" type="int" />
 		<column name="userHasUpvoted" type="String" />
+		<column name="upvotedUsers" type="String" />
 
 		<!-- Order -->
 		<order by="asc">
 			<order-column name="modifiedDate" />
 		</order>
 		
-		<finder return-type="Collection" name="F_groupId" where=" ( content is not null ) ">
+        <column name="opinion" type="boolean"></column>
+		<order by="asc">
+			<order-column name="modifiedDate" />
+		</order>
+
+		<finder return-type="Collection" name="F_groupId"
+			where=" ( content is not null ) ">
 			<finder-column name="groupId"></finder-column>
 		</finder>
+        <finder name="F_groupId_userId_className_classPK_opinion" return-type="Comment">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="userId"></finder-column>
+            <finder-column name="className"></finder-column>
+            <finder-column name="classPK"></finder-column>
+            <finder-column name="opinion"></finder-column>
+        </finder>
+        <finder name="F_groupId_className_classPK" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="className"></finder-column>
+            <finder-column name="classPK"></finder-column>
+        </finder>
+
 
 	</entity>
 	

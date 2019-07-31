@@ -55,12 +55,11 @@ public interface UserInterface {
 
 	public boolean getCheckpass(long groupId, long companyId, long id, String password, ServiceContext serviceContext);
 
-	public boolean addChangepass(long groupId, long companyId, long id, String oldPassword, String newPassword,
+	public int addChangepass(long groupId, long companyId, long id, String oldPassword, String newPassword,
 			ServiceContext serviceContext);
 	
 	public boolean addChangepass(long groupId, long companyId, long id, String oldPassword, String newPassword, int type,
 			ServiceContext serviceContext);
-
 
 	public File uploadEsign(long userId, long companyId, long groupId, long id, InputStream inputStream,
 			String fileName, String fileType, long fileSize, String destination, String desc,
@@ -76,4 +75,5 @@ public interface UserInterface {
 	public String getCertPath(long userId, long companyId, long groupId, ServiceContext serviceContext)
 			throws Exception;
 
+	public String getUserById(long userId);
 }

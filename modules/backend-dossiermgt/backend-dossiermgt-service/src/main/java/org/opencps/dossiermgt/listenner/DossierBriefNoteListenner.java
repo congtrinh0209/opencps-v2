@@ -1,5 +1,15 @@
 package org.opencps.dossiermgt.listenner;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.ModelListenerException;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.BaseModelListener;
+import com.liferay.portal.kernel.model.ModelListener;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.util.List;
 
 import org.opencps.dossiermgt.action.util.DossierContentGenerator;
@@ -15,16 +25,6 @@ import org.opencps.dossiermgt.service.ProcessStepLocalServiceUtil;
 import org.opencps.dossiermgt.service.ServiceConfigLocalServiceUtil;
 import org.osgi.service.component.annotations.Component;
 
-import com.liferay.portal.kernel.exception.ModelListenerException;
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.BaseModelListener;
-import com.liferay.portal.kernel.model.ModelListener;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
-
 @Component(immediate = true, service = ModelListener.class)
 public class DossierBriefNoteListenner extends BaseModelListener<DossierFile> {
 
@@ -39,7 +39,7 @@ public class DossierBriefNoteListenner extends BaseModelListener<DossierFile> {
 
 	@Override
 	public void onAfterUpdate(DossierFile model) throws ModelListenerException {
-		_log.info("Update DossierBriefNote=====-");
+		_log.debug("Update DossierBriefNote=====-");
 		
 		ServiceContext serviceContext = new ServiceContext();
 		serviceContext.setCompanyId(model.getCompanyId());
@@ -59,38 +59,43 @@ public class DossierBriefNoteListenner extends BaseModelListener<DossierFile> {
 //			_log.info("dossier.getServiceCode(): " + dossier.getServiceCode());
 //			_log.info("dossier.getGovAgencyCode(): " + dossier.getGovAgencyCode());
 //			_log.info("dossier.getDossierTemplateNo(): " + dossier.getDossierTemplateNo());
-			option = getProcessOption(dossier.getServiceCode(), dossier.getGovAgencyCode(),
-					dossier.getDossierTemplateNo(), groupId);
-
-			long serviceProcessId = option.getServiceProcessId();
-//			_log.info("serviceProcessId: " + serviceProcessId);
-			
-			String briefNote = StringPool.BLANK;
-			if (Validator.isNotNull(serviceProcessId)) {
-				List<ProcessStep> processStepList = ProcessStepLocalServiceUtil
-						.getProcessStepbyServiceProcessId(serviceProcessId);
-				if (processStepList != null && processStepList.size() > 0) {
-					for (ProcessStep processStep : processStepList) {
-						String briefNoteStep = processStep.getBriefNote();
-//						_log.info("briefNoteStep: " + briefNoteStep);
-						if (Validator.isNotNull(briefNoteStep)) {
-							briefNote = DossierContentGenerator.getBriefNote(groupId, dossierId, briefNoteStep);
-//							_log.info("briefNote: " + briefNote);
-							break;
+			if (dossier != null) {
+				option = getProcessOption(dossier.getServiceCode(), dossier.getGovAgencyCode(),
+						dossier.getDossierTemplateNo(), groupId);
+	
+				long serviceProcessId = option.getServiceProcessId();
+	//			_log.info("serviceProcessId: " + serviceProcessId);
+				
+				String briefNote = StringPool.BLANK;
+				if (Validator.isNotNull(serviceProcessId)) {
+					List<ProcessStep> processStepList = ProcessStepLocalServiceUtil
+							.getProcessStepbyServiceProcessId(serviceProcessId);
+					if (processStepList != null && processStepList.size() > 0) {
+						for (ProcessStep processStep : processStepList) {
+							String briefNoteStep = processStep.getBriefNote();
+	//						_log.info("briefNoteStep: " + briefNoteStep);
+							if (Validator.isNotNull(briefNoteStep)) {
+								briefNote = DossierContentGenerator.getBriefNote(groupId, dossierId, briefNoteStep);
+	//							_log.info("briefNote: " + briefNote);
+								break;
+							}
 						}
 					}
 				}
+		
+				if (Validator.isNotNull(briefNote)) {
+					DossierLocalServiceUtil.updateDossierBriefNote(dossierId, briefNote);
+				}
+			
 			}
-	
-			if (Validator.isNotNull(briefNote)) {
-				DossierLocalServiceUtil.updateDossierBriefNote(dossierId, briefNote);
-			}
+
 		} catch (PortalException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			_log.error(e);
 		}
 	}
 
-	public static DossierFile modelBeforeUpdate;
+	public DossierFile modelBeforeUpdate;
 
 	private Log _log = LogFactoryUtil.getLog(DossierBriefNoteListenner.class.getName());
 	

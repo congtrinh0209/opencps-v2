@@ -1,25 +1,10 @@
 package org.opencps.dossiermgt.service.indexer;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.regex.Pattern;
-
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-
-import org.opencps.dossiermgt.action.util.SpecialCharacterUtils;
-import org.opencps.dossiermgt.constants.DeliverableTerm;
-import org.opencps.dossiermgt.model.Deliverable;
-import org.opencps.dossiermgt.model.DossierFile;
-import org.opencps.dossiermgt.service.DeliverableLocalServiceUtil;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -31,10 +16,28 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
 import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
+
+import org.opencps.dossiermgt.action.util.SpecialCharacterUtils;
+import org.opencps.dossiermgt.constants.DeliverableTerm;
+import org.opencps.dossiermgt.constants.DossierTerm;
+import org.opencps.dossiermgt.constants.ModelKeysDeliverable;
+import org.opencps.dossiermgt.model.Deliverable;
+import org.opencps.dossiermgt.service.DeliverableLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
+
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class DeliverableIndexer extends BaseIndexer<Deliverable> {
 	public static final String CLASS_NAME = Deliverable.class.getName();
 
@@ -76,9 +79,15 @@ public class DeliverableIndexer extends BaseIndexer<Deliverable> {
 		}
 
 		// add text fields
-		if (Validator.isNotNull(object.getDeliverableCode())) {
-			document.addTextSortable(DeliverableTerm.DELIVERABLE_CODE, object.getDeliverableCode());			
+		String deliverableCode = object.getDeliverableCode();
+		if (Validator.isNotNull(deliverableCode)) {
+			document.addTextSortable(DeliverableTerm.DELIVERABLE_CODE, deliverableCode);
+			document.addTextSortable(DeliverableTerm.DELIVERABLE_CODE_SEARCH, SpecialCharacterUtils.splitSpecial(deliverableCode));
+		} else {
+			document.addTextSortable(DeliverableTerm.DELIVERABLE_CODE, StringPool.BLANK);
+			document.addTextSortable(DeliverableTerm.DELIVERABLE_CODE_SEARCH, StringPool.BLANK);
 		}
+		
 		if (Validator.isNotNull(object.getDeliverableName())) {
 			document.addTextSortable(DeliverableTerm.DELIVERABLE_NAME, object.getDeliverableName());			
 		}
@@ -104,6 +113,19 @@ public class DeliverableIndexer extends BaseIndexer<Deliverable> {
 			document.addTextSortable(DeliverableTerm.FORM_DATA, object.getFormData());			
 		}
 
+		document.addNumberSortable(ModelKeysDeliverable.ISSUEDATE, Validator.isNotNull(object.getIssueDate()) ? object.getIssueDate().getTime() : null);
+		document.addNumberSortable(ModelKeysDeliverable.EXPIREDATE, Validator.isNotNull(object.getExpireDate()) ? object.getExpireDate().getTime(): null);
+		document.addNumberSortable(ModelKeysDeliverable.REVALIDATE, Validator.isNotNull(object.getRevalidate()) ? object.getRevalidate().getTime() : null);
+		
+		document.addDateSortable(ModelKeysDeliverable.ISSUEDATE + "_date", object.getIssueDate());
+		document.addDateSortable(ModelKeysDeliverable.EXPIREDATE + "_date", object.getExpireDate());
+		document.addDateSortable(ModelKeysDeliverable.REVALIDATE + "_date", object.getRevalidate());
+		
+		document.addNumberSortable(ModelKeysDeliverable.DELIVERABLESTATE, object.getDeliverableState());
+		document.addNumberSortable(ModelKeysDeliverable.FILEENTRYID, object.getFileEntryId());
+		document.addNumberSortable(ModelKeysDeliverable.DOCSYNC, object.getDocSync());
+		document.addNumberSortable(ModelKeysDeliverable.DOSSIERID, object.getDossierId());
+		
 		// add form data detail
 		String formData = object.getFormData();
 		if (Validator.isNotNull(formData)) {
@@ -114,14 +136,27 @@ public class DeliverableIndexer extends BaseIndexer<Deliverable> {
 			if (keyValues != null) {
 				for (Object[] keyValue : keyValues) {
 //					_log.info("=========DELIVERABLE_INDEX_FORM_DATA========:" + keyValue[0] + "_" + keyValue[1]);
-                    document.addKeyword(
-                        keyValue[0].toString(), keyValue[1].toString());
-					document.addKeyword(keyValue[0].toString().toLowerCase(),
+//                    document.addKeyword(
+//                        keyValue[0].toString() + "_data", keyValue[1].toString());
+					document.addKeyword(keyValue[0].toString().toLowerCase()+ "_data",
 							keyValue[1].toString().toLowerCase());
 				}
 			}
 		}
 
+		try {
+			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(object.getFormData());
+
+			Iterator<String> keys = jsonObject.keys();
+
+			while(keys.hasNext()) {
+			    String key = keys.next();
+			    document.addTextSortable(key+ "_data", jsonObject.getString(key));
+			}
+		} catch (Exception e) {
+			_log.error(e);
+		}
+		
 		if (Validator.isNotNull(object.getFormScript())) {
 			document.addTextSortable(DeliverableTerm.FORM_SCRIPT, object.getFormScript());			
 		}
@@ -129,7 +164,7 @@ public class DeliverableIndexer extends BaseIndexer<Deliverable> {
 			document.addTextSortable(DeliverableTerm.FORM_REPORT, object.getFormReport());			
 		}
 		if (Validator.isNotNull(object.getDeliverableState())) {
-			document.addTextSortable(DeliverableTerm.DELIVERABLE_STATE, object.getDeliverableState());			
+			document.addNumberSortable(DeliverableTerm.DELIVERABLE_STATE, object.getDeliverableState());			
 		}
 
 		return document;
@@ -201,6 +236,7 @@ public class DeliverableIndexer extends BaseIndexer<Deliverable> {
 			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(formData);
 			parseJSONObject(keyValues, jsonObject);
 		} catch (Exception e) {
+			_log.error(e);
 			_log.info("Can not parse json object from FormData: =>"
 					+ " : Cause " + e.getCause());
 		}
@@ -237,6 +273,7 @@ public class DeliverableIndexer extends BaseIndexer<Deliverable> {
 					keyValues.add(keyValue);
 					parseJSONObjectIndex(keyValues, json.getJSONObject(key), key);
 				} catch (JSONException e) {
+					_log.debug(e);
 					// string
 					Object[] keyValue = new Object[2];
 					keyValue[0] = key;
@@ -278,6 +315,7 @@ public class DeliverableIndexer extends BaseIndexer<Deliverable> {
 					keyValues.add(keyValue);
 					parseJSONObjectIndex(keyValues, json.getJSONObject(key), keyValue[0].toString());
 				} catch (JSONException e) {
+					_log.error(e);
 					// string
 					Object[] keyValue = new Object[2];
 					keyValue[0] = keyJson + "@" + key;

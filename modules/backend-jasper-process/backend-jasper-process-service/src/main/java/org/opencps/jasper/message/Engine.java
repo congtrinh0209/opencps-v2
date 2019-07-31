@@ -43,39 +43,37 @@ public class Engine implements MessageListener {
 
 			String className = msgData.getString("className");
 
-			if (className.equals("org.opencps.dossiermgt.model.DossierFile")) {
-			JSONObject jsonData = JSONFactoryUtil.createJSONObject();
-			try {
-				jsonData = JSONFactoryUtil.createJSONObject(msgData.getString("formData"));
-			} catch (JSONException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-
-			String fileExport = JRReportUtil.createReportFile(msgData.getString("jrxmlTemplate"),
-					jsonData.toJSONString(), null, file.getCanonicalPath());
-
-			if (Validator.isNotNull(fileExport)) {
-				
-				_log.info("Jasper export success: " + fileExport);
-				
-				JSONObject msgDataIn = JSONFactoryUtil.createJSONObject();
-				msgDataIn.put("className", className);
-				msgDataIn.put("classPK", classPK);
-				msgDataIn.put("userId", userId);
-				msgDataIn.put("filePath", fileExport );
-				
-				message.put("msgToEngine", msgDataIn);
-				MessageBusUtil.sendMessage("jasper/dossier/in/destination", message);
-				}				
-			}
-			else if (className.equals("org.opencps.dossiermgt.Deliverable")) {
+			if ("org.opencps.dossiermgt.model.DossierFile".equals(className)) {
 				JSONObject jsonData = JSONFactoryUtil.createJSONObject();
 				try {
 					jsonData = JSONFactoryUtil.createJSONObject(msgData.getString("formData"));
 				} catch (JSONException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					_log.error(e1);
+				}
+	
+				String fileExport = JRReportUtil.createReportFile(msgData.getString("jrxmlTemplate"),
+						jsonData.toJSONString(), null, file.getCanonicalPath());
+
+				if (Validator.isNotNull(fileExport)) {
+				
+					_log.info("Jasper export success: " + fileExport);
+					
+					JSONObject msgDataIn = JSONFactoryUtil.createJSONObject();
+					msgDataIn.put("className", className);
+					msgDataIn.put("classPK", classPK);
+					msgDataIn.put("userId", userId);
+					msgDataIn.put("filePath", fileExport );
+					
+					message.put("msgToEngine", msgDataIn);
+					MessageBusUtil.sendMessage("jasper/dossier/in/destination", message);
+				}				
+			}
+			else if ("org.opencps.dossiermgt.model.Deliverable".equals(className)) {
+				JSONObject jsonData = JSONFactoryUtil.createJSONObject();
+				try {
+					jsonData = JSONFactoryUtil.createJSONObject(msgData.getString("formData"));
+				} catch (JSONException e1) {
+					_log.error(e1);
 				}
 
 				String fileExport = JRReportUtil.createReportFile(msgData.getString("jrxmlTemplate"),
@@ -95,9 +93,58 @@ public class Engine implements MessageListener {
 					MessageBusUtil.sendMessage("jasper/dossier/in/destination", message);
 				}								
 			}
+			else if ("org.opencps.deliverable.model.OpenCPSDeliverable".equals(className)) {
+				JSONObject jsonData = JSONFactoryUtil.createJSONObject();
+				try {
+					jsonData = JSONFactoryUtil.createJSONObject(msgData.getString("formData"));
+				} catch (JSONException e1) {
+					_log.error(e1);
+				}
+
+				String fileExport = JRReportUtil.createReportFile(msgData.getString("jrxmlTemplate"),
+						jsonData.toJSONString(), null, file.getCanonicalPath());
+
+				if (Validator.isNotNull(fileExport)) {
+					
+					_log.info("Jasper export success: " + fileExport);
+					
+					JSONObject msgDataIn = JSONFactoryUtil.createJSONObject();
+					msgDataIn.put("className", className);
+					msgDataIn.put("classPK", classPK);
+					msgDataIn.put("userId", userId);
+					msgDataIn.put("filePath", fileExport );
+					
+					message.put("msgToEngine", msgDataIn);
+					MessageBusUtil.sendMessage("jasper/dossier/in/destination", message);
+				}								
+			}
+			else if ("org.opencps.dossiermgt.model.DossierDocument".equals(className)) {
+				JSONObject jsonData = JSONFactoryUtil.createJSONObject();
+				try {
+					jsonData = JSONFactoryUtil.createJSONObject(msgData.getString("formData"));
+				} catch (JSONException e1) {
+					_log.error(e1);
+				}
+
+				String fileExport = JRReportUtil.createReportFile(msgData.getString("jrxmlTemplate"),
+						jsonData.toJSONString(), null, file.getCanonicalPath());
+
+				if (Validator.isNotNull(fileExport)) {
+					
+					_log.info("Jasper export success: " + fileExport);
+					
+					JSONObject msgDataIn = JSONFactoryUtil.createJSONObject();
+					msgDataIn.put("className", className);
+					msgDataIn.put("classPK", classPK);
+					msgDataIn.put("userId", userId);
+					msgDataIn.put("filePath", fileExport );
+					
+					message.put("msgToEngine", msgDataIn);
+					MessageBusUtil.sendMessage("jasper/dossier/in/destination", message);
+				}												
+			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			_log.error(e);
 		}
 
 	}

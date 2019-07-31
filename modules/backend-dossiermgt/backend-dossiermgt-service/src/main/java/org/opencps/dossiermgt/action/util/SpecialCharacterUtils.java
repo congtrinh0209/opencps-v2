@@ -1,24 +1,24 @@
 package org.opencps.dossiermgt.action.util;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.regex.Pattern;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public class SpecialCharacterUtils {
 
 	private static Log _log = LogFactoryUtil.getLog(SpecialCharacterUtils.class);
 	
 	public static String splitSpecial(String value) {
-		String[] charSpecialArr = new String[]{"+", "-", "=", "&&", "||", ">", "<", "!", "(", ")", "{", "}", "[", "]", "^", "~", "?", ":","\\", "/"};
+		String[] charSpecialArr = new String[]{"+", "-", "=", "&&", "||", ">", "<", "!", "(", ")", "{", "}", "[", "]", "^", "~", "?", ":","\\", "/",".", ","};
 		String valueSplit = StringPool.BLANK;
 		for (int i = 0; i < charSpecialArr.length; i++) {
 			String specialCharacter = charSpecialArr[i];
@@ -64,6 +64,8 @@ public class SpecialCharacterUtils {
 			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(formData);
 			parseJSONObject(keyValues, jsonObject);
 		} catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
 			_log.info("Can not parse json object from FormData: =>"
 					+ " : Cause " + e.getCause());
 		}
@@ -99,6 +101,8 @@ public class SpecialCharacterUtils {
 					keyValues.add(keyValue);
 					parseJSONObjectIndex(keyValues, json.getJSONObject(key), key);
 				} catch (JSONException e) {
+					_log.debug(e);
+					//_log.error(e);
 					// string
 					Object[] keyValue = new Object[2];
 					keyValue[0] = key;
@@ -138,6 +142,8 @@ public class SpecialCharacterUtils {
 					keyValues.add(keyValue);
 					parseJSONObjectIndex(keyValues, json.getJSONObject(key), keyValue[0].toString());
 				} catch (JSONException e) {
+					_log.debug(e);
+					//_log.error(e);
 					// string
 					Object[] keyValue = new Object[2];
 					keyValue[0] = keyJson + "@" + key;

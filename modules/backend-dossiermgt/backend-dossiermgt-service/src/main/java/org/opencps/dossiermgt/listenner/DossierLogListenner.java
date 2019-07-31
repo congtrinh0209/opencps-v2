@@ -17,7 +17,7 @@ public class DossierLogListenner extends BaseModelListener<DossierLog> {
 	public void onAfterCreate(DossierLog model) throws ModelListenerException {
 		
 		//TODO: add notification when add
-		DossierListennerUltils.createNotificationQueue(model);
+//		DossierListennerUltils.createNotificationQueue(model);
 	
 	}
 
@@ -30,14 +30,14 @@ public class DossierLogListenner extends BaseModelListener<DossierLog> {
 
 	@Override
 	public void onBeforeUpdate(DossierLog model) throws ModelListenerException {
-		try {
-			modelBeforeUpdate = DossierLogLocalServiceUtil.getDossierLog(model.getPrimaryKey());
-		} catch (Exception e) {
-			_log.error(e);
-		}
+//		try {
+//			modelBeforeUpdate = DossierLogLocalServiceUtil.getDossierLog(model.getPrimaryKey());
+//		} catch (Exception e) {
+//			_log.debug(e);
+//		}
 	}
 
-	public static DossierLog modelBeforeUpdate;
+	public DossierLog modelBeforeUpdate;
 
 	private Log _log = LogFactoryUtil.getLog(DossierLogListenner.class.getName());
 }

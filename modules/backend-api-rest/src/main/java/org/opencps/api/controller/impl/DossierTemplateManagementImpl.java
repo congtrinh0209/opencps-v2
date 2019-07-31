@@ -1,16 +1,34 @@
 package org.opencps.api.controller.impl;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.search.SortFactoryUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
-import org.apache.commons.httpclient.util.HttpURLConnection;
 import org.opencps.api.controller.DossierTemplateManagement;
-import org.opencps.api.controller.exception.ErrorMsg;
 import org.opencps.api.controller.util.DossierTemplateUtils;
 import org.opencps.api.dossiertemplate.model.DossierPartContentInputUpdateModel;
 import org.opencps.api.dossiertemplate.model.DossierPartInputModel;
@@ -24,31 +42,21 @@ import org.opencps.auth.api.BackendAuth;
 import org.opencps.auth.api.BackendAuthImpl;
 import org.opencps.auth.api.exception.NotFoundException;
 import org.opencps.auth.api.exception.UnauthenticationException;
-import org.opencps.auth.api.exception.UnauthorizationException;
-import org.opencps.auth.api.keys.ActionKeys;
 import org.opencps.dossiermgt.action.DossierTemplateActions;
 import org.opencps.dossiermgt.action.impl.DossierTemplateActionsImpl;
+import org.opencps.dossiermgt.action.util.OpenCPSConfigUtil;
 import org.opencps.dossiermgt.constants.DossierPartTerm;
 import org.opencps.dossiermgt.model.DossierPart;
 import org.opencps.dossiermgt.model.DossierTemplate;
 import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
 import org.opencps.dossiermgt.service.DossierTemplateLocalServiceUtil;
 
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.Sort;
-import com.liferay.portal.kernel.search.SortFactoryUtil;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HtmlUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
+import backend.auth.api.exception.BusinessExceptionImpl;
 
 public class DossierTemplateManagementImpl implements DossierTemplateManagement {
 
+	private static Log _log = LogFactoryUtil.getLog(DossierTemplateManagementImpl.class);
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDossierTemplates(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, DossierTemplateSearchModel query) {
@@ -83,13 +91,7 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(results).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("Content not found!");
-			error.setCode(404);
-			error.setDescription(e.getMessage());
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -107,52 +109,31 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			if (!auth.isAuth(serviceContext)) {
 				throw new UnauthenticationException();
 			}
+			String templateName = HtmlUtil.escape(input.getTemplateName());
+			String templateNo = HtmlUtil.escape(input.getTemplateNo());
+			String description = HtmlUtil.escape(input.getDescription());
+			String newFormScript = input.getNewFormScript();
+			
+//			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
+//				throw new UnauthorizationException();
+//			}
 
-			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
-				throw new UnauthorizationException();
-			}
-
-			DossierTemplate dossierTemplate = actions.updateDossierTemplate(groupId, 0l, input.getTemplateName(),
-					input.getTemplateNo(), input.getDescription(), serviceContext);
+			DossierTemplate dossierTemplate = actions.updateDossierTemplate(groupId, 0l, templateName,
+					templateNo, description, newFormScript, serviceContext);
 
 			DossierTemplateInputModel result = DossierTemplateUtils.mappingForTemplatePOST(dossierTemplate);
 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
 
 	@Override
 	public Response getDossierTemplateDetail(HttpServletRequest request, HttpHeaders header, Company company,
-			Locale locale, User user, ServiceContext serviceContext, String id) {
+			Locale locale, User user, ServiceContext serviceContext, String id, Request requestCC) {
 		DossierTemplateActions actions = new DossierTemplateActionsImpl();
 		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
@@ -166,6 +147,8 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			try {
 				dossierTemplate = actions.getDossierTemplate(dossierTemplateId);
 			} catch (Exception e) {
+				_log.debug(e);
+				//_log.error(e);
 				dossierTemplate = actions.getDossierTemplate(groupId, id);
 			}
 
@@ -174,17 +157,20 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			}
 
 			result = DossierTemplateUtils.mappingForTemplateGetDetail(dossierTemplate);
-
-			return Response.status(200).entity(result).build();
-
+			EntityTag etag = new EntityTag(Integer.toString(Long.valueOf(groupId).hashCode()));
+		    ResponseBuilder builder = requestCC.evaluatePreconditions(etag);
+			if (OpenCPSConfigUtil.isHttpCacheEnable() && builder == null) {
+				builder = Response.status(200);
+				CacheControl cc = new CacheControl();
+				cc.setMaxAge(OpenCPSConfigUtil.getHttpCacheMaxAge());
+				cc.setPrivate(true);	
+				return builder.entity(result).cacheControl(cc).build();
+			}
+			else {
+				return Response.status(200).entity(result).build();
+			}
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("Content not found!");
-			error.setCode(404);
-			error.setDescription(e.getMessage());
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -201,46 +187,25 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			if (!auth.isAuth(serviceContext)) {
 				throw new UnauthenticationException();
 			}
+			
+			String templateName = HtmlUtil.escape(input.getTemplateName());
+			String templateNo = HtmlUtil.escape(input.getTemplateNo());
+			String description = HtmlUtil.escape(input.getDescription());
+			String newFormScript = input.getNewFormScript();
 
-			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
-				throw new UnauthorizationException();
-			}
+//			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
+//				throw new UnauthorizationException();
+//			}
 
-			DossierTemplate dossierTemplate = actions.updateDossierTemplate(groupId, id, input.getTemplateName(),
-					input.getTemplateNo(), input.getDescription(), serviceContext);
+			DossierTemplate dossierTemplate = actions.updateDossierTemplate(groupId, id, templateName,
+					templateNo, description, newFormScript, serviceContext);
 
 			DossierTemplateDetailModel result = DossierTemplateUtils.mappingForTemplateGetDetail(dossierTemplate);
 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			e.printStackTrace();
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -257,9 +222,9 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 				throw new UnauthenticationException();
 			}
 
-			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
-				throw new UnauthorizationException();
-			}
+//			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
+//				throw new UnauthorizationException();
+//			}
 
 			DossierTemplate dossierTemplate = actions.removeDossierTemplate(id);
 
@@ -268,36 +233,12 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDossierParts(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, long id, DossierPartSearchModel query) {
@@ -318,7 +259,7 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			params.put(Field.GROUP_ID, String.valueOf(groupId));
 			params.put(Field.KEYWORD_SEARCH, query.getKeyword());
 
-			String templateNo = StringPool.BLANK;
+			String templateNo;
 
 			if (id != 0) {
 				DossierTemplate dossierTemplate = DossierTemplateLocalServiceUtil.fetchDossierTemplate(id);
@@ -375,13 +316,7 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(results).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("Content not found!");
-			error.setCode(404);
-			error.setDescription(e.getMessage());
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -399,13 +334,21 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 				throw new UnauthenticationException();
 			}
 
-			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
-				throw new UnauthorizationException();
-			}
+			String partNo = HtmlUtil.escape(query.getPartNo());
+			String partName = HtmlUtil.escape(query.getPartName());
+			String partTip = HtmlUtil.escape(query.getPartTip());
+			String multiple = HtmlUtil.escape(String.valueOf(query.getMultiple()));
+			String required = HtmlUtil.escape(String.valueOf(query.getRequired()));
+			String fileTemplateNo = HtmlUtil.escape(query.getFileTemplateNo());
+			String eSign = HtmlUtil.escape(String.valueOf(query.getEsign()));
+			
+//			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
+//				throw new UnauthorizationException();
+//			}
 
 			DossierTemplate dossierTemplate = DossierTemplateLocalServiceUtil.getDossierTemplate(id);
 
-			DossierPartInputModel result = new DossierPartInputModel();
+			DossierPartInputModel result;
 
 /*			DossierPart dossierPart = actions.updateDossierPart(groupId, 0l, dossierTemplate.getTemplateNo(),
 					query.getPartNo(), query.getPartName(), query.getPartTip(), query.getPartType(),
@@ -415,43 +358,23 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 */
 			
 			DossierPart dossierPart = actions.updateDossierPart(groupId, 0l,
-					dossierTemplate.getTemplateNo(), query.getPartNo(), query.getPartName(), query.getPartTip(),
-					query.getPartType(), GetterUtil.getBoolean(query.getMultiple()), StringPool.BLANK, StringPool.BLANK,
-					StringPool.BLANK, GetterUtil.getBoolean(query.getRequired()), query.getFileTemplateNo(),
-					GetterUtil.getBoolean(query.getEsign()), query.getTypeCode(), query.getDeliverableAction(),
+					dossierTemplate.getTemplateNo(), partNo, partName, partTip,
+					query.getPartType(), GetterUtil.getBoolean(multiple), StringPool.BLANK, StringPool.BLANK,
+					StringPool.BLANK, GetterUtil.getBoolean(required), fileTemplateNo,
+					GetterUtil.getBoolean(eSign), query.getTypeCode(), query.getDeliverableAction(),
 					serviceContext);
+
+			if (dossierPart != null) {
+				dossierPart.setEForm(GetterUtil.getBoolean(query.geteForm()));
+				DossierPartLocalServiceUtil.updateDossierPart(dossierPart);
+			}
 			
 			result = DossierTemplateUtils.mappingForPartPOST(dossierPart);
 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -468,11 +391,18 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 				throw new UnauthenticationException();
 			}
 
-			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
-				throw new UnauthorizationException();
-			}
+//			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
+//				throw new UnauthorizationException();
+//			}
+			String newPartNo = HtmlUtil.escape(query.getPartNo());
+			String partName = HtmlUtil.escape(query.getPartName());
+			String partTip = HtmlUtil.escape(query.getPartTip());
+			String multiple = HtmlUtil.escape(String.valueOf(query.getMultiple()));
+			String required = HtmlUtil.escape(String.valueOf(query.getRequired()));
+			String fileTemplateNo = HtmlUtil.escape(query.getFileTemplateNo());
+			String eSign = HtmlUtil.escape(String.valueOf(query.getEsign()));
 
-			DossierPartInputModel result = new DossierPartInputModel();
+			DossierPartInputModel result;
 
 			DossierTemplate dossierTemplate = DossierTemplateLocalServiceUtil.getDossierTemplate(id);
 
@@ -486,43 +416,23 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 					GetterUtil.getBoolean(query.getEsign()), serviceContext);
 */			
 			DossierPart dossierPart = actions.updateDossierPart(groupId, partUpdate.getPrimaryKey(),
-					dossierTemplate.getTemplateNo(), query.getPartNo(), query.getPartName(), query.getPartTip(),
-					query.getPartType(), GetterUtil.getBoolean(query.getMultiple()), StringPool.BLANK, StringPool.BLANK,
-					StringPool.BLANK, GetterUtil.getBoolean(query.getRequired()), query.getFileTemplateNo(),
-					GetterUtil.getBoolean(query.getEsign()), query.getTypeCode(), query.getDeliverableAction(),
+					dossierTemplate.getTemplateNo(), newPartNo, partName, partTip,
+					query.getPartType(), GetterUtil.getBoolean(multiple), StringPool.BLANK, StringPool.BLANK,
+					StringPool.BLANK, GetterUtil.getBoolean(required), fileTemplateNo,
+					GetterUtil.getBoolean(eSign), query.getTypeCode(), query.getDeliverableAction(),
 					serviceContext);
+
+			if (dossierPart != null) {
+				dossierPart.setEForm(GetterUtil.getBoolean(query.geteForm()));
+				DossierPartLocalServiceUtil.updateDossierPart(dossierPart);
+			}
 
 			result = DossierTemplateUtils.mappingForPartPOST(dossierPart);
 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -539,11 +449,11 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 				throw new UnauthenticationException();
 			}
 
-			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
-				throw new UnauthorizationException();
-			}
+//			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
+//				throw new UnauthorizationException();
+//			}
 
-			DossierPartInputModel result = new DossierPartInputModel();
+			DossierPartInputModel result;
 
 			DossierTemplate dossierTemplate = DossierTemplateLocalServiceUtil.getDossierTemplate(id);
 
@@ -557,61 +467,42 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
 
 	@Override
 	public Response getFormScript(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
-			User user, ServiceContext serviceContext, long id, String partNo) {
+			User user, ServiceContext serviceContext, String id, String partNo) {
 
 		DossierTemplateActions actions = new DossierTemplateActionsImpl();
 		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+		long dossierTempId = GetterUtil.getLong(id);
+		_log.info("dossierTempId: "+dossierTempId+"|id: "+id+"|partNo: "+partNo);
+		
 
-		DossierPartContentInputUpdateModel result = new DossierPartContentInputUpdateModel();
+//		DossierPartContentInputUpdateModel result = new DossierPartContentInputUpdateModel();
 
 		try {
 
-			String content = actions.getFormScript(groupId, id, partNo);
+			if (dossierTempId == 0) {
+				DossierTemplate dossierTemp = DossierTemplateLocalServiceUtil.getByTemplateNo(groupId, id);
+				if (dossierTemp != null) {
+					dossierTempId = dossierTemp.getDossierTemplateId();
+				}
+			}
+			String content = actions.getFormScript(groupId, dossierTempId, partNo);
+			JSONObject result = JSONFactoryUtil.createJSONObject();
+			result.put("value", content);
 
-			result.setValue(content);
+//			result.setValue(content);
 
-			return Response.status(200).entity(result).build();
+			return Response.status(200).entity(content).build();
+//			return Response.status(200).entity(JSONFactoryUtil.looseSerializeDeep(result)).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("Content not found!");
-			error.setCode(404);
-			error.setDescription(e.getMessage());
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -634,13 +525,7 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("Content not found!");
-			error.setCode(404);
-			error.setDescription(e.getMessage());
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -665,13 +550,7 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("Content not found!");
-			error.setCode(404);
-			error.setDescription(e.getMessage());
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -693,9 +572,9 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 				throw new UnauthenticationException();
 			}
 
-			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
-				throw new UnauthorizationException();
-			}
+//			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
+//				throw new UnauthorizationException();
+//			}
 
 			String content = actions.updateFormScript(groupId, id, partNo, input.getValue(), serviceContext);
 
@@ -706,32 +585,7 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -753,9 +607,9 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 				throw new UnauthenticationException();
 			}
 
-			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
-				throw new UnauthorizationException();
-			}
+//			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
+//				throw new UnauthorizationException();
+//			}
 
 			String content = actions.updateFormReport(groupId, id, partNo, input.getValue(), serviceContext);
 
@@ -764,32 +618,7 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -811,9 +640,9 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 				throw new UnauthenticationException();
 			}
 
-			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
-				throw new UnauthorizationException();
-			}
+//			if (!auth.hasResource(serviceContext, DossierTemplate.class.getName(), ActionKeys.ADD_ENTRY)) {
+//				throw new UnauthorizationException();
+//			}
 
 			String content = actions.updateSample(groupId, id, partNo, input.getValue(), serviceContext);
 
@@ -822,32 +651,7 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -876,23 +680,7 @@ public class DossierTemplateManagementImpl implements DossierTemplateManagement 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-
-				error.setMessage("Internal Server Error");
-				error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-				error.setDescription(e.getMessage());
-
-				return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 

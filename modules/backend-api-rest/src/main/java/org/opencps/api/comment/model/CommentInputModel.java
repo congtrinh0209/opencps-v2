@@ -7,6 +7,8 @@
 
 package org.opencps.api.comment.model;
 
+import com.liferay.petra.string.StringPool;
+
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -14,8 +16,6 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-
-import com.liferay.portal.kernel.util.StringPool;
 
 /**
  * <p>Java class for anonymous complex type. <p>The following schema fragment
@@ -49,7 +49,7 @@ import com.liferay.portal.kernel.util.StringPool;
 @XmlType(name = "", propOrder = {
 	"className", "classPK", "parent", "content", "fileName", "fileType",
 	"fileSize", "pings", "userId", "email", "fullname", "upvoteCount",
-	"userHasUpvoted"
+	"userHasUpvoted", "opinion"
 })
 @XmlRootElement(name = "CommentInputModel")
 public class CommentInputModel {
@@ -102,6 +102,9 @@ public class CommentInputModel {
 	@DefaultValue("0")
 	@FormParam(value = "upvoteCount")
 	protected Integer upvoteCount;
+
+	@FormParam(value = "opinion")
+	protected Boolean opinion;
 
 	/**
 	 * Gets the value of the className property.
@@ -356,4 +359,11 @@ public class CommentInputModel {
 		this.upvoteCount = value;
 	}
 
+	public Boolean getOpinion() {
+		return opinion;
+	}
+	
+	public void setOpinion(Boolean value) {
+		this.opinion = value;
+	}
 }

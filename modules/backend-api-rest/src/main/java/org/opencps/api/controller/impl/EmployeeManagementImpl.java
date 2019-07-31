@@ -1,5 +1,24 @@
 package org.opencps.api.controller.impl;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.search.SortFactoryUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,43 +46,27 @@ import org.opencps.api.employee.model.EmployeeJobposResults;
 import org.opencps.api.employee.model.EmployeeModel;
 import org.opencps.api.employee.model.EmployeeResults;
 import org.opencps.api.error.model.ErrorMsg;
+import org.opencps.auth.utils.APIDateTimeUtils;
+import org.opencps.communication.model.ServerConfig;
+import org.opencps.communication.service.ServerConfigLocalServiceUtil;
+import org.opencps.dossiermgt.action.util.SpecialCharacterUtils;
 import org.opencps.usermgt.action.EmployeeInterface;
 import org.opencps.usermgt.action.impl.EmployeeActions;
 import org.opencps.usermgt.constants.EmployeeJobPosTerm;
 import org.opencps.usermgt.constants.EmployeeTerm;
-import org.opencps.usermgt.exception.DuplicateEmployeeEmailException;
-import org.opencps.usermgt.exception.DuplicateEmployeeNoException;
 import org.opencps.usermgt.model.Employee;
 import org.opencps.usermgt.model.EmployeeJobPos;
 import org.opencps.usermgt.service.EmployeeLocalServiceUtil;
 import org.opencps.usermgt.utils.DateTimeUtils;
 
-import com.liferay.asset.kernel.exception.DuplicateCategoryException;
-import com.liferay.portal.kernel.exception.NoSuchUserException;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.repository.model.FileEntry;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Sort;
-import com.liferay.portal.kernel.search.SortFactoryUtil;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.service.UserLocalServiceUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.kernel.workflow.WorkflowConstants;
-
-import backend.auth.api.exception.UnauthenticationException;
-import backend.auth.api.exception.UnauthorizationException;
+import backend.auth.api.exception.BusinessExceptionImpl;
 
 public class EmployeeManagementImpl implements EmployeeManagement {
 
 	private static final Log _log = LogFactoryUtil.getLog(EmployeeManagementImpl.class);
+	private static final String SERVER = "SERVER_";
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getEmployees(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, DataSearchModel query) {
@@ -72,11 +75,8 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 		try {
 
 			if (query.getEnd() == 0) {
-
 				query.setStart(-1);
-
 				query.setEnd(-1);
-
 			}
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
@@ -88,6 +88,13 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			params.put(EmployeeTerm.WORKING_UNIT_ID, query.getWorkingunit());
 			params.put(EmployeeTerm.JOB_POS_ID, query.getJobpos());
 			params.put(EmployeeTerm.WORKING_STATUS, query.getStatus());
+
+			String jobposCode = query.getJobposCode();
+			String jobposCodeSearch = StringPool.BLANK;
+			if (Validator.isNotNull(jobposCode)) {
+				jobposCodeSearch = SpecialCharacterUtils.splitSpecial(jobposCode);
+			}
+			params.put(EmployeeTerm.JOB_POS_CODE_SEARCH, jobposCodeSearch);
 
 			if(Validator.isNotNull(query.getActive())){
 				params.put(EmployeeTerm.ACTIVE,
@@ -112,14 +119,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -161,9 +161,16 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			Date recruitDate = DateTimeUtils.convertStringToDateAPI(input.getRecruitDate());
 			Date leaveDate = DateTimeUtils.convertStringToDateAPI(input.getLeaveDate());
 
-			Employee employee = actions.create(user.getUserId(), company.getCompanyId(), groupId, input.getEmployeeNo(),
-					input.getFullName(), input.getEmail(), input.getGender(), birthDate, input.getTelNo(),
-					input.getMobile(), input.getTitle(), input.getWorkingStatus(), recruitDate, leaveDate,
+			String fullName = HtmlUtil.escape(input.getFullName());
+			String employeeNo = HtmlUtil.escape(input.getEmployeeNo());
+			String telNo = HtmlUtil.escape(input.getTelNo());
+			String mobile = HtmlUtil.escape(input.getMobile());
+			String email = HtmlUtil.escape(input.getEmail());
+			String title = HtmlUtil.escape(input.getTitle());
+			
+			Employee employee = actions.create(user.getUserId(), company.getCompanyId(), groupId, employeeNo,
+					fullName, email, input.getGender(), birthDate, telNo,
+					mobile, title, input.getWorkingStatus(), recruitDate, leaveDate,
 					serviceContext);
 
 			employeeModel = EmployeeUtils.mapperEmployeeModel(employee);
@@ -171,73 +178,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).entity(employeeModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict! User");
-				error.setCode(409);
-				error.setDescription("conflict! User");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateEmployeeNoException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("duplicate-employee-no");
-				error.setCode(409);
-				error.setDescription("duplicate-employee-no");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateEmployeeEmailException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("duplicate-employee-email");
-				error.setCode(409);
-				error.setDescription("duplicate-employee-email");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -255,9 +196,16 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			Date recruitDate = DateTimeUtils.convertStringToDateAPI(input.getRecruitDate());
 			Date leaveDate = DateTimeUtils.convertStringToDateAPI(input.getLeaveDate());
 
+			String fullName = HtmlUtil.escape(input.getFullName());
+			String employeeNo = HtmlUtil.escape(input.getEmployeeNo());
+			String telNo = HtmlUtil.escape(input.getTelNo());
+			String mobile = HtmlUtil.escape(input.getMobile());
+			String email = HtmlUtil.escape(input.getEmail());
+			String title = HtmlUtil.escape(input.getTitle());
+
 			Employee employee = actions.update(user.getUserId(), company.getCompanyId(), groupId, id,
-					input.getEmployeeNo(), input.getFullName(), input.getEmail(), input.getGender(), birthDate,
-					input.getTelNo(), input.getMobile(), input.getTitle(), input.getWorkingStatus(), recruitDate,
+					employeeNo, fullName, email, input.getGender(), birthDate,
+					telNo, mobile, title, input.getWorkingStatus(), recruitDate,
 					leaveDate, serviceContext);
 
 			employeeModel = EmployeeUtils.mapperEmployeeModel(employee);
@@ -265,73 +213,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).entity(employeeModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateEmployeeNoException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("duplicate employeeNo");
-				error.setCode(409);
-				error.setDescription("duplicate employeeNo");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateEmployeeEmailException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("duplicate employee email");
-				error.setCode(409);
-				error.setDescription("duplicate employee email");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -345,47 +227,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).build();
 
 		} catch (Exception e) {
-			_log.error("@DELETE: " + e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@DELETE: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@DELETE: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@DELETE: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -410,21 +252,15 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 
 				return responseBuilder.build();
 			}else{
-				ErrorMsg error = new ErrorMsg();
-				error.setMessage("file not found!");
-				error.setCode(404);
-				error.setDescription("file not found!");
-				return Response.status(404).entity(error).build();
+//				ErrorMsg error = new ErrorMsg();
+//				error.setMessage("file not found!");
+//				error.setCode(404);
+//				error.setDescription("file not found!");
+				return Response.status(404).entity("").build();
 			}
 
 		} catch (Exception e) {
-			_log.error("Can not get employee photo employeeId = " + id + " " + e);
-
-			ErrorMsg error = new ErrorMsg();
-			error.setMessage("file not found!");
-			error.setCode(404);
-			error.setDescription("file not found!");
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -435,9 +271,8 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 		EmployeeInterface actions = new EmployeeActions();
 		InputStream inputStream = null;
 
-		DataHandler dataHandler = attachment.getDataHandler();
-
 		try {
+			DataHandler dataHandler = attachment.getDataHandler();
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
@@ -457,48 +292,19 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 
 			return responseBuilder.build();
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-			} else if (e instanceof UnauthorizationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			} else if (e instanceof NoSuchUserException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-			} else {
-				return Response.status(500).build();
-			}
+			return BusinessExceptionImpl.processException(e);
 
 		} finally {
 			try {
-				inputStream.close();
+				if (inputStream != null)
+					inputStream.close();
 			} catch (IOException e) {
 				_log.error(e);
 			}
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getEmployeeJobpos(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, long id, DataSearchModel query) {
@@ -507,11 +313,8 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 		try {
 
 			if (query.getEnd() == 0) {
-
 				query.setStart(-1);
-
 				query.setEnd(-1);
-
 			}
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
@@ -535,14 +338,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			_log.error("/ @GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -565,60 +361,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).entity(employeeJobposModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -641,47 +384,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).entity(employeeJobposModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -696,47 +399,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).build();
 
 		} catch (Exception e) {
-			_log.error("@DELETE: " + e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@DELETE: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@DELETE: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@DELETE: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -745,6 +408,17 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			Locale locale, User user, ServiceContext serviceContext, long id, EmployeeAccountInputModel input) {
 		EmployeeInterface actions = new EmployeeActions();
 		EmployeeAccountModel employeeAccountModel = new EmployeeAccountModel();
+		
+//		try {
+//			_log.info("RESET USER ERROR");
+//
+//			Role adminRole = RoleLocalServiceUtil.getRole(20122);
+//			
+//			RoleLocalServiceUtil.addUserRole(
+//					user.getUserId(), adminRole.getRoleId());
+//		} catch (Exception e) {
+//			_log.info("RESET USER ERROR");
+//		}
 
 		try {
 
@@ -767,60 +441,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			}
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("account already exits!");
-				error.setCode(409);
-				error.setDescription("account already exits!");
-
-				return Response.status(200).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -842,47 +463,7 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).entity(employeeAccountModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -900,24 +481,11 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 			return Response.status(200).build();
 
 		} catch (Exception e) {
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getEmployeesByRole(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, long roleId, DataSearchModel query) {
@@ -971,14 +539,87 @@ public class EmployeeManagementImpl implements EmployeeManagement {
 				return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Response getEmployeesByItemCode(HttpServletRequest request, HttpHeaders header, Company company,
+			Locale locale, User user, ServiceContext serviceContext, String itemCode, DataSearchModel query) {
+		EmployeeInterface actions = new EmployeeActions();
+		EmployeeResults result = new EmployeeResults();
+		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+		try {
+
+			String serverNo = SERVER + itemCode;
+//			String jobPos = query.getJobpos();
+			ServerConfig serverConfig = ServerConfigLocalServiceUtil.getByCode(groupId, serverNo);
+
+			long groupIdEmp = 0;
+			if (serverConfig != null) {
+				String config = serverConfig.getConfigs();
+				if (Validator.isNotNull(config)) {
+					JSONObject jsonConfig = JSONFactoryUtil.createJSONObject(config);
+					if (jsonConfig != null) {
+						groupIdEmp = GetterUtil.getLong(jsonConfig.getString("groupId"));
+					}
+				}
+			}
+			if (groupIdEmp > 0) {
+				if (query.getEnd() == 0) {
+					query.setStart(-1);
+					query.setEnd(-1);
+				}
+
+				LinkedHashMap<String, Object> params = new LinkedHashMap<String, Object>();
+
+				params.put("groupId", String.valueOf(groupIdEmp));
+				params.put("keywords", query.getKeywords());
+				params.put(EmployeeTerm.WORKING_UNIT_ID, query.getWorkingunit());
+				params.put(EmployeeTerm.JOB_POS_ID, query.getJobpos());
+				params.put(EmployeeTerm.WORKING_STATUS, query.getStatus());
+				params.put(EmployeeTerm.FULL_NAME, query.getEmployeeName());
+
+				Sort[] sorts = new Sort[] { SortFactoryUtil.create(query.getSort() + "_sortable", Sort.STRING_TYPE,
+						Boolean.valueOf(query.getOrder())) };
+
+				JSONObject jsonData = actions.getEmployees(user.getUserId(), company.getCompanyId(), groupId, params, sorts,
+						query.getStart(), query.getEnd(), serviceContext);
+
+//				int total = 0;
+//				if (jsonData != null && jsonData.getLong("total") > 0) {
+					// if (Validator.isNotNull(jobPos)) {
+					// List<Document> docList = (List<Document>)
+					// jsonData.get("data");
+					// if (docList != null && docList.size() > 0) {
+					// for (Document document : docList) {
+					// String jobPosCode =
+					// GetterUtil.getString(document.get(""));
+					// }
+					// } else {
+					// result.setTotal(0);
+					// }
+					// } else {
+					// result.setTotal(jsonData.getLong("total"));
+					// result.getEmployeeModel().addAll(EmployeeUtils.mapperEmployeeList((List<Document>)
+					// jsonData.get("data")));
+					// }
+					// } else {
+					// result.setTotal(jsonData.getLong("total"));
+					// }
+					result.setTotal(jsonData.getLong("total"));
+					result.getEmployeeModel()
+							.addAll(EmployeeUtils.mapperEmployeeList((List<Document>) jsonData.get("data")));
+//				} else {
+//					result.setTotal(0);
+//				}
+			}
+			return Response.status(200).entity(result).build();
+
+		} catch (Exception e) {
+			return BusinessExceptionImpl.processException(e);
+		}
+	}
+
 }

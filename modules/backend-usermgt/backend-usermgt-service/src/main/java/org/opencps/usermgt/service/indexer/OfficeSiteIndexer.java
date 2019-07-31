@@ -6,10 +6,11 @@ import java.util.Locale;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
 
+import org.opencps.usermgt.constants.CommonTerm;
 import org.opencps.usermgt.constants.OfficeSiteTerm;
-import org.opencps.usermgt.constants.ResourceRoleTerm;
 import org.opencps.usermgt.model.OfficeSite;
 import org.opencps.usermgt.service.OfficeSiteLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
@@ -30,6 +31,10 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class OfficeSiteIndexer extends BaseIndexer<OfficeSite> {
 
 	public static final String CLASS_NAME = OfficeSite.class.getName();
@@ -119,14 +124,14 @@ public class OfficeSiteIndexer extends BaseIndexer<OfficeSite> {
 
 	@Override
 	protected String doGetSortField(String orderByCol) {
-		if (orderByCol.equals("email-address")) {
-			return "emailAddress";
-		} else if (orderByCol.equals("first-name")) {
-			return "firstName";
-		} else if (orderByCol.equals("job-title")) {
-			return "jobTitle";
-		} else if (orderByCol.equals("last-name")) {
-			return "lastName";
+		if (CommonTerm.EMAIL_DASH_ADDRESS.equals(orderByCol)) {
+			return CommonTerm.EMAIL_ADDRESS;
+		} else if (CommonTerm.FIRST_DASH_NAME.equals(orderByCol)) {
+			return CommonTerm.FIRST_NAME;
+		} else if (CommonTerm.JOB_DASH_TITLE.equals(orderByCol)) {
+			return CommonTerm.JOB_TITLE;
+		} else if (CommonTerm.LAST_DASH_NAME.equals(orderByCol)) {
+			return CommonTerm.LAST_NAME;
 		} else {
 			return orderByCol;
 		}

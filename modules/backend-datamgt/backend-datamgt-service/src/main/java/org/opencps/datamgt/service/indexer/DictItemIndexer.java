@@ -1,17 +1,6 @@
 package org.opencps.datamgt.service.indexer;
 
-import java.util.LinkedHashMap;
-import java.util.Locale;
-
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-
-import org.opencps.datamgt.constants.DictItemTerm;
-import org.opencps.datamgt.model.DictCollection;
-import org.opencps.datamgt.model.DictItem;
-import org.opencps.datamgt.service.DictCollectionLocalServiceUtil;
-import org.opencps.datamgt.service.DictItemLocalServiceUtil;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -27,8 +16,24 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.Locale;
+
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
+
+import org.opencps.datamgt.constants.DictItemTerm;
+import org.opencps.datamgt.model.DictCollection;
+import org.opencps.datamgt.model.DictItem;
+import org.opencps.datamgt.service.DictCollectionLocalServiceUtil;
+import org.opencps.datamgt.service.DictItemLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
+
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class DictItemIndexer extends BaseIndexer<DictItem> {
 
 	public static final String CLASS_NAME = DictItem.class.getName();
@@ -71,12 +76,13 @@ public class DictItemIndexer extends BaseIndexer<DictItem> {
 		}
 		document.addNumberSortable(DictItemTerm.PARENT_ITEM_ID, dictItem.getParentItemId());
 		document.addTextSortable(DictItemTerm.SIBLING, dictItem.getSibling());
+		document.addNumberSortable(DictItemTerm.SIBLING_SEARCH, GetterUtil.getInteger(dictItem.getSibling()));
 		document.addTextSortable(DictItemTerm.TREE_INDEX, dictItem.getTreeIndex());
 		document.addNumberSortable(DictItemTerm.LEVEL, dictItem.getLevel());
 		if (Validator.isNotNull(dictItem.getMetaData())) {
 			document.addTextSortable(DictItemTerm.META_DATA, dictItem.getMetaData());			
 		}
-		
+
 		long dictCollectionId = dictItem.getDictCollectionId();
 		
 		DictCollection dictCollection = DictCollectionLocalServiceUtil.fetchDictCollection(dictCollectionId);
@@ -84,7 +90,6 @@ public class DictItemIndexer extends BaseIndexer<DictItem> {
 		if(Validator.isNotNull(dictCollection)){
 			document.addTextSortable(DictItemTerm.DICT_COLLECTION_CODE, dictCollection.getCollectionCode());
 		}
-		
 		String parentCode = StringPool.BLANK;
 		
 		if(dictItem.getParentItemId() > 0){
@@ -93,9 +98,10 @@ public class DictItemIndexer extends BaseIndexer<DictItem> {
 			
 			if (Validator.isNotNull(parentItem) && Validator.isNotNull(parentItem.getItemCode())) {
 				parentCode = parentItem.getItemCode();
-			} else {
-				_log.info(parentItem.getItemCode());
 			}
+			//else {
+			//	_log.info(parentItem.getItemCode());
+			//}
 			
 		}  else {
 			parentCode = "0";

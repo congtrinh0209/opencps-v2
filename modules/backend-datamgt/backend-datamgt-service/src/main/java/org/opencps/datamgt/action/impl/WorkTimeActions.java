@@ -64,9 +64,11 @@ public class WorkTimeActions implements WorkTimeInterface {
 			result.put("total", total);
 
 		} catch (ParseException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		} catch (SearchException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		return result;
@@ -104,6 +106,12 @@ public class WorkTimeActions implements WorkTimeInterface {
 				workTime.getHours(), serviceContext);
 
 		return workTime;
+	}
+
+	@Override
+	public void updateWorkTimeDB(long userId, long groupId, int workTimeDay, String workTimeHours) throws NoSuchUserException {
+
+		WorkTimeLocalServiceUtil.updateWorkTimeDB(userId, groupId, workTimeDay, workTimeHours);
 	}
 
 }

@@ -1,16 +1,16 @@
 package org.opencps.dossiermgt.action.util;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class MappingDataUtils {
 
@@ -42,7 +42,7 @@ public class MappingDataUtils {
 		//Get key mappingData
 		Iterator<String> keyMapping = mappingDataJSON.keys();
 		List<String> keyMapList = new ArrayList<String>();
-		String keys = StringPool.BLANK;
+		String keys;
 		while(keyMapping.hasNext()) {
 				keys = keyMapping.next();
 				keyMapList.add(keys);
@@ -55,12 +55,12 @@ public class MappingDataUtils {
 				keys = keyFormData.next();
 				keyFormList.add(keys);
 		}
-		String valueMap = StringPool.BLANK;
+		String valueMap;
 		for (String keyMap : keyMapList) {
 			valueMap = String.valueOf(mappingDataJSON.get(keyMap));
 			String valueMapLower = valueMap.toLowerCase();
 			if (Validator.isNotNull(valueMap) && !strKeyMapping.contains(valueMapLower)) {
-				valueMap = valueMap.replaceAll(StringPool.POUND, StringPool.BLANK);
+//				valueMap = valueMap.replaceAll(StringPool.POUND, StringPool.BLANK);
 			}
 			for (String keyForm : keyFormList) {
 				String keyFormLower = keyForm.toLowerCase();

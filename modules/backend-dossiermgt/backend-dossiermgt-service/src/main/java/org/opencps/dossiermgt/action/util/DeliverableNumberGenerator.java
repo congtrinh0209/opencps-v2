@@ -1,5 +1,13 @@
 package org.opencps.dossiermgt.action.util;
 
+import com.liferay.counter.kernel.model.Counter;
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.search.ParseException;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -12,15 +20,9 @@ import org.opencps.datamgt.utils.DateTimeUtils;
 import org.opencps.dossiermgt.model.DeliverableType;
 import org.opencps.dossiermgt.service.DeliverableTypeLocalServiceUtil;
 
-import com.liferay.counter.kernel.model.Counter;
-import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
-import com.liferay.portal.kernel.search.ParseException;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
-
 public class DeliverableNumberGenerator {
+
 	public static String generateReferenceUID(long groupId) {
-		// TODO add more logic here for the generate by pattern
 
 		return UUID.randomUUID().toString();
 	}
@@ -58,7 +60,7 @@ public class DeliverableNumberGenerator {
 					String tmp = m.group(1);
 
 					if (r.toString().equals(codePattern)) {
-						String number = countByInit(pattern, Integer.valueOf(deliverableType.getCounter()));
+						String number = countByInit(pattern, deliverableType.getCounter());
 
 						tmp = tmp.replaceAll(tmp.charAt(0) + StringPool.BLANK, String.valueOf(0));
 						if (number.length() < tmp.length()) {
@@ -66,7 +68,7 @@ public class DeliverableNumberGenerator {
 						}
 						seriNumberPattern = seriNumberPattern.replace(m.group(0), number);
 					} else if (r.toString().equals(datetimePattern)) {
-						System.out.println(tmp);
+//						System.out.println(tmp);
 
 						seriNumberPattern = seriNumberPattern.replace(m.group(0), "OK");
 
@@ -156,7 +158,8 @@ public class DeliverableNumberGenerator {
 
 
 		} catch (Exception e) {
-			
+			_log.debug(e);
+			//_log.error(e);
 			certNumber = "" + count;
 		}
 		
@@ -165,5 +168,5 @@ public class DeliverableNumberGenerator {
 	}	
 	
 	public static final String PRE_FIX_CERT = "OPENCPS_CERT@";
-	
+	private static final Log _log = LogFactoryUtil.getLog(DeliverableNumberGenerator.class);
 }

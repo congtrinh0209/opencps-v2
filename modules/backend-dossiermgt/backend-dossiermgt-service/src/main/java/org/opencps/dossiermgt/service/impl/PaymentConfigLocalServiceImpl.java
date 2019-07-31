@@ -14,14 +14,10 @@
 
 package org.opencps.dossiermgt.service.impl;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-
-import org.opencps.dossiermgt.constants.PaymentConfigTerm;
-import org.opencps.dossiermgt.model.PaymentConfig;
-import org.opencps.dossiermgt.service.base.PaymentConfigLocalServiceBaseImpl;
-
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
@@ -39,8 +35,16 @@ import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.generic.MultiMatchQuery;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.opencps.dossiermgt.constants.PaymentConfigTerm;
+import org.opencps.dossiermgt.model.DeliverableType;
+import org.opencps.dossiermgt.model.PaymentConfig;
+import org.opencps.dossiermgt.service.base.PaymentConfigLocalServiceBaseImpl;
 
 import aQute.bnd.annotation.ProviderType;
 
@@ -68,10 +72,10 @@ public class PaymentConfigLocalServiceImpl extends PaymentConfigLocalServiceBase
 	 * NOTE FOR DEVELOPERS:
 	 *
 	 * Never reference this class directly. Always use {@link
-	 * org.opencps.dossiermgt.service.PaymentConfigLocalServiceUtil} to access
-	 * the payment config local service.
+	 * org.opencps.dossiermgt.service.PaymentConfigLocalServiceUtil} to access the
+	 * payment config local service.
 	 */
-	
+
 	@Indexable(type = IndexableType.REINDEX)
 	public PaymentConfig updateInvoidForm(long paymentConfigId, String invoiceForm, ServiceContext context)
 			throws PortalException {
@@ -94,27 +98,26 @@ public class PaymentConfigLocalServiceImpl extends PaymentConfigLocalServiceBase
 		return object;
 
 	}
-	
+
 	@Indexable(type = IndexableType.REINDEX)
 	public PaymentConfig updateEConfig(long paymentConfigId, String eConfig, ServiceContext context)
 			throws PortalException {
-		
+
 		PaymentConfig object = paymentConfigPersistence.fetchByPrimaryKey(paymentConfigId);
 
 		Date now = new Date();
 
 		User userAction = userLocalService.getUser(context.getUserId());
-		
+
 		// Update audit fields
 		object.setModifiedDate(now);
 		object.setUserId(userAction.getUserId());
 		object.setUserName(userAction.getFullName());
-		
-		
+
 		object.setEpaymentConfig(eConfig);
-		
+
 		paymentConfigPersistence.update(object);
-		
+
 		return object;
 
 	}
@@ -172,9 +175,9 @@ public class PaymentConfigLocalServiceImpl extends PaymentConfigLocalServiceBase
 			object.setInvoiceTemplateNo(invoiceTemplateNo);
 			object.setInvoiceIssueNo(invoiceIssueNo);
 			object.setInvoiceLastNo(invoiceLastNo);
-			//object.setInvoiceForm(invoiceForm);
+			// object.setInvoiceForm(invoiceForm);
 			object.setBankInfo(bankInfo);
-			//object.setEpaymentConfig(epaymentConfig);
+			// object.setEpaymentConfig(epaymentConfig);
 
 		}
 
@@ -197,7 +200,7 @@ public class PaymentConfigLocalServiceImpl extends PaymentConfigLocalServiceBase
 	public PaymentConfig getPaymentConfigByGovAgencyCode(long groupId, String govAgencyCode) {
 		return paymentConfigPersistence.fetchByFB_GID_govAgencyCode(groupId, govAgencyCode);
 	}
-	
+
 	public Hits searchLucene(LinkedHashMap<String, Object> params, Sort[] sorts, int start, int end,
 			SearchContext searchContext) throws ParseException, SearchException {
 
@@ -303,6 +306,70 @@ public class PaymentConfigLocalServiceImpl extends PaymentConfigLocalServiceBase
 		return IndexSearcherHelperUtil.searchCount(searchContext, booleanQuery);
 	}
 
+	// LamTV_Process output DB
+	@Indexable(type = IndexableType.REINDEX)
+	public PaymentConfig updatePaymentConfigDB(long userId, long groupId, String govAgencyCode, String govAgencyName,
+			String govAgencyTaxNo, String invoiceTemplateNo, String invoiceIssueNo, String invoiceLastNo,
+			String bankInfo, String epaymentConfig, ServiceContext serviceContext) throws PortalException {
+
+		Date now = new Date();
+		User userAction = userPersistence.fetchByPrimaryKey(userId);
+
+		PaymentConfig object = paymentConfigPersistence.fetchByFB_GID_govAgencyCode(groupId, govAgencyCode);
+
+		if (object == null) {
+			long paymentConfigId = counterLocalService.increment(PaymentConfig.class.getName());
+			object = paymentConfigPersistence.create(paymentConfigId);
+
+		// Add audit fields
+		object.setCompanyId(serviceContext.getCompanyId());
+		object.setGroupId(groupId);
+		object.setCreateDate(now);
+		object.setModifiedDate(now);
+		object.setUserId(userAction.getUserId());
+		object.setUserName(userAction.getFullName());
+
+			object.setGovAgencyCode(govAgencyCode);
+			object.setGovAgencyName(govAgencyName);
+			object.setGovAgencyTaxNo(govAgencyTaxNo);
+			object.setInvoiceTemplateNo(invoiceTemplateNo);
+			object.setInvoiceIssueNo(invoiceIssueNo);
+			object.setInvoiceLastNo(invoiceLastNo);
+			object.setBankInfo(bankInfo);
+			object.setEpaymentConfig(epaymentConfig);
+		} else {
+			// Add audit fields
+			object.setModifiedDate(now);
+			object.setUserId(userAction.getUserId());
+			object.setUserName(userAction.getFullName());
+
+			if (Validator.isNotNull(govAgencyName)) {
+				object.setGovAgencyName(govAgencyName);
+			}
+			
+			if (Validator.isNotNull(govAgencyTaxNo)) {
+				object.setGovAgencyTaxNo(govAgencyTaxNo);
+			}
+			if (Validator.isNotNull(invoiceTemplateNo)) {
+				object.setInvoiceTemplateNo(invoiceTemplateNo);
+			}
+			if (Validator.isNotNull(invoiceIssueNo)) {
+				object.setInvoiceIssueNo(invoiceIssueNo);
+			}
+			if (Validator.isNotNull(invoiceLastNo)) {
+				object.setInvoiceLastNo(invoiceLastNo);
+			}
+			if (Validator.isNotNull(bankInfo)) {
+				object.setBankInfo(bankInfo);
+			}
+			if (Validator.isNotNull(epaymentConfig)) {
+				object.setEpaymentConfig(epaymentConfig);
+			}
+		}
+
+		return paymentConfigPersistence.update(object);
+	}
+
 	private void validateDelete(long paymentConfigId) throws PortalException {
 		// TODO add logic fod remove paymentConfig in here
 	}
@@ -313,6 +380,69 @@ public class PaymentConfigLocalServiceImpl extends PaymentConfigLocalServiceBase
 
 	}
 
+	// super_admin Generators
+	@Indexable(type = IndexableType.DELETE)
+	public PaymentConfig adminProcessDelete(Long id) {
+
+		PaymentConfig object = paymentConfigPersistence.fetchByPrimaryKey(id);
+
+		if (Validator.isNull(object)) {
+			return null;
+		} else {
+			paymentConfigPersistence.remove(object);
+		}
+
+		return object;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public PaymentConfig adminProcessData(JSONObject objectData) {
+
+		PaymentConfig object = null;
+
+		if (objectData.getLong("paymentConfigId") > 0) {
+
+			object = paymentConfigPersistence.fetchByPrimaryKey(objectData.getLong("paymentConfigId"));
+
+			object.setModifiedDate(new Date());
+
+		} else {
+
+			long id = CounterLocalServiceUtil.increment(PaymentConfig.class.getName());
+
+			object = paymentConfigPersistence.create(id);
+
+			object.setGroupId(objectData.getLong("groupId"));
+			object.setCompanyId(objectData.getLong("companyId"));
+			object.setCreateDate(new Date());
+
+		}
+
+		object.setUserId(objectData.getLong("userId"));
+		object.setUserName(objectData.getString("userName"));
+
+		object.setGovAgencyCode(objectData.getString("govAgencyCode"));
+		object.setGovAgencyName(objectData.getString("govAgencyName"));
+		object.setGovAgencyTaxNo(objectData.getString("govAgencyTaxNo"));
+		object.setInvoiceTemplateNo(objectData.getString("invoiceTemplateNo"));
+		object.setInvoiceIssueNo(objectData.getString("invoiceIssueNo"));
+		object.setInvoiceLastNo(objectData.getString("invoiceLastNo"));
+		object.setInvoiceForm(objectData.getString("invoiceForm"));
+		object.setBankInfo(objectData.getString("bankInfo"));
+		object.setEpaymentConfig(objectData.getString("epaymentConfig"));
+
+		paymentConfigPersistence.update(object);
+
+		return object;
+	}
+
+	public PaymentConfig getByInvoiceTemplateNo(long groupId, String invoiceTemplateNo) {
+		return paymentConfigPersistence.fetchByG_ITN(groupId, invoiceTemplateNo);
+	}
+
+	public List<PaymentConfig> findByG(long groupId) {
+		return paymentConfigPersistence.findByFB_GID(groupId);
+	}
 	public static final String CLASS_NAME = PaymentConfig.class.getName();
 
 }

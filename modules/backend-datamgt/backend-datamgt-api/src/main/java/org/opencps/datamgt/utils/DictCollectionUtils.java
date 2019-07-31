@@ -1,12 +1,12 @@
 package org.opencps.datamgt.utils;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+
 import org.opencps.datamgt.model.DictCollection;
 import org.opencps.datamgt.model.DictItem;
 import org.opencps.datamgt.service.DictCollectionLocalServiceUtil;
 import org.opencps.datamgt.service.DictItemLocalServiceUtil;
-
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 
 public class DictCollectionUtils {
 	/**
@@ -20,11 +20,13 @@ public class DictCollectionUtils {
 		DictItem item = null;
 
 		try {
-
 			DictCollection dc = DictCollectionLocalServiceUtil.fetchByF_dictCollectionCode(collectionCode, groupId);
 
-			item = DictItemLocalServiceUtil.fetchByF_dictItemCode(itemCode, dc.getDictCollectionId(), groupId);
+			if (dc != null) {
+				item = DictItemLocalServiceUtil.fetchByF_dictItemCode(itemCode, dc.getDictCollectionId(), groupId);
+			}
 		} catch (Exception e) {
+			_log.error(e);
 		}
 
 		return item;

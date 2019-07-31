@@ -9,7 +9,6 @@
 package org.opencps.api.serviceprocess.model;
 
 import javax.ws.rs.FormParam;
-import javax.ws.rs.QueryParam;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -61,7 +60,8 @@ import javax.xml.bind.annotation.XmlType;
     "dueDatePattern",
     "generatePassword",
     "directNotification",
-    "serverNo"
+    "serverNo",
+    "paymentFee"
 })
 @XmlRootElement(name = "ServiceProcessInputModel")
 public class ServiceProcessInputModel {
@@ -72,7 +72,7 @@ public class ServiceProcessInputModel {
 	@FormParam("description")
     protected String description;
 	@FormParam("durationCount")
-	protected  int durationCount;
+	protected Double durationCount;
 	@FormParam("durationUnit")
     protected  int durationUnit;
 	@FormParam("counter")
@@ -91,6 +91,16 @@ public class ServiceProcessInputModel {
     protected String directNotification;
 	@FormParam("serverNo")
     protected String serverNo;
+	@FormParam("paymentFee")
+    protected String paymentFee;
+
+    public String getPaymentFee() {
+		return paymentFee;
+	}
+
+	public void setPaymentFee(String paymentFee) {
+		this.paymentFee = paymentFee;
+	}
 
     /**
      * Gets the value of the processNo property.
@@ -172,7 +182,7 @@ public class ServiceProcessInputModel {
      *     {@link int }
      *     
      */
-    public int getDurationCount() {
+    public Double getDurationCount() {
         return durationCount;
     }
 
@@ -184,7 +194,7 @@ public class ServiceProcessInputModel {
      *     {@link int }
      *     
      */
-    public void setDurationCount(Integer value) {
+    public void setDurationCount(Double value) {
         this.durationCount = value;
     }
 

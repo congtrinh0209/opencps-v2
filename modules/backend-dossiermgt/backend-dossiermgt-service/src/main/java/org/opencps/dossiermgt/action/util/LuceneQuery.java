@@ -1,11 +1,6 @@
 package org.opencps.dossiermgt.action.util;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import org.opencps.auth.utils.APIDateTimeUtils;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -14,13 +9,16 @@ import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
 import com.liferay.portal.kernel.search.BooleanQueryFactoryUtil;
 import com.liferay.portal.kernel.search.SearchContext;
-import com.liferay.portal.kernel.search.TermQuery;
-import com.liferay.portal.kernel.search.TermQueryFactoryUtil;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.opencps.auth.utils.APIDateTimeUtils;
 
 public class LuceneQuery {
 	private SearchContext _searchContext;
@@ -72,7 +70,8 @@ public class LuceneQuery {
 			}
 
 		} catch (Exception e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		} finally {
 			this.setOccurs(occurs);
 			this.setParams(params);
@@ -199,7 +198,8 @@ public class LuceneQuery {
 				}
 
 			} catch (Exception e) {
-				_log.error(e);
+				_log.debug(e);
+				//_log.error(e);
 			} finally {
 				this.setOccurs(occurs);
 				this.setParams(params);
@@ -629,7 +629,7 @@ public class LuceneQuery {
 
 		List<Role> rolesUsers = new ArrayList<Role>();
 
-		List<Role> roleGroups = new ArrayList<Role>();
+		List<Role> roleGroups;
 
 		List<Role> resultRoles = new ArrayList<Role>();
 

@@ -24,9 +24,9 @@ import java.io.OutputStream;
 
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
 
 /**
  * @author trungnt
@@ -38,57 +38,56 @@ public class PDFUtil {
 
 		InputStream is = null;
 		OutputStream os = null;
-		String imagePath = StringPool.BLANK;
+//		String imagePath = StringPool.BLANK;
 		try {
 
 			DLFileEntry fileEntry = DLFileEntryLocalServiceUtil.getFileEntry(fileEntryId);
-			
+
 			if (fileEntry == null) {
 				return StringPool.BLANK;
 			}
 
-			if (!fileEntry
-				.getExtension().equals("pdf")) {
+			if (!"pdf".equals(fileEntry.getExtension())) {
 				return StringPool.BLANK;
 			}
 
-			is = fileEntry
-				.getContentStream();
+			is = fileEntry.getContentStream();
 
-			imagePath = dest + fileEntry
-				.getTitle() + StringPool.DASH + System
-					.currentTimeMillis() +
-				"_tmp." + fileEntry
-					.getExtension();
+			String imagePath = dest + fileEntry.getTitle() + StringPool.DASH + System.currentTimeMillis() + "_tmp."
+					+ fileEntry.getExtension();
 
 			os = new FileOutputStream(imagePath);
 
 			byte[] b = new byte[1024];
 			int length;
 
-			while ((length = is
-				.read(b)) != -1) {
-				os
-					.write(b, 0, length);
+			while ((length = is.read(b)) != -1) {
+				os.write(b, 0, length);
 			}
+
+			return imagePath;
 		}
 		catch (Exception e) {
-			_log
-				.error(e);
-		}
-		finally {
-			if (is != null) {
-				is
-					.close();
+			_log.error(e);
+		} finally {
+			try {
+				if (is != null) {
+					is.close();
+				}
+			} catch (IOException e1) {
+				_log.error(e1);
+			} finally {
+				try {
+					if (os != null) {
+						os.close();
+					}
+				} catch (IOException e2) {
+					_log.error(e2);
+				}
 			}
-			if (os != null) {
-				os
-					.close();
-			}
 		}
-		return imagePath;
+		return StringPool.BLANK;
 	}
 
-	private static Log _log = LogFactoryUtil
-		.getLog(PDFUtil.class);
+	private static Log _log = LogFactoryUtil.getLog(PDFUtil.class);
 }

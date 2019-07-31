@@ -159,15 +159,23 @@
 			<finder-column name="groupId"></finder-column>
 			<finder-column name="employeeNo"></finder-column>
 		</finder>
-		
+		<finder return-type="Employee" name="F_GID_EMPNO">
+			<finder-column name="groupId" />
+			<finder-column name="employeeNo" />
+		</finder>
 		<finder return-type="Collection" name="F_email">
 			<finder-column name="groupId"></finder-column>
 			<finder-column name="email"></finder-column>
 		</finder>
 		
-<finder return-type="Collection" name="G_UID">
+		<finder return-type="Collection" name="G_UID">
 			<finder-column name="groupId"></finder-column>
 			<finder-column name="userId"></finder-column>
+		</finder>
+
+		<finder return-type="Collection" name="G_EMPID">
+			<finder-column name="groupId"></finder-column>
+            <finder-column name="employeeId" comparator="=" arrayable-operator="OR"></finder-column>
 		</finder>
 	</entity>
 
@@ -186,6 +194,7 @@
 		<column name="modifiedDate" type="Date" />
 
 		<!-- Other fields -->
+		<column name="jobPosCode" type="String" />
 		<column name="title" type="String" />
 		<column name="description" type="String" />
 		<column name="mappingRoleId" type="long" />
@@ -202,6 +211,17 @@
 		<finder return-type="JobPos" name="F_mappingRoleId">
 			<finder-column name="groupId"></finder-column>
 			<finder-column name="mappingRoleId"></finder-column>
+		</finder>
+		<finder return-type="JobPos" name="F_CODE">
+			<finder-column name="groupId" />
+			<finder-column name="jobPosCode" />
+		</finder>
+		<finder return-type="Collection" name="F_mappingRoleIds">
+			<finder-column name="groupId"></finder-column>
+			<finder-column name="mappingRoleId" comparator="=" arrayable-operator="OR"></finder-column>
+		</finder>
+		<finder return-type="Collection" name="G">
+			<finder-column name="groupId"></finder-column>
 		</finder>
 		
 	</entity>
@@ -289,6 +309,14 @@
 			<finder-column name="groupId"></finder-column>
 			<finder-column name="employeeId"></finder-column>
 		</finder>
+        <finder name="F_G_jobPostId" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="jobPostId"></finder-column>
+        </finder>
+        <finder name="F_G_jobPostIds" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="jobPostId" comparator="=" arrayable-operator="OR"></finder-column>
+        </finder>
 	</entity>
 	
 	<entity name="ResourceUser" uuid="true" local-service="true"
@@ -519,21 +547,167 @@
 			<finder-column name="applicantIdNo"/>
 		</finder>
 
+		<finder return-type="Applicant" name="F_APLC_GID" >
+			<finder-column name="groupId"/>
+			<finder-column name="applicantIdNo"/>
+		</finder>
+
 		<finder return-type="Applicant" name="F_CTT_ID" unique="true">
+			<finder-column name="contactTelNo"/>
+		</finder>
+
+		<finder return-type="Applicant" name="F_GID_CTN" unique="true">
+			<finder-column name="groupId"/>
 			<finder-column name="contactTelNo"/>
 		</finder>
 
 		<finder return-type="Applicant" name="F_CTE_ID" unique="true">
 			<finder-column name="contactEmail"/>
 		</finder>
+		<finder return-type="Applicant" name="F_GID_CTEM" unique="true">
+			<finder-column name="groupId"/>
+			<finder-column name="contactEmail"/>
+		</finder>
 		
 		<finder return-type="Applicant" name="F_MAPPING_ID" unique="true">
 			<finder-column name="mappingUserId"/>
+		</finder>
+
+		<finder return-type="Collection" name="F_GID_TYPE">
+			<finder-column name="groupId" />
+			<finder-column name="applicantIdType" />
+		</finder>
+		
+		<finder return-type="Collection" name="F_APLC_IDS">
+			<finder-column name="applicantIdNo"/>
 		</finder>
 		
 		<reference entity="User" package-path="com.liferay.portal" />
 		<reference entity="Role" package-path="com.liferay.portal" />
 	</entity>
+	
+	<entity name="UserLogin" uuid="true" local-service="true"
+		remote-service="false" table="opencps_userlogin">
+
+		<!-- PK fields -->
+
+		<column name="userLoginId" primary="true" type="long" />
+
+		<!-- Group instance -->
+
+		<column name="groupId" type="long" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+		
+		<column name="sessionId" type="String" />
+		<column name="hits" type="int" />
+		<column name="logout" type="Date" />
+		<column name="ipAddress" type="String" />
+		<column name="online" type="boolean" />
+		
+        <finder name="U_S" return-type="UserLogin">
+            <finder-column name="userId"></finder-column>
+            <finder-column name="sessionId"></finder-column>
+        </finder>
+	</entity>
+	<entity name="UserTrackPath" uuid="true" local-service="true"
+		remote-service="false" table="opencps_usertrackpath">
+
+		<!-- PK fields -->
+
+		<column name="userTrackPathId" primary="true" type="long" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="long" />
+		<column name="modifiedDate" type="Date" />
+		
+		<column name="userLoginId" type="long" />
+
+		<column name="path" type="String" />
+		<column name="pathDate" type="Date" />
+	</entity>
+	<entity name="Question" uuid="false" local-service="true"
+		remote-service="false" table="opencps_question">
+
+		<!-- PK fields -->
+		<column name="questionId" type="long" primary="true" />
+
+		<!-- Audit fields -->
+		<column name="companyId" type="long" />
+		<column name="groupId" type="long" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="fullname" type="String" />
+		<column name="email" type="String" />
+		<column name="content" type="String" />
+		<column name="publish" type="int" />
+		<column name="govAgencyCode" type="String" />
+		<column name="govAgencyName" type="String" />
+		<column name="questionType" type="String" />
+
+		<!-- Order -->
+		<order by="asc">
+			<order-column name="createDate" />
+		</order>
+        <finder name="G_PL" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="publish" comparator="=" arrayable-operator="OR"></finder-column>
+        </finder>
+        <finder name="G_PL_QT" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="publish" comparator="=" arrayable-operator="OR"></finder-column>
+            <finder-column name="questionType"></finder-column>
+        </finder>
+		<finder name="G_PL_QT_GC" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="publish" comparator="=" arrayable-operator="OR"></finder-column>
+            <finder-column name="questionType"></finder-column>
+            <finder-column name="govAgencyCode"></finder-column>
+        </finder>
+	</entity>
+	
+	<entity name="Answer" uuid="false" local-service="true"
+		remote-service="false" table="opencps_answer">
+
+		<!-- PK fields -->
+		<column name="answerId" type="long" primary="true" />
+
+		<!-- Audit fields -->
+		<column name="companyId" type="long" />
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="questionId" type="long" />
+
+		<column name="content" type="String" />		
+		<column name="publish" type="int" />
+
+		<!-- Order -->
+		<order by="asc">
+			<order-column name="createDate" />
+		</order>
+        <finder name="G_Q_PL" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="questionId"></finder-column>
+            <finder-column name="publish" comparator="=" arrayable-operator="OR"></finder-column>
+        </finder>
+		
+	</entity>			
 	<exceptions>
 		<exception>NoApplicantName</exception>
 		<exception>NoApplicantIdType</exception>

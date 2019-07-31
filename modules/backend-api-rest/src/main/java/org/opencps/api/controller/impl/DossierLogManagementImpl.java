@@ -8,23 +8,20 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.httpclient.util.HttpURLConnection;
 import org.opencps.api.controller.DossierLogManagement;
-import org.opencps.api.controller.exception.ErrorMsg;
 import org.opencps.api.controller.util.DossierLogUtils;
 import org.opencps.api.dossierlog.model.DossierLogModel;
 import org.opencps.api.dossierlog.model.DossierLogResultsModel;
 import org.opencps.api.dossierlog.model.DossierLogSearchModel;
-import org.opencps.auth.api.BackendAuth;
-import org.opencps.auth.api.BackendAuthImpl;
-import org.opencps.auth.api.exception.UnauthenticationException;
-import org.opencps.auth.api.exception.UnauthorizationException;
 import org.opencps.auth.utils.APIDateTimeUtils;
 import org.opencps.dossiermgt.action.DossierLogActions;
 import org.opencps.dossiermgt.action.impl.DossierLogActionsImpl;
 import org.opencps.dossiermgt.constants.DossierLogTerm;
 import org.opencps.dossiermgt.model.DossierLog;
 
+import backend.auth.api.exception.BusinessExceptionImpl;
+
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -33,6 +30,7 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 public class DossierLogManagementImpl implements DossierLogManagement {
@@ -42,7 +40,7 @@ public class DossierLogManagementImpl implements DossierLogManagement {
 			Locale locale, User user, ServiceContext serviceContext, long id, String notificationType, String author,
 			String payload, String content) {
 
-		BackendAuth auth = new BackendAuthImpl();
+//		BackendAuth auth = new BackendAuthImpl();
 
 		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
@@ -61,15 +59,16 @@ public class DossierLogManagementImpl implements DossierLogManagement {
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			return processException(e);
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDossierLogs(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, DossierLogSearchModel query) {
 
-		BackendAuth auth = new BackendAuthImpl();
+//		BackendAuth auth = new BackendAuthImpl();
 
 		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
@@ -95,10 +94,11 @@ public class DossierLogManagementImpl implements DossierLogManagement {
 			return Response.status(200).entity(results).build();
 
 		} catch (Exception e) {
-			return processException(e);
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDossierLogById(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, DossierLogSearchModel query, long dossierId, String password) {
@@ -138,7 +138,7 @@ public class DossierLogManagementImpl implements DossierLogManagement {
 
 				model.put("dossierLogId", dossierLogId);
 
-				model.put("author", document.get(DossierLogTerm.AUTHOR));
+				model.put("author", document.get(DossierLogTerm.AUTHOR) != null ? document.get(DossierLogTerm.AUTHOR).toUpperCase() : StringPool.BLANK);
 
 				model.put("content", document.get(DossierLogTerm.CONTENT));
 
@@ -150,8 +150,11 @@ public class DossierLogManagementImpl implements DossierLogManagement {
 					date = APIDateTimeUtils.convertStringToDate(strDate, "yyyyMMddHHmmss");
 				}
 
+//				model.put("createDate", date != null
+//						? APIDateTimeUtils.convertDateToString(date, APIDateTimeUtils._TIMESTAMP) : strDate);
+
 				model.put("createDate", date != null
-						? APIDateTimeUtils.convertDateToString(date, APIDateTimeUtils._TIMESTAMP) : strDate);
+				? date.getTime() : 0l);
 
 				model.put("notificationType", document.get(DossierLogTerm.NOTIFICATION_TYPE));
 
@@ -172,36 +175,8 @@ public class DossierLogManagementImpl implements DossierLogManagement {
 			return Response.status(200).entity(results.toJSONString()).build();
 
 		} catch (Exception e) {
-			return processException(e);
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
-	private Response processException(Exception e) {
-		ErrorMsg error = new ErrorMsg();
-
-		if (e instanceof UnauthenticationException) {
-			error.setMessage("Non-Authoritative Information.");
-			error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-			error.setDescription("Non-Authoritative Information.");
-
-			return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-		} else {
-			if (e instanceof UnauthorizationException) {
-				error.setMessage("Unauthorized.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Unauthorized.");
-
-				return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-			} else {
-
-				error.setMessage("No Content.");
-				error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-				error.setDescription("No Content.");
-
-				return Response.status(HttpURLConnection.HTTP_FORBIDDEN).entity(error).build();
-
-			}
-		}
-	}
 }

@@ -4,22 +4,20 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
-import javax.sound.sampled.AudioFormat.Encoding;
 
 import org.opencps.dossiermgt.action.util.SpecialCharacterUtils;
 import org.opencps.dossiermgt.constants.RegistrationFormTerm;
 import org.opencps.dossiermgt.model.RegistrationForm;
 import org.opencps.dossiermgt.service.RegistrationFormLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -30,10 +28,13 @@ import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
 import com.liferay.portal.kernel.search.Summary;
-import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties.Convert;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class RegistrationFormIndexer extends BaseIndexer<RegistrationForm> {
 	public static final String CLASS_NAME = RegistrationForm.class.getName();
 
@@ -101,7 +102,7 @@ public class RegistrationFormIndexer extends BaseIndexer<RegistrationForm> {
 
 	protected List<Object[]> parseJSONObject(List<Object[]> keyValues, JSONObject json) {
 
-		List<Object[]> objects = new ArrayList<Object[]>();
+//		List<Object[]> objects = new ArrayList<Object[]>();
 		try {
 
 		Iterator<String> itr = json.keys();
@@ -122,6 +123,7 @@ public class RegistrationFormIndexer extends BaseIndexer<RegistrationForm> {
 				keyValues.add(keyValue);
 				parseJSONObjectIndex(keyValues, json.getJSONObject(key), key);
 			} catch (JSONException e) {
+				_log.error(e);
 				// string
 				Object[] keyValue = new Object[2];
 				keyValue[0] = key;
@@ -136,6 +138,7 @@ public class RegistrationFormIndexer extends BaseIndexer<RegistrationForm> {
 		}
 		} catch (Exception e2) {
 			//
+			_log.error(e2);
 		}
 
 		return keyValues;
@@ -143,7 +146,7 @@ public class RegistrationFormIndexer extends BaseIndexer<RegistrationForm> {
 
 	protected List<Object[]> parseJSONObjectIndex(List<Object[]> keyValues, JSONObject json, String keyJson) {
 
-		List<Object[]> objects = new ArrayList<Object[]>();
+//		List<Object[]> objects = new ArrayList<Object[]>();
 		if (json != null) {
 			Iterator<String> itr = json.keys();
 			while (itr.hasNext()) {
@@ -163,6 +166,7 @@ public class RegistrationFormIndexer extends BaseIndexer<RegistrationForm> {
 					keyValues.add(keyValue);
 					parseJSONObjectIndex(keyValues, json.getJSONObject(key), keyValue[0].toString());
 				} catch (JSONException e) {
+					_log.error(e);
 					// string
 					Object[] keyValue = new Object[2];
 					keyValue[0] = keyJson + "@" + key;

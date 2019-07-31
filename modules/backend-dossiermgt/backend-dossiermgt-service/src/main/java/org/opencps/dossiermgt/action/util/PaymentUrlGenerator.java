@@ -1,5 +1,15 @@
 package org.opencps.dossiermgt.action.util;
 
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
@@ -20,16 +30,6 @@ import org.opencps.dossiermgt.model.PaymentFile;
 import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
 import org.opencps.dossiermgt.service.PaymentConfigLocalServiceUtil;
 import org.opencps.dossiermgt.service.PaymentFileLocalServiceUtil;
-
-import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
-import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
 
 public class PaymentUrlGenerator {
 
@@ -62,9 +62,10 @@ public class PaymentUrlGenerator {
 		byte[] ba = null;
 		// create the md5 hash and UTF-8 encode it
 		try {
-			md5 = MessageDigest.getInstance("MD5");
+			md5 = MessageDigest.getInstance("SHA-256");
 			ba = md5.digest(buf.toString().getBytes("UTF-8"));
 		} catch (Exception e) {
+			_log.error(e);
 		} // wont happen
 		DateFormat df = new SimpleDateFormat("yy"); // Just the year, with 2 digits
 		String formattedDate = df.format(Calendar.getInstance().getTime());
@@ -96,8 +97,9 @@ public class PaymentUrlGenerator {
 				String merchant_code = epaymentConfigJSON.getString("paymentMerchantCode");
 
 				String good_code = generatorGoodCode(10);
-
-				String net_cost = String.valueOf((int) paymentFile.getPaymentAmount());
+				
+				String net_cost = String.valueOf(paymentFile.getPaymentAmount());
+				
 				String ship_fee = "0";
 				String tax = "0";
 
@@ -153,9 +155,12 @@ public class PaymentUrlGenerator {
 
 				// TODO : update returnURL keyPay
 
-				String return_url = StringPool.BLANK;
-				return_url = epaymentConfigJSON.getString("paymentReturnUrl")+ "/" + dossier.getReferenceUid() + "/" + paymentFile.getReferenceUid();
-
+				String return_url;
+				_log.info("SONDT GENURL paymentReturnUrl ====================== "+ JSONFactoryUtil.looseSerialize(epaymentConfigJSON));
+//				return_url = epaymentConfigJSON.getString("paymentReturnUrl")+ "/" + dossier.getReferenceUid() + "/" + paymentFile.getReferenceUid();
+				return_url = epaymentConfigJSON.getString("paymentReturnUrl")+ "&dossierId=" + dossier.getDossierId() + "&goodCode=" + good_code + "&transId=" + merchant_trans_id + "&referenceUid=" + dossier.getReferenceUid();
+				_log.info("SONDT GENURL paymentReturnUrl ====================== "+ return_url);
+				// http://119.17.200.66:2681/web/bo-van-hoa/dich-vu-cong/#/thanh-toan-thanh-cong?paymentPortal=KEYPAY&dossierId=77603&goodCode=123&transId=555
 				KeyPay keypay = new KeyPay(String.valueOf(merchant_trans_id), merchant_code, good_code, net_cost,
 						ship_fee, tax, bank_code, service_code, version, command, currency_code, desc_1, desc_2, desc_3,
 						desc_4, desc_5, xml_description, current_locale, country_code, return_url, internal_bank,
@@ -227,18 +232,18 @@ public class PaymentUrlGenerator {
 	 * @param dossierId
 	 * @return
 	 */
-	private static Dossier _getDossier(long dossierId) {
-
-		Dossier dossier = null;
-
-		try {
-			dossier = DossierLocalServiceUtil.fetchDossier(dossierId);
-		} catch (Exception e) {
-			_log.error(e);
-		}
-
-		return dossier;
-	}
+//	private static Dossier _getDossier(long dossierId) {
+//
+//		Dossier dossier = null;
+//
+//		try {
+//			dossier = DossierLocalServiceUtil.fetchDossier(dossierId);
+//		} catch (Exception e) {
+//			_log.error(e);
+//		}
+//
+//		return dossier;
+//	}
 
 	private static List<String> _putPaymentMessage(String pattern) {
 
@@ -282,36 +287,38 @@ public class PaymentUrlGenerator {
 	 * @param paymentFileId
 	 * @return
 	 */
-	private static PaymentFile _getPaymentFileById(long paymentFileId) {
-
-		PaymentFile paymentFile = null;
-
-		try {
-			paymentFile = PaymentFileLocalServiceUtil.fetchPaymentFile(paymentFileId);
-		} catch (Exception e) {
-			paymentFile = null;
-		}
-
-		return paymentFile;
-	}
+//	private static PaymentFile _getPaymentFileById(long paymentFileId) {
+//
+//		PaymentFile paymentFile = null;
+//
+//		try {
+//			paymentFile = PaymentFileLocalServiceUtil.fetchPaymentFile(paymentFileId);
+//		} catch (Exception e) {
+//			_log.error(e);
+//			paymentFile = null;
+//		}
+//
+//		return paymentFile;
+//	}
 
 	/**
 	 * @param groupId
 	 * @param govAgencyOrganizationId
 	 * @return
 	 */
-	private static PaymentConfig _getPaymentConfig(long groupId, String govAgencyCode) {
-
-		PaymentConfig paymentConfig = null;
-
-		try {
-			paymentConfig = PaymentConfigLocalServiceUtil.getPaymentConfigByGovAgencyCode(groupId, govAgencyCode);
-		} catch (Exception e) {
-			paymentConfig = null;
-		}
-
-		return paymentConfig;
-	}
+//	private static PaymentConfig _getPaymentConfig(long groupId, String govAgencyCode) {
+//
+//		PaymentConfig paymentConfig = null;
+//
+//		try {
+//			paymentConfig = PaymentConfigLocalServiceUtil.getPaymentConfigByGovAgencyCode(groupId, govAgencyCode);
+//		} catch (Exception e) {
+//			_log.error(e);
+//			paymentConfig = null;
+//		}
+//
+//		return paymentConfig;
+//	}
 
 	/**
 	 * @param length
@@ -321,7 +328,7 @@ public class PaymentUrlGenerator {
 
 		String tempGoodCode = _generatorUniqueString(length);
 
-		String goodCode = StringPool.BLANK;
+		String goodCode;
 
 		while (_checkContainsGoodCode(tempGoodCode)) {
 			tempGoodCode = _generatorUniqueString(length);
@@ -369,13 +376,13 @@ public class PaymentUrlGenerator {
 		boolean isContains = false;
 
 		try {
-			// TODO
 			PaymentFile paymentFile = null;//PaymentFileLocalServiceUtil.getByGoodCode(keypayGoodCode);
 
 			if (Validator.isNotNull(paymentFile)) {
 				isContains = true;
 			}
 		} catch (Exception e) {
+			_log.error(e);
 			isContains = true;
 		}
 

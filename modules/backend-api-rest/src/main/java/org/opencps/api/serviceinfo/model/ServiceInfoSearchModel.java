@@ -8,14 +8,14 @@
 
 package org.opencps.api.serviceinfo.model;
 
+import com.liferay.petra.string.StringPool;
+
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-
-import com.liferay.portal.kernel.util.StringPool;
 
 
 /**
@@ -53,7 +53,9 @@ import com.liferay.portal.kernel.util.StringPool;
     "start",
     "end",
     "sort",
-    "order"
+    "order",
+    "active",
+    "top"
 })
 @XmlRootElement(name = "ServiceInfoSearchModel")
 public class ServiceInfoSearchModel {
@@ -64,7 +66,7 @@ public class ServiceInfoSearchModel {
 	@QueryParam(value = "domain")
     protected String domain;
 	@DefaultValue("0") @QueryParam(value = "level")
-    protected int level;
+    protected String level;
 	@QueryParam(value = "start")
     protected int start;
 	@QueryParam(value = "end")
@@ -73,6 +75,10 @@ public class ServiceInfoSearchModel {
     protected String sort;
 	@QueryParam(value = "order")
     protected String order;
+	@QueryParam(value = "active")
+    protected String active;
+	@QueryParam(value = "top")
+    protected String top;
 
     /**
      * Gets the value of the keyword property.
@@ -154,7 +160,7 @@ public class ServiceInfoSearchModel {
      *     {@link int }
      *     
      */
-    public int getLevel() {
+    public String getLevel() {
         return level;
     }
 
@@ -166,7 +172,7 @@ public class ServiceInfoSearchModel {
      *     {@link int }
      *     
      */
-    public void setLevel(int value) {
+    public void setLevel(String value) {
         this.level = value;
     }
 
@@ -265,5 +271,21 @@ public class ServiceInfoSearchModel {
     public void setOrder(String value) {
         this.order = value;
     }
+
+	public String getActive() {
+		return active;
+	}
+
+	public void setActive(String active) {
+		this.active = active;
+	}
+
+	public String getTop() {
+		return top;
+	}
+
+	public void setTop(String top) {
+		this.top = top;
+	}
 
 }

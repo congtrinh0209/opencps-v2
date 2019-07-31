@@ -162,7 +162,40 @@ import javax.xml.bind.annotation.XmlType;
     "notification",
     "online",
     "specialNo",
-    "lockState"
+    "lockState",
+    "delegateAddress",
+    "delegateCityCode",
+    "delegateCityName",
+    "delegateDistrictCode",
+    "delegateDistrictName",
+    "delegateEmail",
+    "delegateIdNo",
+    "delegateName",
+    "delegateTelNo",
+    "delegateWardCode",
+    "delegateWardName",
+    "dossierActionId",
+    "postalDistrictCode",
+    "postalDistrictName",
+    "postalWardCode",
+    "postalWardName",
+    "postalServiceCode",
+    "dossierTemplateName",
+    "processBlock",
+    "processUnit",
+    "paymentFee",
+    "paymentNote",
+    "durationCount",
+    "durationUnit",
+    "sampleCount",
+    "lastActionUserId",
+    "extendDate",
+    "dossierName",
+    "originality",
+    "originDossierId",
+    "originDossierNo",
+    "metaData",
+    "groupDossierId"
 })
 @XmlRootElement(name = "DossierDetailModel")
 public class DossierDetailModel {
@@ -173,7 +206,7 @@ public class DossierDetailModel {
     protected String createDate;
     protected String modifiedDate;
     protected String referenceUid;
-    protected Integer counter;
+    protected Long counter;
     protected String serviceCode;
     protected String serviceName;
     protected String govAgencyCode;
@@ -232,6 +265,135 @@ public class DossierDetailModel {
     protected String online;
     protected Integer specialNo;
     protected String lockState;
+    protected String delegateAddress;
+    protected String delegateCityCode;
+    protected String delegateCityName;
+    protected String delegateDistrictCode;
+    protected String delegateDistrictName;
+    protected String delegateEmail;
+    protected String delegateIdNo;
+    protected String delegateName;
+    protected String delegateTelNo;
+    protected String delegateWardCode;
+    protected String delegateWardName;
+    protected Long dossierActionId;
+    protected String postalDistrictCode;
+    protected String postalDistrictName;
+    protected String postalWardCode;
+    protected String postalWardName;
+    protected String postalServiceCode;
+    protected String dossierTemplateName;
+    protected String paymentFee;
+    protected String paymentNote;
+    protected Double durationCount;
+    protected Integer durationUnit;
+    protected Long sampleCount;
+	protected Double processBlock;
+    protected int processUnit;
+    protected Long lastActionUserId;
+    protected String extendDate;
+    protected String dossierName;
+    protected int originality;
+	protected Long originDossierId;
+	protected String originDossierNo;
+	protected String metaData;
+	protected Long groupDossierId;
+	
+    public Long getGroupDossierId() {
+		return groupDossierId;
+	}
+
+	public void setGroupDossierId(Long groupDossierId) {
+		this.groupDossierId = groupDossierId;
+	}
+
+	public String getPaymentFee() {
+		return paymentFee;
+	}
+
+	public void setPaymentFee(String paymentFee) {
+		this.paymentFee = paymentFee;
+	}
+
+	public String getPaymentNote() {
+		return paymentNote;
+	}
+
+	public void setPaymentNote(String paymentNote) {
+		this.paymentNote = paymentNote;
+	}
+
+	public Double getProcessBlock() {
+		return processBlock;
+	}
+
+	public void setProcessBlock(Double processBlock) {
+		this.processBlock = processBlock;
+	}
+
+	public int getProcessUnit() {
+		return processUnit;
+	}
+
+	public void setProcessUnit(int processUnit) {
+		this.processUnit = processUnit;
+	}
+
+	public String getDossierTemplateName() {
+		return dossierTemplateName;
+	}
+
+	public void setDossierTemplateName(String dossierTemplateName) {
+		this.dossierTemplateName = dossierTemplateName;
+	}
+
+	public String getPostalServiceCode() {
+		return postalServiceCode;
+	}
+
+	public void setPostalServiceCode(String postalServiceCode) {
+		this.postalServiceCode = postalServiceCode;
+	}
+
+	public String getPostalDistrictCode() {
+		return postalDistrictCode;
+	}
+
+	public void setPostalDistrictCode(String postalDistrictCode) {
+		this.postalDistrictCode = postalDistrictCode;
+	}
+
+	public String getPostalDistrictName() {
+		return postalDistrictName;
+	}
+
+	public void setPostalDistrictName(String postalDistrictName) {
+		this.postalDistrictName = postalDistrictName;
+	}
+
+	public String getPostalWardCode() {
+		return postalWardCode;
+	}
+
+	public void setPostalWardCode(String postalWardCode) {
+		this.postalWardCode = postalWardCode;
+	}
+
+	public String getPostalWardName() {
+		return postalWardName;
+	}
+
+	public void setPostalWardName(String postalWardName) {
+		this.postalWardName = postalWardName;
+	}
+
+	public Long getDossierActionId() {
+		return dossierActionId;
+	}
+
+	public void setDossierActionId(Long dossierActionId) {
+		this.dossierActionId = dossierActionId;
+	}
 
 	public String getLockState() {
 		return lockState;
@@ -400,7 +562,7 @@ public class DossierDetailModel {
      *     {@link Integer }
      *     
      */
-    public Integer getCounter() {
+    public Long getCounter() {
         return counter;
     }
 
@@ -412,7 +574,7 @@ public class DossierDetailModel {
      *     {@link Integer }
      *     
      */
-    public void setCounter(Integer value) {
+    public void setCounter(Long value) {
         this.counter = value;
     }
 
@@ -1782,6 +1944,174 @@ public class DossierDetailModel {
      */
 	public void setSpecialNo(Integer specialNo) {
 		this.specialNo = specialNo;
+	}
+
+	public String getDelegateAddress() {
+		return delegateAddress;
+	}
+
+	public void setDelegateAddress(String delegateAddress) {
+		this.delegateAddress = delegateAddress;
+	}
+
+	public String getDelegateCityCode() {
+		return delegateCityCode;
+	}
+
+	public void setDelegateCityCode(String delegateCityCode) {
+		this.delegateCityCode = delegateCityCode;
+	}
+
+	public String getDelegateCityName() {
+		return delegateCityName;
+	}
+
+	public void setDelegateCityName(String delegateCityName) {
+		this.delegateCityName = delegateCityName;
+	}
+
+	public String getDelegateDistrictCode() {
+		return delegateDistrictCode;
+	}
+
+	public void setDelegateDistrictCode(String delegateDistrictCode) {
+		this.delegateDistrictCode = delegateDistrictCode;
+	}
+
+	public String getDelegateDistrictName() {
+		return delegateDistrictName;
+	}
+
+	public void setDelegateDistrictName(String delegateDistrictName) {
+		this.delegateDistrictName = delegateDistrictName;
+	}
+
+	public String getDelegateEmail() {
+		return delegateEmail;
+	}
+
+	public void setDelegateEmail(String delegateEmail) {
+		this.delegateEmail = delegateEmail;
+	}
+
+	public String getDelegateIdNo() {
+		return delegateIdNo;
+	}
+
+	public void setDelegateIdNo(String delegateIdNo) {
+		this.delegateIdNo = delegateIdNo;
+	}
+
+	public String getDelegateName() {
+		return delegateName;
+	}
+
+	public void setDelegateName(String delegateName) {
+		this.delegateName = delegateName;
+	}
+
+	public String getDelegateTelNo() {
+		return delegateTelNo;
+	}
+
+	public void setDelegateTelNo(String delegateTelNo) {
+		this.delegateTelNo = delegateTelNo;
+	}
+
+	public String getDelegateWardCode() {
+		return delegateWardCode;
+	}
+
+	public void setDelegateWardCode(String delegateWardCode) {
+		this.delegateWardCode = delegateWardCode;
+	}
+
+	public String getDelegateWardName() {
+		return delegateWardName;
+	}
+
+	public void setDelegateWardName(String delegateWardName) {
+		this.delegateWardName = delegateWardName;
+	}
+
+	public Double getDurationCount() {
+		return durationCount;
+	}
+
+	public void setDurationCount(Double durationCount) {
+		this.durationCount = durationCount;
+	}
+
+	public Integer getDurationUnit() {
+		return durationUnit;
+	}
+
+	public void setDurationUnit(Integer durationUnit) {
+		this.durationUnit = durationUnit;
+	}
+
+	public Long getSampleCount() {
+		return sampleCount;
+	}
+
+	public void setSampleCount(Long sampleCount) {
+		this.sampleCount = sampleCount;
+	}
+
+	public Long getLastActionUserId() {
+		return lastActionUserId;
+	}
+
+	public void setLastActionUserId(Long lastActionUserId) {
+		this.lastActionUserId = lastActionUserId;
+	}
+
+	public String getExtendDate() {
+		return extendDate;
+	}
+
+	public void setExtendDate(String extendDate) {
+		this.extendDate = extendDate;
+	}
+
+	public String getDossierName() {
+		return dossierName;
+	}
+
+	public void setDossierName(String dossierName) {
+		this.dossierName = dossierName;
+	}
+
+	public int getOriginality() {
+		return originality;
+	}
+
+	public void setOriginality(int originality) {
+		this.originality = originality;
+	}
+
+	public Long getOriginDossierId() {
+		return originDossierId;
+	}
+
+	public void setOriginDossierId(Long originDossierId) {
+		this.originDossierId = originDossierId;
+	}
+
+	public String getOriginDossierNo() {
+		return originDossierNo;
+	}
+
+	public void setOriginDossierNo(String originDossierNo) {
+		this.originDossierNo = originDossierNo;
+	}
+
+	public String getMetaData() {
+		return metaData;
+	}
+
+	public void setMetaData(String metaData) {
+		this.metaData = metaData;
 	}
 
 }

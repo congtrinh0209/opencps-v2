@@ -8,9 +8,6 @@
 
 package org.opencps.api.dossier.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlType;
@@ -174,7 +171,35 @@ import javax.xml.bind.annotation.XmlType;
     "certDate",
     "endorsementDate",
     "lockState",
-    "statusReg"
+    "statusReg",
+    "durationCount",
+    "durationUnit",
+    "sampleCount",
+    "assigned",
+    "domainCode",
+    "domainName",
+    "extendDate",
+    "lastActionUserId",
+    "currentActionUser",
+    "dossierName",
+    "dueDateComing",
+    "originality",
+    "origin",
+    "originDossierId",
+    "originDossierNo",
+    "delegateName",
+    "delegateIdNo",
+    "delegateTelNo",
+    "delegateEmail",
+    "delegateAddress",
+    "delegateCityCode",
+    "delegateCityName",
+    "delegateDistrictCode",
+    "delegateDistrictName",
+    "delegateWardCode",
+    "delegateWardName",
+    "metaData",
+    "groupDossierId"
 })
 public class DossierDataModel {
 
@@ -252,6 +277,42 @@ public class DossierDataModel {
 	protected String endorsementDate;
 	protected String lockState;
 	protected String statusReg;
+	protected Double durationCount;
+	protected Integer durationUnit;
+	protected Long sampleCount;
+	protected Integer assigned;
+	protected String domainCode;
+	protected String domainName;
+	protected String extendDate;
+	protected Long lastActionUserId;
+	protected String currentActionUser;
+	protected String dossierName;
+	protected String dueDateComing;
+	protected Integer originality;
+	protected String origin;
+	protected Integer originDossierId;
+	protected String originDossierNo;
+	protected String delegateAddress;
+    protected String delegateCityCode;
+    protected String delegateCityName;
+    protected String delegateDistrictCode;
+    protected String delegateDistrictName;
+    protected String delegateEmail;
+    protected String delegateIdNo;
+    protected String delegateName;
+    protected String delegateTelNo;
+    protected String delegateWardCode;
+    protected String delegateWardName;
+    protected String metaData;
+    protected Long groupDossierId;
+
+	public Long getGroupDossierId() {
+		return groupDossierId;
+	}
+
+	public void setGroupDossierId(Long groupDossierId) {
+		this.groupDossierId = groupDossierId;
+	}
 
 	public String getStatusReg() {
 		return statusReg;
@@ -1855,33 +1916,220 @@ public class DossierDataModel {
 		this.certDate = certDate;
 	}
 
-    /**
-     * Gets the value of the data property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the data property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getCertNumber().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link DossierDataModel }
-     * 
-     * 
-     */
-//	public List<CertNumberModel> getCertNumber() {
-//		if (certNumber == null) {
-//			certNumber = new ArrayList<CertNumberModel>();
-//        }
-//        return this.certNumber;
-//	}
+	public Double getDurationCount() {
+		return durationCount;
+	}
+
+	public void setDurationCount(Double durationCount) {
+		this.durationCount = durationCount;
+	}
+
+	public Integer getDurationUnit() {
+		return durationUnit;
+	}
+
+	public void setDurationUnit(Integer durationUnit) {
+		this.durationUnit = durationUnit;
+	}
+
+	public Long getSampleCount() {
+		return sampleCount;
+	}
+
+	public void setSampleCount(Long sampleCount) {
+		this.sampleCount = sampleCount;
+	}
+
+	public Integer getAssigned() {
+		return assigned;
+	}
+
+	public void setAssigned(Integer assigned) {
+		this.assigned = assigned;
+	}
+
+	public String getDomainCode() {
+		return domainCode;
+	}
+
+	public void setDomainCode(String domainCode) {
+		this.domainCode = domainCode;
+	}
+
+	public String getDomainName() {
+		return domainName;
+	}
+
+	public void setDomainName(String domainName) {
+		this.domainName = domainName;
+	}
+
+	public String getExtendDate() {
+		return extendDate;
+	}
+
+	public void setExtendDate(String extendDate) {
+		this.extendDate = extendDate;
+	}
+
+	public Long getLastActionUserId() {
+		return lastActionUserId;
+	}
+
+	public void setLastActionUserId(Long lastActionUserId) {
+		this.lastActionUserId = lastActionUserId;
+	}
+
+	public String getCurrentActionUser() {
+		return currentActionUser;
+	}
+	
+	public void setCurrentActionUser(String currentActionUser) {
+		this.currentActionUser = currentActionUser;
+	}
+
+	public String getDossierName() {
+		return dossierName;
+	}
+
+	public void setDossierName(String dossierName) {
+		this.dossierName = dossierName;
+	}
+
+	public String getDueDateComing() {
+		return dueDateComing;
+	}
+
+	public void setDueDateComing(String value) {
+		this.dueDateComing = value;
+	}
+
+	public Integer getOriginality() {
+		return originality;
+	}
+
+	public void setOriginality(Integer originality) {
+		this.originality = originality;
+	}
+
+	public String getOrigin() {
+		return origin;
+	}
+
+	public void setOrigin(String origin) {
+		this.origin = origin;
+	}
+
+	public Integer getOriginDossierId() {
+		return originDossierId;
+	}
+
+	public void setOriginDossierId(Integer originDossierId) {
+		this.originDossierId = originDossierId;
+	}
+
+	public String getOriginDossierNo() {
+		return originDossierNo;
+	}
+
+	public void setOriginDossierNo(String originDossierNo) {
+		this.originDossierNo = originDossierNo;
+	}
+
+	public String getDelegateAddress() {
+		return delegateAddress;
+	}
+
+	public void setDelegateAddress(String delegateAddress) {
+		this.delegateAddress = delegateAddress;
+	}
+
+	public String getDelegateCityCode() {
+		return delegateCityCode;
+	}
+
+	public void setDelegateCityCode(String delegateCityCode) {
+		this.delegateCityCode = delegateCityCode;
+	}
+
+	public String getDelegateCityName() {
+		return delegateCityName;
+	}
+
+	public void setDelegateCityName(String delegateCityName) {
+		this.delegateCityName = delegateCityName;
+	}
+
+	public String getDelegateDistrictCode() {
+		return delegateDistrictCode;
+	}
+
+	public void setDelegateDistrictCode(String delegateDistrictCode) {
+		this.delegateDistrictCode = delegateDistrictCode;
+	}
+
+	public String getDelegateDistrictName() {
+		return delegateDistrictName;
+	}
+
+	public void setDelegateDistrictName(String delegateDistrictName) {
+		this.delegateDistrictName = delegateDistrictName;
+	}
+
+	public String getDelegateEmail() {
+		return delegateEmail;
+	}
+
+	public void setDelegateEmail(String delegateEmail) {
+		this.delegateEmail = delegateEmail;
+	}
+
+	public String getDelegateIdNo() {
+		return delegateIdNo;
+	}
+
+	public void setDelegateIdNo(String delegateIdNo) {
+		this.delegateIdNo = delegateIdNo;
+	}
+
+	public String getDelegateName() {
+		return delegateName;
+	}
+
+	public void setDelegateName(String delegateName) {
+		this.delegateName = delegateName;
+	}
+
+	public String getDelegateTelNo() {
+		return delegateTelNo;
+	}
+
+	public void setDelegateTelNo(String delegateTelNo) {
+		this.delegateTelNo = delegateTelNo;
+	}
+
+	public String getDelegateWardCode() {
+		return delegateWardCode;
+	}
+
+	public void setDelegateWardCode(String delegateWardCode) {
+		this.delegateWardCode = delegateWardCode;
+	}
+
+	public String getDelegateWardName() {
+		return delegateWardName;
+	}
+
+	public void setDelegateWardName(String delegateWardName) {
+		this.delegateWardName = delegateWardName;
+	}
+
+	public String getMetaData() {
+		return metaData;
+	}
+
+	public void setMetaData(String metaData) {
+		this.metaData = metaData;
+	}
 
 }

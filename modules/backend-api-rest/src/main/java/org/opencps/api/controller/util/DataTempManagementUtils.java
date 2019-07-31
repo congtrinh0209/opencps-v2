@@ -1,5 +1,17 @@
 package org.opencps.api.controller.util;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,18 +36,6 @@ import org.opencps.synchronization.model.DictItemTemp;
 import org.opencps.synchronization.service.DictCollectionTempLocalServiceUtil;
 import org.opencps.synchronization.service.DictGroupTempLocalServiceUtil;
 import org.opencps.synchronization.service.DictItemTempLocalServiceUtil;
-
-import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Sort;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
 
 public class DataTempManagementUtils {
 
@@ -252,6 +252,7 @@ public class DataTempManagementUtils {
 		return results;
 	}	
 	
+	@SuppressWarnings("unchecked")
 	public static DictItemTempDetailModel mapperDictItemTempModel(DictItemTemp dictItem, DictCollectionTempInterface dictItemDataUtil,
 			long userId, long companyId, long groupId, ServiceContext serviceContext) {
 
@@ -313,7 +314,8 @@ public class DataTempManagementUtils {
 				}
 
 			} catch (Exception e) {
-				_log.error(e);
+				//_log.error(e);
+				_log.debug(e);
 			}
 
 		} catch (Exception e) {
@@ -347,7 +349,8 @@ public class DataTempManagementUtils {
 				result.put(DictCollectionTempTerm.COLLECTION_CODE, dictCollection.getCollectionCode());
 			}
 			catch (Exception e) {
-				
+				_log.debug(e);
+				//_log.error(e);
 			}
 		}
 		else if (o instanceof DictItemTemp) {
@@ -367,14 +370,16 @@ public class DataTempManagementUtils {
 				result.put(DictCollectionTempTerm.COLLECTION_CODE, dictCollection.getCollectionCode());
 			}
 			catch (Exception e) {
-				
+				_log.debug(e);
+				//_log.error(e);
 			}			
 			try {
 				DictItemTemp parentItem = DictItemTempLocalServiceUtil.fetchDictItemTemp(dictItem.getParentItemId());
 				result.put(DictItemTempTerm.PARENT_ITEM_CODE, parentItem.getItemCode());
 			}
 			catch (Exception e) {
-				
+				_log.debug(e);
+				//_log.error(e);
 			}			
 		}
 		else if (o instanceof DictItemGroupTemp) {
@@ -392,24 +397,27 @@ public class DataTempManagementUtils {
 					result.put(DictCollectionTempTerm.COLLECTION_CODE, dictCollection.getCollectionCode());
 				}
 				catch (Exception e) {
-					
+					_log.debug(e);
+					//_log.error(e);
 				}			
 			}
 			catch (Exception e) {
-				
+				_log.debug(e);
+				//_log.error(e);
 			}			
 			try {
 				DictGroupTemp dictGroup = DictGroupTempLocalServiceUtil.fetchDictGroupTemp(dictItemGroup.getDictGroupId());
 				result.put(DictGroupTempTerm.GROUP_CODE, dictGroup.getGroupCode());
 			}
 			catch (Exception e) {
-				
+				_log.debug(e);
+				//_log.error(e);
 			}
 		}
 		
 		return result;
 	}
 	
-	public static Log _log = LogFactoryUtil.getLog(DataTempManagementUtils.class);
+	private static final Log _log = LogFactoryUtil.getLog(DataTempManagementUtils.class);
 
 }

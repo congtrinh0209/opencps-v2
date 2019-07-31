@@ -11,6 +11,7 @@ import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalServiceUtil;
 import com.liferay.document.library.kernel.service.DLAppServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
@@ -20,8 +21,6 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 public class FileUploadUtils {
@@ -43,12 +42,12 @@ public class FileUploadUtils {
 
 			calendar.setTime(new Date());
 
-			destination += calendar.get(Calendar.YEAR) + StringPool.SLASH;
-			destination += calendar.get(Calendar.MONTH) + StringPool.SLASH;
-			destination += calendar.get(Calendar.DAY_OF_MONTH);
+//			destination += calendar.get(Calendar.YEAR) + StringPool.SLASH;
+//			destination += calendar.get(Calendar.MONTH) + StringPool.SLASH;
+//			destination += calendar.get(Calendar.DAY_OF_MONTH);
 
-			DLFolder dlFolder = DLFolderUtil.getTargetFolder(userId, groupId, groupId, false, 0, destination,
-					"Comment attactment", false, serviceContext);
+//			DLFolder dlFolder = DLFolderUtil.getTargetFolder(userId, groupId, groupId, false, 0, destination,
+//					"Comment attactment", false, serviceContext);
 
 			User user = UserLocalServiceUtil.getUser(serviceContext.getUserId());
 
@@ -278,7 +277,7 @@ public class FileUploadUtils {
 	private static String getFileName(String sourceFileName) {
 		String ext = FileUtil.getExtension(sourceFileName);
 		
-		return System.currentTimeMillis() + "." + ext;
+		return Validator.isNotNull(ext) ? (System.currentTimeMillis() + "." + ext) :  String.valueOf(System.currentTimeMillis());
 	}
 
 	// Upload Payment File

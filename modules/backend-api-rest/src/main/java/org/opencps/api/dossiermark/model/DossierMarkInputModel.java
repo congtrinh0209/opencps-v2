@@ -8,7 +8,6 @@
 
 package org.opencps.api.dossiermark.model;
 
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -38,64 +37,45 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
+    "fileMark",
     "fileCheck",
-    "fileType"
+    "fileComment",
+    "recordCount"
 })
 @XmlRootElement(name = "DossierMarkInputModel")
 public class DossierMarkInputModel {
+	@FormParam(value = "fileMark")
+	protected Integer fileMark;
 	@FormParam(value = "fileCheck")
-	@DefaultValue("false")
-    protected Boolean fileCheck;
-	@FormParam(value = "fileType")
-	@DefaultValue("0")
-    protected Integer fileType;
+	protected Integer fileCheck;
+	@FormParam(value = "fileComment")
+	protected String fileComment;
+	@FormParam(value = "recordCount")
+	protected String recordCount;
 
-    /**
-     * Gets the value of the fileCheck property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Boolean }
-     *     
-     */
-    public Boolean isFileCheck() {
-        return fileCheck;
-    }
-
-    /**
-     * Sets the value of the fileCheck property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Boolean }
-     *     
-     */
-    public void setFileCheck(Boolean value) {
-        this.fileCheck = value;
-    }
-
-    /**
-     * Gets the value of the fileType property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Integer }
-     *     
-     */
-    public Integer getFileType() {
-        return fileType;
-    }
-
-    /**
-     * Sets the value of the fileType property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Integer }
-     *     
-     */
-    public void setFileType(Integer value) {
-        this.fileType = value;
-    }
+	public Integer getFileMark() {
+		return fileMark;
+	}
+	public void setFileMark(Integer fileMark) {
+		this.fileMark = fileMark;
+	}
+	public Integer getFileCheck() {
+		return fileCheck;
+	}
+	public void setFileCheck(Integer fileCheck) {
+		this.fileCheck = fileCheck;
+	}
+	public String getFileComment() {
+		return fileComment;
+	}
+	public void setFileComment(String fileComment) {
+		this.fileComment = fileComment;
+	}
+	public String getRecordCount() {
+		return recordCount;
+	}
+	public void setRecordCount(String recordCount) {
+		this.recordCount = recordCount;
+	}
 
 }

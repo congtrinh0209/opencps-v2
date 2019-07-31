@@ -20,6 +20,8 @@ package org.opencps.datamgt.utils;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
@@ -33,13 +35,15 @@ import com.liferay.portal.kernel.util.Validator;
  */
 public class SendMailUtils {
 
+	private static Log _log = LogFactoryUtil.getLog(SendMailUtils.class);
+
 	public static void sendEmailNotification(JSONObject payLoad, ServiceContext serviceContext) throws SystemException {
 
 		if(Validator.isNotNull(payLoad)){
 //			String fromName = PrefsPropsUtil.getString(payLoad.getLong("companyId"), PropsKeys.ADMIN_EMAIL_FROM_NAME);
 			String fromName = "MOBILINK Mail System";
 			
-			String fromAddress = PrefsPropsUtil.getString(payLoad.getLong("companyId"), PropsKeys.ADMIN_EMAIL_FROM_ADDRESS);
+			String fromAddress = "no-reply@cntt.gov.vn"; // PrefsPropsUtil.getString(payLoad.getLong("companyId"), PropsKeys.ADMIN_EMAIL_FROM_ADDRESS);
 
 			String toName = payLoad.getString("toName");
 
@@ -101,8 +105,7 @@ public class SendMailUtils {
 //		        }
 		        
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				_log.error(e);
 			}		
 		}
 		

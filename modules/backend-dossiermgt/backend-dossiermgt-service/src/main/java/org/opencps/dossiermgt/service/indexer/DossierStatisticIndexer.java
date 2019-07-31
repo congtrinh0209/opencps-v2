@@ -8,6 +8,7 @@ import javax.portlet.PortletResponse;
 import org.opencps.dossiermgt.constants.DossierStatisticTerm;
 import org.opencps.dossiermgt.model.DossierStatistic;
 import org.opencps.dossiermgt.service.DossierStatisticLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
@@ -22,6 +23,10 @@ import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
 import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.util.GetterUtil;
 
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class DossierStatisticIndexer extends BaseIndexer<DossierStatistic> {
 	public static final String CLASS_NAME = DossierStatistic.class.getName();
 
@@ -61,7 +66,6 @@ public class DossierStatisticIndexer extends BaseIndexer<DossierStatistic> {
 		document.addNumberSortable(DossierStatisticTerm.OVERDUE_COUNT, object.getOverdueCount());
 		document.addNumberSortable(DossierStatisticTerm.ONTIME_COUNT, object.getOntimeCount());
 		document.addNumberSortable(DossierStatisticTerm.OVERTIME_COUNT, object.getOvertimeCount());
-		document.addNumberSortable(DossierStatisticTerm.ADMINISTRATION_LEVEL, object.getAdministrationLevel());
 		// add text fields
 		document.addTextSortable(DossierStatisticTerm.GOV_AGENCY_CODE, object.getGovAgencyCode());
 		document.addTextSortable(DossierStatisticTerm.GOV_AGENCY_NAME, object.getGovAgencyName());

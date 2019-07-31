@@ -14,38 +14,10 @@
 
 package org.opencps.dossiermgt.service.impl;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Properties;
-
-import org.opencps.datamgt.model.DictItem;
-import org.opencps.datamgt.service.DictItemLocalServiceUtil;
-import org.opencps.dossiermgt.constants.DossierStatusConstants;
-import org.opencps.dossiermgt.constants.ServiceProcessTerm;
-import org.opencps.dossiermgt.exception.DuplicateProcessNameException;
-import org.opencps.dossiermgt.exception.DuplicateProcessNoException;
-import org.opencps.dossiermgt.exception.HasChildrenException;
-import org.opencps.dossiermgt.exception.RequiredDossierNoPatternException;
-import org.opencps.dossiermgt.exception.RequiredDueDatePatternException;
-import org.opencps.dossiermgt.exception.RequiredProcessNameException;
-import org.opencps.dossiermgt.exception.RequiredProcessNoException;
-import org.opencps.dossiermgt.model.ProcessAction;
-import org.opencps.dossiermgt.model.ProcessStep;
-import org.opencps.dossiermgt.model.ProcessStepRole;
-import org.opencps.dossiermgt.model.ServiceProcess;
-import org.opencps.dossiermgt.model.ServiceProcessRole;
-import org.opencps.dossiermgt.service.base.ServiceProcessLocalServiceBaseImpl;
-import org.opencps.dossiermgt.service.persistence.ProcessStepRolePK;
-import org.opencps.dossiermgt.service.persistence.ServiceProcessRolePK;
-
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -65,8 +37,47 @@ import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.generic.MultiMatchQuery;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Properties;
+
+import org.opencps.dossiermgt.constants.DossierStatusConstants;
+import org.opencps.dossiermgt.constants.DossierTerm;
+import org.opencps.dossiermgt.constants.ServiceProcessTerm;
+import org.opencps.dossiermgt.exception.DataConflictException;
+import org.opencps.dossiermgt.exception.DuplicateProcessNameException;
+import org.opencps.dossiermgt.exception.DuplicateProcessNoException;
+import org.opencps.dossiermgt.exception.HasChildrenException;
+import org.opencps.dossiermgt.exception.RequiredDossierNoPatternException;
+import org.opencps.dossiermgt.exception.RequiredDueDatePatternException;
+import org.opencps.dossiermgt.exception.RequiredProcessNameException;
+import org.opencps.dossiermgt.exception.RequiredProcessNoException;
+import org.opencps.dossiermgt.model.Dossier;
+import org.opencps.dossiermgt.model.ProcessAction;
+import org.opencps.dossiermgt.model.ProcessOption;
+import org.opencps.dossiermgt.model.ProcessSequence;
+import org.opencps.dossiermgt.model.ProcessStep;
+import org.opencps.dossiermgt.model.ProcessStepRole;
+import org.opencps.dossiermgt.model.ServiceConfig;
+import org.opencps.dossiermgt.model.ServiceProcess;
+import org.opencps.dossiermgt.model.ServiceProcessRole;
+import org.opencps.dossiermgt.service.ProcessActionLocalServiceUtil;
+import org.opencps.dossiermgt.service.ProcessOptionLocalServiceUtil;
+import org.opencps.dossiermgt.service.ProcessSequenceLocalServiceUtil;
+import org.opencps.dossiermgt.service.ProcessStepLocalServiceUtil;
+import org.opencps.dossiermgt.service.ProcessStepRoleLocalServiceUtil;
+import org.opencps.dossiermgt.service.ServiceConfigLocalServiceUtil;
+import org.opencps.dossiermgt.service.ServiceProcessLocalServiceUtil;
+import org.opencps.dossiermgt.service.ServiceProcessRoleLocalServiceUtil;
+import org.opencps.dossiermgt.service.base.ServiceProcessLocalServiceBaseImpl;
+import org.opencps.dossiermgt.service.persistence.ProcessStepRolePK;
+import org.opencps.dossiermgt.service.persistence.ServiceProcessRolePK;
 
 import aQute.bnd.annotation.ProviderType;
 
@@ -94,19 +105,20 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 	 * NOTE FOR DEVELOPERS:
 	 *
 	 * Never reference this class directly. Always use {@link
-	 * org.opencps.dossiermgt.service.ServiceProcessLocalServiceUtil} to access
-	 * the service process local service.
+	 * org.opencps.dossiermgt.service.ServiceProcessLocalServiceUtil} to access the
+	 * service process local service.
 	 */
 
 	static final String PROCESS_NO = "DEFAULT_SERVICE_PROCESS";
-	
+
 	@Indexable(type = IndexableType.REINDEX)
-	public void cloneServiceProcess(long serviceProcessId, long groupId, String processNo, ServiceContext serviceContext) throws PortalException {
-		
+	public void cloneServiceProcess(long serviceProcessId, long groupId, String processNo,
+			ServiceContext serviceContext) throws PortalException {
+
 		ServiceProcess originServiceProcess = serviceProcessPersistence.fetchByPrimaryKey(serviceProcessId);
-		
+
 		long cloneServiceProcessId = counterLocalService.increment(ServiceProcess.class.getName());
-		
+
 		ServiceProcess cloneServiceProcess = serviceProcessPersistence.create(cloneServiceProcessId);
 
 		Date now = new Date();
@@ -120,9 +132,10 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 		cloneServiceProcess.setModifiedDate(now);
 		cloneServiceProcess.setUserId(userAction.getUserId());
 		cloneServiceProcess.setUserName(userAction.getFullName());
-		
+
 		// Add other fields
-//		cloneServiceProcess.setProcessNo(originServiceProcess.getProcessNo() + "_CLONE");
+		// cloneServiceProcess.setProcessNo(originServiceProcess.getProcessNo() +
+		// "_CLONE");
 		cloneServiceProcess.setProcessNo(processNo);
 		cloneServiceProcess.setProcessName(originServiceProcess.getProcessName());
 		cloneServiceProcess.setDescription(originServiceProcess.getDescription());
@@ -138,30 +151,31 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 		cloneServiceProcess.setServerNo(originServiceProcess.getServerNo());
 
 		serviceProcessPersistence.update(cloneServiceProcess);
-		
+
 		List<ServiceProcessRole> processRoles = serviceProcessRolePersistence.findByP_S_ID(serviceProcessId);
-		
-		//clone processRole
+
+		// clone processRole
 		for (ServiceProcessRole sp : processRoles) {
-			//long roleId = counterLocalService.increment(ServiceProcessRole.class.getName());
-			
+			// long roleId =
+			// counterLocalService.increment(ServiceProcessRole.class.getName());
+
 			ServiceProcessRolePK pk = new ServiceProcessRolePK(cloneServiceProcessId, sp.getRoleId());
-			
+
 			ServiceProcessRole cloneRole = serviceProcessRolePersistence.create(pk);
-			
+
 			cloneRole.setModerator(sp.getModerator());
 			cloneRole.setCondition(sp.getCondition());
-			
-			
+
 			serviceProcessRolePersistence.update(cloneRole);
 		}
-		
+
 		Indexer<ServiceProcess> indexer = IndexerRegistryUtil.nullSafeGetIndexer(ServiceProcess.class);
-		
+
 		try {
 			indexer.reindex(cloneServiceProcess);
 		} catch (SearchException se) {
-			se.printStackTrace();
+			// se.printStackTrace();
+			_log.error(se);
 		}
 
 		Indexer<ProcessStep> stepindexer = IndexerRegistryUtil.nullSafeGetIndexer(ProcessStep.class);
@@ -169,12 +183,12 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 		Indexer<ProcessAction> actionindexer = IndexerRegistryUtil.nullSafeGetIndexer(ProcessAction.class);
 
 		List<ProcessStep> originSteps = processStepPersistence.findByS_P_ID(serviceProcessId);
-		
+
 		for (ProcessStep step : originSteps) {
 			long cloneStepId = counterLocalService.increment(ProcessStep.class.getName());
-			
+
 			ProcessStep cloneStep = processStepPersistence.create(cloneStepId);
-			
+
 			// Add audit fields
 			cloneStep.setCompanyId(serviceContext.getCompanyId());
 			cloneStep.setGroupId(groupId);
@@ -185,9 +199,9 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 
 			// Add other fields
 
-//			cloneStep.setStepCode(step.getStepCode() + "_CLONE");
-			
-			//Hot fixes in land
+			// cloneStep.setStepCode(step.getStepCode() + "_CLONE");
+
+			// Hot fixes in land
 			cloneStep.setStepCode(step.getStepCode());
 			cloneStep.setServiceProcessId(cloneServiceProcessId);
 			cloneStep.setStepName(step.getStepName());
@@ -198,37 +212,37 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 			cloneStep.setCustomProcessUrl(step.getCustomProcessUrl());
 			cloneStep.setStepInstruction(step.getStepInstruction());
 			cloneStep.setEditable(step.getEditable());
-			
+
 			processStepPersistence.update(cloneStep);
-			
+
 			try {
 				stepindexer.reindex(cloneStep);
 			} catch (SearchException se) {
-				se.printStackTrace();
+				// se.printStackTrace();
+				_log.error(se);
 			}
 
-			
 			List<ProcessStepRole> stepRoles = processStepRolePersistence.findByP_S_ID(cloneStepId);
-			
+
 			for (ProcessStepRole role : stepRoles) {
 				ProcessStepRolePK pk = new ProcessStepRolePK(cloneStepId, role.getRoleId());
-				
+
 				ProcessStepRole cloneStepRole = processStepRolePersistence.create(pk);
-				
+
 				cloneStepRole.setModerator(role.getModerator());
 				cloneStepRole.setCondition(role.getCondition());
-				
+
 				processStepRolePersistence.update(cloneStepRole);
 			}
 		}
-		
+
 		List<ProcessAction> originActions = processActionPersistence.findByS_P_ID(serviceProcessId);
-		
+
 		for (ProcessAction act : originActions) {
 			long cloneActionId = counterLocalService.increment(ProcessAction.class.getName());
-			
+
 			ProcessAction cloneaction = processActionPersistence.create(cloneActionId);
-			
+
 			// Add audit fields
 			cloneaction.setCompanyId(serviceContext.getCompanyId());
 			cloneaction.setGroupId(groupId);
@@ -250,18 +264,19 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 			cloneaction.setPreStepCode(act.getPreStepCode());
 			cloneaction.setPostStepCode(act.getPostStepCode());
 			cloneaction.setSyncActionCode(act.getSyncActionCode());
-			
+
 			processActionPersistence.update(cloneaction);
-			
+
 			try {
 				actionindexer.reindex(cloneaction);
 			} catch (SearchException se) {
-				se.printStackTrace();
+				// se.printStackTrace();
+				_log.error(se);
 			}
 
 		}
 	}
-	
+
 	@Indexable(type = IndexableType.REINDEX)
 	public void initServiceProcess(long groupId, ServiceContext context) {
 
@@ -270,14 +285,14 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 		InputStream input = null;
 
 		Date now = new Date();
-		
+
 		try {
-			
+
 			User userAction = userLocalService.getUser(context.getUserId());
-			
+
 			input = this.getClass().getClassLoader().getResourceAsStream("default_service_process.properties");
 
-			//input = new FileInputStream("default_service_process.properties");
+			// input = new FileInputStream("default_service_process.properties");
 
 			// load a properties file
 			props.load(input);
@@ -286,7 +301,7 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 
 			ServiceProcess object = serviceProcessPersistence
 					.create(counterLocalService.increment(ServiceProcess.class.getName()));
-			
+
 			// Add audit fields
 			object.setCompanyId(context.getCompanyId());
 			object.setGroupId(groupId);
@@ -300,29 +315,31 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 			object.setProcessNo(PROCESS_NO);
 			object.setProcessName(PROCESS_NO);
 			object.setDescription(PROCESS_NO);
-			
+
 			serviceProcessPersistence.update(object);
-			
+
 			Indexer<ServiceProcess> indexer = IndexerRegistryUtil.nullSafeGetIndexer(ServiceProcess.class);
-			
+
 			try {
 				indexer.reindex(object);
 			} catch (SearchException se) {
-				se.printStackTrace();
+				// se.printStackTrace();
+				_log.error(se);
 			}
 
 			Indexer<ProcessStep> stepindexer = IndexerRegistryUtil.nullSafeGetIndexer(ProcessStep.class);
 
 			while (e.hasMoreElements()) {
-				
+
 				int sequenceNo = 1;
-				
+
 				String stepCode = "DEFAULT_STEPCODE" + sequenceNo;
-				
+
 				String key = (String) e.nextElement();
-				
-				ProcessStep step = processStepPersistence.create(counterLocalService.increment(ProcessStep.class.getName()));
-				
+
+				ProcessStep step = processStepPersistence
+						.create(counterLocalService.increment(ProcessStep.class.getName()));
+
 				// Add audit fields
 				step.setCompanyId(context.getCompanyId());
 				step.setGroupId(groupId);
@@ -338,20 +355,20 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 				step.setStepName(props.getProperty(key));
 				step.setSequenceNo(String.valueOf(sequenceNo));
 				step.setStepCode(key);
-				
+
 				step.setDossierStatus(_getDossierStatus(key));
-				
+
 				processStepPersistence.update(step);
-				
+
 				try {
 					stepindexer.reindex(step);
 				} catch (SearchException se) {
-					se.printStackTrace();
+					// se.printStackTrace();
+					_log.error(se);
 				}
 
-
 				sequenceNo++;
-				
+
 			}
 
 		} catch (Exception e) {
@@ -361,16 +378,17 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 				try {
 					input.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					// e.printStackTrace();
+					_log.error(e);
 				}
 			}
 		}
 	}
-	
+
 	private String _getDossierStatus(String key) {
-		
+
 		String dossierStatus;
-		
+
 		switch (key) {
 		case "110":
 			dossierStatus = DossierStatusConstants.NEW;
@@ -445,24 +463,25 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 			dossierStatus = StringPool.BLANK;
 			break;
 		}
-		
+
 		return dossierStatus;
 	}
-	
+
 	private String _getDossierStatusName(String dossierStatus) {
-		//TODO: add implement to get dossierStatusName
-		
-		// if not found, need to create new DicItem with dossierStatus, it has dictCollectionCode = "DOSSIER_STATUS";
-		
+		// TODO: add implement to get dossierStatusName
+
+		// if not found, need to create new DicItem with dossierStatus, it has
+		// dictCollectionCode = "DOSSIER_STATUS";
+
 		return "";
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
 	public ServiceProcess updateServiceProcess(long groupId, long serviceProcessId, String processNo,
-			String processName, String description, int durationCount, int durationUnit, long counter,
+			String processName, String description, Double durationCount, int durationUnit, long counter,
 			boolean generateDossierNo, String dossierNoPattern, boolean generateDueDate, String dueDatePattern,
-			boolean generatePassword, boolean directNotification, String serverNo, ServiceContext context)
-			throws PortalException {
+			boolean generatePassword, boolean directNotification, String serverNo, String paymentFee,
+			ServiceContext context) throws PortalException {
 
 		Date now = new Date();
 
@@ -501,6 +520,7 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 			object.setGeneratePassword(generatePassword);
 			object.setDirectNotification(directNotification);
 			object.setServerNo(serverNo);
+			object.setPaymentFee(paymentFee);
 
 		} else {
 			object = serviceProcessPersistence.fetchByPrimaryKey(serviceProcessId);
@@ -524,6 +544,7 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 			object.setGeneratePassword(generatePassword);
 			object.setDirectNotification(directNotification);
 			object.setServerNo(serverNo);
+			object.setPaymentFee(paymentFee);
 		}
 
 		serviceProcessPersistence.update(object);
@@ -534,18 +555,17 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 	@Indexable(type = IndexableType.DELETE)
 	public ServiceProcess removeServiceProcess(long serviceProcessId, long groupId) throws PortalException {
 		validateRemove(serviceProcessId, groupId);
-		
-		List<ServiceProcessRole> processRoles = serviceProcessRolePersistence.findByP_S_ID(serviceProcessId);
 
-		for (ServiceProcessRole processRole : processRoles) {
-			serviceProcessRolePersistence.remove(processRole);
-		}
-		
+		// List<ServiceProcessRole> processRoles =
+		// serviceProcessRolePersistence.findByP_S_ID(serviceProcessId);
+
+		// for (ServiceProcessRole processRole : processRoles) {
+		// serviceProcessRolePersistence.remove(processRole);
+		// }
+
 		ServiceProcess serviceProcess = serviceProcessPersistence.fetchByPrimaryKey(serviceProcessId);
 
-		serviceProcessPersistence.remove(serviceProcess);
-
-		return serviceProcess;
+		return serviceProcessPersistence.remove(serviceProcess);
 
 	}
 
@@ -733,7 +753,8 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 
 	private void validateRemove(long serviceProcessId, long groupId) throws PortalException {
 
-		//List<ServiceProcessRole> processRoles = serviceProcessRolePersistence.findByP_S_ID(serviceProcessId);
+		// List<ServiceProcessRole> processRoles =
+		// serviceProcessRolePersistence.findByP_S_ID(serviceProcessId);
 
 		List<ProcessStep> processSteps = processStepPersistence.findByS_P_ID(serviceProcessId);
 
@@ -743,10 +764,286 @@ public class ServiceProcessLocalServiceImpl extends ServiceProcessLocalServiceBa
 			throw new HasChildrenException("HasChildrenException");
 		}
 	}
-	
-	
+
 	public List<ServiceProcess> getByServerNo(String serverNo) {
 		return serviceProcessPersistence.findBySVR_NO(serverNo);
+	}
+
+	// LamTV_Process
+	public ServiceProcess getServiceByCode(long groupId, String serviceCode, String govAgencyCode,
+			String dossierTemplateNo) throws PortalException {
+
+		ProcessOption option = getProcessOption(serviceCode, govAgencyCode, dossierTemplateNo, groupId);
+		if (option != null) {
+			long serviceProcessId = option.getServiceProcessId();
+
+			return serviceProcessPersistence.findByPrimaryKey(serviceProcessId);
+		} else {
+			return null;
+		}
+	}
+
+	// LamTV_Process output ServiceProcess to DB
+	@Indexable(type = IndexableType.REINDEX)
+	public ServiceProcess updateServiceProcessDB(long userId, long groupId, String processNo, String processName,
+			String description, Double durationCount, Integer durationUnit, boolean generatePassword, String serverNo,
+			String serverName, String dossierNoPattern, String dueDatePattern, ServiceContext serviceContext)
+			throws PortalException {
+
+		Date now = new Date();
+		User userAction = userLocalService.getUser(userId);
+
+		ServiceProcess object = serviceProcessPersistence.fetchByG_ID_PNO(groupId, processNo);
+
+		if (object == null) {
+			long serviceProcessId = counterLocalService.increment(ServiceProcess.class.getName());
+			object = serviceProcessPersistence.create(serviceProcessId);
+
+			// Add audit fields
+			object.setCompanyId(serviceContext.getCompanyId());
+			object.setGroupId(groupId);
+			object.setCreateDate(now);
+			object.setModifiedDate(now);
+			object.setUserId(userAction.getUserId());
+			object.setUserName(userAction.getFullName());
+
+			// Add other fields
+			object.setProcessNo(processNo);
+			object.setProcessName(processName);
+			object.setDescription(description);
+			object.setDurationCount(durationCount);
+			object.setDurationUnit(durationUnit);
+			object.setGeneratePassword(generatePassword);
+			object.setServerNo(serverNo);
+			object.setServerName(serverName);
+			object.setDossierNoPattern(dossierNoPattern);
+			object.setDueDatePattern(dueDatePattern);
+		} else {
+			// Add audit fields
+			object.setModifiedDate(now);
+			object.setUserId(userAction.getUserId());
+			object.setUserName(userAction.getFullName());
+
+			// Add other fields
+			object.setProcessNo(processNo);
+			object.setProcessName(processName);
+			object.setDescription(description);
+			object.setDurationCount(durationCount);
+			object.setDurationUnit(durationUnit);
+			object.setGeneratePassword(generatePassword);
+			object.setServerNo(serverNo);
+			object.setServerName(serverName);
+			object.setDossierNoPattern(dossierNoPattern);
+			object.setDueDatePattern(dueDatePattern);
+		}
+
+		return serviceProcessPersistence.update(object);
+	}
+
+	private ProcessOption getProcessOption(String serviceInfoCode, String govAgencyCode, String dossierTemplateNo,
+			long groupId) throws PortalException {
+
+		ServiceConfig config = ServiceConfigLocalServiceUtil.getBySICodeAndGAC(groupId, serviceInfoCode, govAgencyCode);
+
+		return ProcessOptionLocalServiceUtil.getByDTPLNoAndServiceCF(groupId, dossierTemplateNo,
+				config.getServiceConfigId());
+	}
+
+	public ServiceProcess getByG_PNO(long groupId, String processNo) {
+		return serviceProcessPersistence.fetchByG_ID_PNO(groupId, processNo);
+	}
+
+	public List<ServiceProcess> getByG_ID(long groupId) {
+		return serviceProcessPersistence.findByG_ID(groupId);
+	}
+
+	// super_admin Generators
+	@Indexable(type = IndexableType.DELETE)
+	public ServiceProcess adminProcessDelete(Long id) throws Exception {
+
+		ServiceProcess process = serviceProcessPersistence.fetchByPrimaryKey(id);
+		if (process != null) {
+			String processNo = process.getProcessNo();
+			long groupId = process.getGroupId();
+			if (Validator.isNotNull(processNo)) {
+				int countDossier = dossierLocalService.countByG_NOTS_O_PN(process.getGroupId(), new String[] { DossierTerm.DOSSIER_STATUS_DONE, DossierTerm.DOSSIER_STATUS_CANCELLED, DossierTerm.DOSSIER_STATUS_DENIED, DossierTerm.DOSSIER_STATUS_UNRESOLVED }, 1, process.getProcessNo());
+				if (countDossier > 0) {
+					throw new DataConflictException("Have dossiers use this service process");
+				}
+				List<Dossier> dossierList = dossierPersistence.findByGID_PNO(groupId, processNo);
+				if (dossierList == null || dossierList.size() == 0) {
+					boolean flagProRole = deleteAllProcessRole(id);
+					boolean flagStep = deleteAllProcessStep(id);
+					boolean flagProAction = deleteAllProcessAction(id);
+					boolean flagSequence = deleteAllProcessSequence(process.getGroupId(), id);
+					if (flagProRole && flagStep && flagProAction && flagSequence) {
+						try {
+							return ServiceProcessLocalServiceUtil.removeServiceProcess(id, groupId);
+						} catch (Exception e) {
+							_log.debug(e);
+							return null;
+						}
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public ServiceProcess adminProcessData(JSONObject objectData) {
+
+		ServiceProcess object = null;
+
+		if (objectData.getLong("serviceProcessId") > 0) {
+
+			object = serviceProcessPersistence.fetchByPrimaryKey(objectData.getLong("serviceProcessId"));
+
+			object.setModifiedDate(new Date());
+
+		} else {
+
+			long id = CounterLocalServiceUtil.increment(ServiceProcess.class.getName());
+
+			object = serviceProcessPersistence.create(id);
+
+			object.setGroupId(objectData.getLong("groupId"));
+			object.setCompanyId(objectData.getLong("companyId"));
+			object.setCreateDate(new Date());
+
+		}
+
+		object.setUserId(objectData.getLong("userId"));
+		object.setUserName(objectData.getString("userName"));
+
+		object.setProcessNo(objectData.getString("processNo"));
+		object.setProcessName(objectData.getString("processName"));
+		object.setDescription(objectData.getString("description"));
+		object.setDurationCount(objectData.getDouble("durationCount"));
+		object.setDurationUnit(objectData.getInt("durationUnit"));
+		object.setCounter(objectData.getLong("counter"));
+		object.setGenerateDossierNo(objectData.getBoolean("generateDossierNo"));
+		object.setDossierNoPattern(objectData.getString("dossierNoPattern"));
+		object.setGenerateDueDate(objectData.getBoolean("generateDueDate"));
+		object.setDueDatePattern(objectData.getString("dueDatePattern"));
+		object.setGeneratePassword(objectData.getBoolean("generatePassword"));
+		object.setDirectNotification(objectData.getBoolean("directNotification"));
+		object.setServerNo(objectData.getString("serverNo"));
+		object.setServerName(objectData.getString("serverName"));
+		object.setRequestPayment(objectData.getBoolean("requestPayment"));
+		object.setPaymentFee(objectData.getString("paymentFee"));
+
+		serviceProcessPersistence.update(object);
+
+		return object;
+	}
+
+	private boolean deleteAllProcessAction(long serviceProcessId) {
+		boolean flag = false;
+		try {
+			List<ProcessAction> actList = ProcessActionLocalServiceUtil.getProcessActionbyServiceProcessId(serviceProcessId);
+			if (actList != null && actList.size() > 0) {
+				for (ProcessAction act : actList) {
+					ProcessActionLocalServiceUtil.deleteProcessAction(act);
+					flag = true;
+				}
+			} else {
+				flag = true;
+			}
+		}catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
+			return false;
+		}
+
+		return flag;
+	}
+
+	private boolean deleteAllProcessRole(long serviceProcessId) {
+		boolean flag = false;
+		try {
+			List<ServiceProcessRole> roleList = ServiceProcessRoleLocalServiceUtil.findByS_P_ID(serviceProcessId);
+			if (roleList != null && roleList.size() > 0) {
+				for (ServiceProcessRole role : roleList) {
+					ServiceProcessRoleLocalServiceUtil.deleteServiceProcessRole(role);
+					flag = true;
+				}
+			} else {
+				flag = true;
+			}
+		}catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
+			return false;
+		}
+
+		return flag;
+	}
+
+	private boolean deleteAllProcessStep(long serviceProcessId) {
+		boolean flag = false;
+		try {
+			List<ProcessStep> stepList = ProcessStepLocalServiceUtil.getProcessStepbyServiceProcessId(serviceProcessId);
+			if (stepList != null && stepList.size() > 0) {
+//				_log.info("stepList: "+stepList.size());
+				long stepId = 0;
+				for (ProcessStep step : stepList) {
+					stepId = step.getProcessStepId();
+//					_log.info("stepId: "+stepId);
+					if (stepId > 0) {
+						List<ProcessStepRole> stepRoleList = ProcessStepRoleLocalServiceUtil
+								.findByP_S_ID(stepId);
+//						_log.info("stepRoleList: "+stepRoleList.size());
+						if (stepRoleList != null && stepRoleList.size() > 0) {
+							for (ProcessStepRole stepRole : stepRoleList) {
+								ProcessStepRoleLocalServiceUtil.deleteProcessStepRole(stepRole);
+								flag = true;
+							}
+						} else {
+							flag = true;
+						}
+					}
+					if (flag) {
+//						_log.info("STARTTT: ");
+						ProcessStep processStep = ProcessStepLocalServiceUtil.deleteProcessStep(step);
+						if (processStep == null) {
+							flag = false;
+						}
+					}
+				}
+			} else {
+				flag = true;
+			}
+		}catch (Exception e) {
+//			e.printStackTrace();
+			_log.debug(e);
+			//_log.error(e);
+			return false;
+		}
+
+		return flag;
+	}
+
+	private boolean deleteAllProcessSequence(long groupId, long serviceProcessId) {
+		boolean flag = false;
+		try {
+			List<ProcessSequence> seqList = ProcessSequenceLocalServiceUtil.getByServiceProcess(groupId, serviceProcessId);
+			if (seqList != null && seqList.size() > 0) {
+				for (ProcessSequence seq : seqList) {
+					ProcessSequenceLocalServiceUtil.deleteProcessSequence(seq);
+					flag = true;
+				}
+			} else {
+				flag = true;
+			}
+		}catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
+			return false;
+		}
+
+		return flag;
 	}
 
 	Log _log = LogFactoryUtil.getLog(ServiceProcessLocalServiceImpl.class);

@@ -1,5 +1,10 @@
 package org.opencps.api.controller;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.ServiceContext;
+
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,11 +30,6 @@ import org.opencps.api.employee.model.DataSearchModel;
 import org.opencps.api.employee.model.EmployeeAccountInputModel;
 import org.opencps.api.employee.model.EmployeeInputModel;
 import org.opencps.api.employee.model.EmployeeJobposInputModel;
-
-import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.StringPool;
 
 @Path("/employees")
 public interface EmployeeManagement {
@@ -126,7 +126,7 @@ public interface EmployeeManagement {
 
 	@POST
 	@Path("/{id}/account")
-	@Consumes({ MediaType.APPLICATION_FORM_URLENCODED })
+	@Consumes({ MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
 	public Response createEmployeeAccount(@Context HttpServletRequest request, @Context HttpHeaders header,
 			@Context Company company, @Context Locale locale, @Context User user,
@@ -160,4 +160,12 @@ public interface EmployeeManagement {
 	public Response getEmployeesByRole(@Context HttpServletRequest request, @Context HttpHeaders header,
 			@Context Company company, @Context Locale locale, @Context User user,
 			@Context ServiceContext serviceContext, @PathParam("roleId") long roleId, @BeanParam DataSearchModel query);
+
+	@GET
+	@Path("/publish/{itemCode}")
+	@Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED })
+	@Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+	public Response getEmployeesByItemCode(@Context HttpServletRequest request, @Context HttpHeaders header,
+			@Context Company company, @Context Locale locale, @Context User user,
+			@Context ServiceContext serviceContext, @PathParam("itemCode") String itemCode, @BeanParam DataSearchModel query);
 }

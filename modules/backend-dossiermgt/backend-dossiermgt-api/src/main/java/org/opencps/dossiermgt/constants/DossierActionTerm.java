@@ -24,4 +24,17 @@ public class DossierActionTerm {
 	public static final String PAYLOAD = "payload";
 	public static final String STEP_INSTRUCTION = "stepInstruction";
 	public static final String AUTO = "auto";
+	public static final String DOSSIER_DOCUMENT_ID = "dossierDocumentId";
+	
+	public static final int STATE_WAITING_PROCESSING = 0;
+	public static final int STATE_ALREADY_PROCESSED = 1;
+	public static final int STATE_ROLLBACK = 2;
+	
+	public static final int EVENT_STATUS_NOT_CREATED = 0;
+	public static final int EVENT_STATUS_WAIT_SENDING = 1;
+	public static final int EVENT_STATUS_SENDED_SUCCESS = 2;
+	public static final int EVENT_STATUS_SENDED_ERROR = 3;
+	
+	public static final String OUTSIDE_ACTION_9100 = "9100";
+	public static final String OUTSIDE_ACTION_ROLLBACK = "9000";
 }

@@ -3,6 +3,10 @@ package backend.auth.api;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.HttpHeaders;
+
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ResourceConstants;
@@ -20,40 +24,27 @@ public class BackendAuthImpl implements BackendAuth {
 	public boolean hasResource(
 		ServiceContext context, String name, String actionId) {
 
-		// if (context.getThemeDisplay().getPermissionChecker().isOmniadmin() ){
-		//
-		// return true;
-		//
-		// }
-
 		boolean hasPermission = false;
-
-		List<Role> roles =
-			RoleLocalServiceUtil.getUserRoles(context.getUserId());
+		List<Role> roles = RoleLocalServiceUtil.getUserRoles(context.getUserId());
 		try {
-			for (Role role : roles) {
+			if (roles != null && roles.size() > 0) {
+				for (Role role : roles) {
+					// LamTV_Fix sonarqube
+					if ("Administrator".equals(role.getName())) {
+						hasPermission = true;
+						break;
+					}
 
-				if (role.getName().equals("Administrator")) {
+					hasPermission = ResourcePermissionLocalServiceUtil.hasResourcePermission(context.getCompanyId(),
+							name, ResourceConstants.SCOPE_INDIVIDUAL, Long.toString(role.getRoleId()), role.getRoleId(),
+							actionId);
 
-					hasPermission = true;
-					break;
-
-				}
-
-				hasPermission =
-					ResourcePermissionLocalServiceUtil.hasResourcePermission(
-						context.getCompanyId(), name,
-						ResourceConstants.SCOPE_INDIVIDUAL,
-						Long.toString(role.getRoleId()), role.getRoleId(),
-						actionId);
-
-				if (hasPermission) {
-					break;
+					if (hasPermission) {
+						break;
+					}
 				}
 			}
-
-		}
-		catch (Exception e) {
+		} catch (PortalException e) {
 			_log.error(e);
 		}
 
@@ -65,27 +56,21 @@ public class BackendAuthImpl implements BackendAuth {
 		ServiceContext context, String name, String actionId) {
 
 		boolean hasPermission = false;
+		List<Role> roles = RoleLocalServiceUtil.getUserRoles(context.getUserId());
 
-		List<Role> roles =
-			RoleLocalServiceUtil.getUserRoles(context.getUserId());
-		
 		try {
-			for (Role role : roles) {
+			if (roles != null && roles.size() > 0) {
+				for (Role role : roles) {
+					hasPermission = ResourcePermissionLocalServiceUtil.hasResourcePermission(context.getCompanyId(),
+							name, ResourceConstants.SCOPE_INDIVIDUAL, Long.toString(role.getRoleId()), role.getRoleId(),
+							actionId);
 
-				hasPermission =
-					ResourcePermissionLocalServiceUtil.hasResourcePermission(
-						context.getCompanyId(), name,
-						ResourceConstants.SCOPE_INDIVIDUAL,
-						Long.toString(role.getRoleId()), role.getRoleId(),
-						actionId);
-
-				if (hasPermission) {
-					break;
+					if (hasPermission) {
+						break;
+					}
 				}
 			}
-
-		}
-		catch (Exception e) {
+		} catch (PortalException e) {
 			_log.error(e);
 		}
 
@@ -97,21 +82,18 @@ public class BackendAuthImpl implements BackendAuth {
 
 		boolean isAdmin = false;
 
-		List<Role> roles =
-			RoleLocalServiceUtil.getUserRoles(context.getUserId());
+		List<Role> roles = RoleLocalServiceUtil.getUserRoles(context.getUserId());
 		try {
-			for (Role role : roles) {
-
-				if (role.getName().equals("Administrator")) {
-
-					isAdmin = true;
-					break;
-
+			if (roles != null && roles.size() > 0) {
+				for (Role role : roles) {
+					// LamTV_Fix sonarqube
+					if ("Administrator".equals(role.getName())) {
+						isAdmin = true;
+						break;
+					}
 				}
 			}
-
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			_log.error(e);
 		}
 
@@ -119,25 +101,33 @@ public class BackendAuthImpl implements BackendAuth {
 	}
 
 	@Override
-	public boolean isAuth(
-		ServiceContext context, String security, String password) {
+	public boolean isAuth(ServiceContext context, String security, String password) {
 
 		boolean isAuth = false;
 
 		if (Validator.isNotNull(security)) {
-			/*
-			 * Activity activity = null;//BackendUtils.getActivity(security); if
-			 * (Validator.isNotNull(activity)) { Participant participant =
-			 * BackendUtils.getParticipant(activity.getActivityId(), password);
-			 * if (Validator.isNotNull(participant)) { isAuth = true; } }
-			 */
 
-		}
-		else {
+		} else {
 			isAuth = context.isSignedIn();
 		}
 
 		return isAuth;
 	}
 
+	@Override
+	public boolean checkToken(HttpServletRequest request, HttpHeaders header) {
+		
+//		String tokenFromSession = (String) request.getSession().getAttribute(CSRF_TOKEN_FOR_SESSION_NAME);
+//		
+//		_log.info("TOKEN***SESSION:"+tokenFromSession);
+//		
+//		String tokenFromRequest = header.getHeaderString(CPS_AUTH);
+//		_log.info("TOKEN***REQUEST:"+tokenFromRequest);
+//
+//		if (tokenFromRequest.contentEquals(tokenFromSession)) {
+		return true;
+//		}
+		
+//		return false;
+	}
 }

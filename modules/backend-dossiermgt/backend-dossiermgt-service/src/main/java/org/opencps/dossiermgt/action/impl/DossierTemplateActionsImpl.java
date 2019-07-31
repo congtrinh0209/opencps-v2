@@ -13,6 +13,8 @@ import org.opencps.dossiermgt.service.DossierTemplateLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Sort;
@@ -20,7 +22,8 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 
 public class DossierTemplateActionsImpl implements DossierTemplateActions {
-
+	private static final Log _log = LogFactoryUtil.getLog(DossierTemplateActionsImpl.class);
+	
 	public static final int DOSSIER_PART_CONTENT_TYPE_SCRIPT = 1;
 	public static final int DOSSIER_PART_CONTENT_TYPE_REPORT = 2;
 	public static final int DOSSIER_PART_CONTENT_TYPE_SAMPLE = 3;
@@ -51,10 +54,10 @@ public class DossierTemplateActionsImpl implements DossierTemplateActions {
 
 	@Override
 	public DossierTemplate updateDossierTemplate(long groupId, long dossierTemplateId, String templateName,
-			String templateNo, String description, ServiceContext context) throws PortalException {
+			String templateNo, String description, String newFormScript, ServiceContext context) throws PortalException {
 
 		return DossierTemplateLocalServiceUtil.updateDossierTemplate(groupId, dossierTemplateId, templateName,
-				templateNo, description, context);
+				templateNo, description, newFormScript, context);
 	}
 
 	@Override
@@ -195,6 +198,8 @@ public class DossierTemplateActionsImpl implements DossierTemplateActions {
 			dossierPartId = dossierPart.getDossierPartId();
 
 		} catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
 			dossierPartId = 0; // :)
 		}
 
@@ -209,6 +214,47 @@ public class DossierTemplateActionsImpl implements DossierTemplateActions {
 		return DossierPartLocalServiceUtil.updateDossierPart(groupId, dossierPartId, templateNo, partNo, partName,
 				partTip, partType, multiple, formScript, formReport, sampleData, required, fileTemplateNo, eSign,
 				deliverableType, deliverableAction, context);
+	}
+
+	@Override
+	public void updateDossierTemplateDB(long userId, long groupId, String templateNo, String templateName,
+			String description, String newFormScript, ServiceContext serviceContext) throws PortalException {
+
+		DossierTemplateLocalServiceUtil.updateDossierTemplateDB(userId, groupId, templateNo, templateName, description, newFormScript,
+				serviceContext);
+	}
+
+	@Override
+	public void updateDossierPartDB(long userId, long groupId, String templateNo, String partNo, String partName,
+			String partTip, Integer partType, boolean multiple, String formScript, String formReport, boolean required,
+			boolean esign, String fileTemplateNo, String deliverableType, Integer deliverableAction, boolean eForm,
+			String sampleData, Integer fileMark, ServiceContext serviceContext) throws PortalException {
+
+		DossierPartLocalServiceUtil.updateDossierPartDB(userId, groupId, templateNo, partNo, partName, partTip,
+				partType, multiple, formScript, formReport, required, esign, fileTemplateNo, deliverableType,
+				deliverableAction, eForm, sampleData, fileMark, serviceContext);
+	}
+
+	@Override
+	public boolean deleteAllDossierPart(long userId, long groupId, String templateNo, ServiceContext serviceContext) {
+		boolean flag = true;
+		try {
+			List<DossierPart> partList = DossierPartLocalServiceUtil.getByTemplateNo(groupId, templateNo);
+			if (partList != null && partList.size() > 0) {
+				for (DossierPart part : partList) {
+					DossierPartLocalServiceUtil.deleteDossierPart(part);
+					flag = true;
+				}
+			} else {
+				flag = true;
+			}
+		}catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
+			return false;
+		}
+
+		return flag;
 	}
 
 }

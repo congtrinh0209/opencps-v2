@@ -8,15 +8,14 @@
 
 package org.opencps.api.serviceconfig.model;
 
+import com.liferay.petra.string.StringPool;
+
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-
-import com.liferay.portal.kernel.util.StringPool;
-
 
 /**
  * <p>Java class for anonymous complex type.
@@ -57,7 +56,20 @@ import com.liferay.portal.kernel.util.StringPool;
     "agency",
     "service",
     "domain",
-    "applicant"
+    "applicant",
+    "serviceCode",
+    "serviceName",
+    "typeCode",
+    "templateNo",
+    "applicantName",
+    "applicantAddress",
+    "applicantEmail",
+    "applicantTelNo",
+    "employeeName",
+    "partNo",
+    "type",
+    "applicantNote",
+    "applicantIdType"
 })
 @XmlRootElement(name = "ServiceConfigSearchModel")
 public class ServiceConfigSearchModel {
@@ -82,6 +94,32 @@ public class ServiceConfigSearchModel {
     protected String domain;
 	@QueryParam(value = "applicant")
     protected String applicant;
+	@QueryParam(value = "serviceCode")
+    protected String serviceCode;
+	@QueryParam(value = "serviceName")
+    protected String serviceName;
+	@QueryParam(value = "typeCode")
+    protected String typeCode;
+	@QueryParam(value = "templateNo")
+    protected String templateNo;
+	@QueryParam(value = "applicantName")
+    protected String applicantName;
+	@QueryParam(value = "applicantAddress")
+    protected String applicantAddress;
+	@QueryParam(value = "applicantEmail")
+    protected String applicantEmail;
+	@QueryParam(value = "applicantTelNo")
+    protected String applicantTelNo;
+	@QueryParam(value = "employeeName")
+    protected String employeeName;
+	@QueryParam(value = "partNo")
+    protected String partNo;
+	@QueryParam(value = "type")
+    protected String type;
+	@QueryParam(value = "applicantNote")
+    protected String applicantNote;
+    @QueryParam(value = "applicantIdType")
+    protected String applicantIdType;
 
     /**
      * Gets the value of the keyword property.
@@ -322,5 +360,109 @@ public class ServiceConfigSearchModel {
     public void setApplicant(String value) {
         this.applicant = value;
     }
+
+	public String getServiceCode() {
+		return serviceCode;
+	}
+
+	public void setServiceCode(String serviceCode) {
+		this.serviceCode = serviceCode;
+	}
+
+	public String getServiceName() {
+		return serviceName;
+	}
+
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
+	}
+
+	public String getTypeCode() {
+		return typeCode;
+	}
+
+	public void setTypeCode(String typeCode) {
+		this.typeCode = typeCode;
+	}
+
+	public String getTemplateNo() {
+		return templateNo;
+	}
+
+	public void setTemplateNo(String templateNo) {
+		this.templateNo = templateNo;
+	}
+
+	public String getApplicantName() {
+		return applicantName;
+	}
+
+	public void setApplicantName(String applicantName) {
+		this.applicantName = applicantName;
+	}
+
+	public String getApplicantAddress() {
+		return applicantAddress;
+	}
+
+	public void setApplicantAddress(String applicantAddress) {
+		this.applicantAddress = applicantAddress;
+	}
+
+	public String getApplicantEmail() {
+		return applicantEmail;
+	}
+
+	public void setApplicantEmail(String applicantEmail) {
+		this.applicantEmail = applicantEmail;
+	}
+
+	public String getApplicantTelNo() {
+		return applicantTelNo;
+	}
+
+	public void setApplicantTelNo(String applicantTelNo) {
+		this.applicantTelNo = applicantTelNo;
+	}
+
+	public String getEmployeeName() {
+		return employeeName;
+	}
+
+	public void setEmployeeName(String employeeName) {
+		this.employeeName = employeeName;
+	}
+
+	public String getPartNo() {
+		return partNo;
+	}
+
+	public void setPartNo(String partNo) {
+		this.partNo = partNo;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public String getApplicantNote() {
+		return applicantNote;
+	}
+
+	public void setApplicantNote(String applicantNote) {
+		this.applicantNote = applicantNote;
+	}
+
+	public String getApplicantIdType() {
+		return applicantIdType;
+	}
+
+	public void setApplicantIdType(String applicantIdType) {
+		this.applicantIdType = applicantIdType;
+	}
 
 }

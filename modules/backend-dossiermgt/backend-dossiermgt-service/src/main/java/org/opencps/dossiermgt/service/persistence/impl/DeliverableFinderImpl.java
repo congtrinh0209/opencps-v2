@@ -26,7 +26,7 @@ public class DeliverableFinderImpl extends DeliverableFinderBaseImpl
 
 	@SuppressWarnings("unchecked")
 	public List<Deliverable> findDeliverableByState(
-		    String strDeliverableCode, String state) {
+		    String strDeliverableCode, int state) {
 
 		    Session session = null;
 		    List<Deliverable> deliverableList = null;
@@ -49,7 +49,8 @@ public class DeliverableFinderImpl extends DeliverableFinderBaseImpl
 		            throw new SystemException(e);
 		        }
 		        catch (SystemException se) {
-		            se.printStackTrace();
+//		            se.printStackTrace();
+		        	_log.error(se);
 		        }
 		    }
 		    finally {
@@ -89,7 +90,8 @@ public class DeliverableFinderImpl extends DeliverableFinderBaseImpl
 		            throw new SystemException(e);
 		        }
 		        catch (SystemException se) {
-		            se.printStackTrace();
+//		            se.printStackTrace();
+		        	_log.error(se);
 		        }
 		    }
 		    finally {
@@ -124,7 +126,8 @@ public class DeliverableFinderImpl extends DeliverableFinderBaseImpl
 		            throw new SystemException(e);
 		        }
 		        catch (SystemException se) {
-		            se.printStackTrace();
+//		            se.printStackTrace();
+		        	_log.error(se);
 		        }
 		    }
 		    finally {

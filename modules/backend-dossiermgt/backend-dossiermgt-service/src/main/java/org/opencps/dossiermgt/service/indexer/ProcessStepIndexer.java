@@ -1,5 +1,21 @@
 package org.opencps.dossiermgt.service.indexer;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.search.BaseIndexer;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
+import com.liferay.portal.kernel.search.Summary;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -16,23 +32,12 @@ import org.opencps.dossiermgt.model.ProcessStep;
 import org.opencps.dossiermgt.model.ProcessStepRole;
 import org.opencps.dossiermgt.service.ProcessStepLocalServiceUtil;
 import org.opencps.dossiermgt.service.ProcessStepRoleLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
-import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
-import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
-import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.search.BaseIndexer;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
-import com.liferay.portal.kernel.search.Summary;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
-
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class ProcessStepIndexer extends BaseIndexer<ProcessStep> {
 	public static final String CLASS_NAME = ProcessStep.class.getName();
 
@@ -81,6 +86,7 @@ public class ProcessStepIndexer extends BaseIndexer<ProcessStep> {
 		document.addTextSortable(ProcessStepTerm.BRIEF_NOTE, object.getBriefNote());
 		document.addTextSortable(ProcessStepTerm.EDITABLE, Boolean.toString(object.getEditable()));
 		document.addTextSortable(ProcessStepTerm.LOCK_STATE, object.getLockState());
+		document.addNumber(ProcessStepTerm.CHECK_INPUT, object.getCheckInput());
 
 		// add extra fields (ProcessStepRole)
 		List<ProcessStepRole> roles = ProcessStepRoleLocalServiceUtil.findByP_S_ID(object.getPrimaryKey());

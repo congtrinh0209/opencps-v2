@@ -1,5 +1,18 @@
 package org.opencps.dossiermgt.service.indexer;
 
+import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.search.BaseIndexer;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
+import com.liferay.portal.kernel.search.Summary;
+import com.liferay.portal.kernel.util.GetterUtil;
+
 import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -16,21 +29,12 @@ import org.opencps.dossiermgt.model.Dossier;
 import org.opencps.dossiermgt.model.PaymentFile;
 import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
 import org.opencps.dossiermgt.service.PaymentFileLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
-import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
-import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
-import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.search.BaseIndexer;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Field;
-import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
-import com.liferay.portal.kernel.search.Summary;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
-
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class PaymentFileIndexer extends BaseIndexer<PaymentFile> {
 	public static final String CLASS_NAME = PaymentFile.class.getName();
 
@@ -65,16 +69,16 @@ public class PaymentFileIndexer extends BaseIndexer<PaymentFile> {
 		document.addNumberSortable(PaymentFileTerm.PAYMENT_AMOUNT, object.getPaymentAmount());
 		document.addNumberSortable(PaymentFileTerm.PAYMENT_STATUS, object.getPaymentStatus());
 		document.addNumberSortable(PaymentFileTerm.CONFIRM_FILE_ENTRY_ID, object.getConfirmFileEntryId());
-		document.addNumberSortable(PaymentFileTerm.INVOICE_FILE_ENTRY_ID, object.getInvoiceFileEntryId());
+//		document.addNumberSortable(PaymentFileTerm.INVOICE_FILE_ENTRY_ID, object.getInvoiceFileEntryId());
 		
 		document.addDateSortable(PaymentFileTerm.APPROVE_DATETIME, object.getApproveDatetime());
 		document.addDateSortable(PaymentFileTerm.CONFIRM_DATETIME, object.getConfirmDatetime());
 
 		// add text fields
 		document.addTextSortable(PaymentFileTerm.REFERENCE_UID, object.getReferenceUid());
-		document.addTextSortable(PaymentFileTerm.GOV_AGENCY_CODE, object.getGovAgencyCode());
-		document.addTextSortable(PaymentFileTerm.GOV_AGENCY_NAME, object.getGovAgencyName());
-		document.addTextSortable(PaymentFileTerm.IS_NEW, Boolean.toString(object.getIsNew()));
+//		document.addTextSortable(PaymentFileTerm.GOV_AGENCY_CODE, object.getGovAgencyCode());
+//		document.addTextSortable(PaymentFileTerm.GOV_AGENCY_NAME, object.getGovAgencyName());
+//		document.addTextSortable(PaymentFileTerm.IS_NEW, Boolean.toString(object.getIsNew()));
 		document.addTextSortable(PaymentFileTerm.PAYMENT_FEE, object.getPaymentFee());
 		document.addTextSortable(PaymentFileTerm.PAYMENT_NOTE, object.getPaymentNote());
 		document.addTextSortable(PaymentFileTerm.EPAYMENT_PROFILE, object.getEpaymentProfile());
@@ -107,25 +111,27 @@ public class PaymentFileIndexer extends BaseIndexer<PaymentFile> {
 
 			try {
 				
-				md5 = MessageDigest.getInstance("MD5");
+				md5 = MessageDigest.getInstance("SHA-256");
 				
 				ba = md5.digest(dossier.getReferenceUid().getBytes("UTF-8"));
 				
 			} catch (Exception e) {
+				_log.error(e);
 			} 
 
 			DateFormat df = new SimpleDateFormat("yy");
 			
 			String formattedDate = df.format(Calendar.getInstance().getTime());
 			
-			String dossierIDCTN = StringPool.BLANK;
+			String dossierIDCTN;
 			
 			dossierIDCTN = formattedDate + HashFunction.hexShort(ba);
 			
 			document.addTextSortable(DossierTerm.DOSSIER_ID+"CTN", dossierIDCTN);
 			
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
+			_log.error(e);
 		}
 
 		return document;

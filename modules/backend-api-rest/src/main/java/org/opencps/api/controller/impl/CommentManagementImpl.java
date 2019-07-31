@@ -1,6 +1,23 @@
 
 package org.opencps.api.controller.impl;
 
+import com.liferay.document.library.kernel.service.DLAppLocalServiceUtil;
+import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.search.Hits;
+import com.liferay.portal.kernel.search.SearchContext;
+import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.search.SortFactoryUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,28 +42,11 @@ import org.opencps.api.comment.model.CommentTopList;
 import org.opencps.api.controller.CommentManagement;
 import org.opencps.api.controller.util.CommentUtils;
 import org.opencps.api.error.model.ErrorMsg;
+import org.opencps.datamgt.constants.CommentTerm;
 import org.opencps.datamgt.model.Comment;
 import org.opencps.datamgt.service.CommentLocalServiceUtil;
 
-import com.liferay.document.library.kernel.service.DLAppLocalServiceUtil;
-import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
-import com.liferay.portal.kernel.exception.NoSuchUserException;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.repository.model.FileEntry;
-import com.liferay.portal.kernel.search.Hits;
-import com.liferay.portal.kernel.search.SearchContext;
-import com.liferay.portal.kernel.search.Sort;
-import com.liferay.portal.kernel.search.SortFactoryUtil;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
-
-import backend.auth.api.exception.UnauthenticationException;
-import backend.auth.api.exception.UnauthorizationException;
+import backend.auth.api.exception.BusinessExceptionImpl;
 
 /**
  * @author trungnt
@@ -66,77 +66,43 @@ public class CommentManagementImpl implements CommentManagement {
 			Comment comment = CommentLocalServiceUtil.addComment(userId, groupId, commentInputModel.getClassName(),
 					commentInputModel.getClassPK(), commentInputModel.getFullname(), commentInputModel.getEmail(),
 					commentInputModel.getParent(), commentInputModel.getContent(), 0, null, StringPool.BLANK,
-					StringPool.BLANK, 0, commentInputModel.getPings(), serviceContext);
+					StringPool.BLANK, 0, commentInputModel.getPings(), commentInputModel.getOpinion(), serviceContext);
 
-			CommentModel commentModel = new CommentModel();
+			CommentModel commentModel;
 
 			commentModel = CommentUtils.mappingComment(comment, serviceContext);
 
 			return Response.status(200).entity(commentModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-
-			if (e instanceof UnauthenticationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			else if (e instanceof UnauthorizationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			else if (e instanceof NoSuchUserException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			} else {
-				return Response.status(500).build();
-			}
-
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
 	@Override
 	public Response addCommentAttachment(Attachment attachment, HttpServletRequest request, HttpHeaders header,
 			ServiceContext serviceContext, String className, String classPK, long parent, String fileName,
-			String fileType, long fileSize, String pings, String email, String fullname) {
+			String fileType, long fileSize, String pings, String email, String fullname, Boolean opinion) {
 
 		InputStream inputStream = null;
 
-		DataHandler dataHandler = attachment.getDataHandler();
-
 		try {
+			DataHandler dataHandler = attachment.getDataHandler();
+			List<String> lstSecureFiles = new ArrayList<>();
+			lstSecureFiles.add("text/x-sh");
+			lstSecureFiles.add("application/macbinary");
+			lstSecureFiles.add("application/x-msdownload");
 
 			long userId = serviceContext.getUserId();
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
 			inputStream = dataHandler.getInputStream();
-
+			if (lstSecureFiles.contains(fileType)) {
+				return Response.status(405).entity(StringPool.BLANK).build();
+			}
 			Comment comment = CommentLocalServiceUtil.addComment(userId, groupId, className, classPK, fullname, email,
-					parent, StringPool.BLANK, fileSize, inputStream, fileName, fileType, 0, pings, serviceContext);
+					parent, StringPool.BLANK, fileSize, inputStream, fileName, fileType, 0, pings, opinion, serviceContext);
 
 			CommentModel commentModel = new CommentModel();
 
@@ -144,42 +110,11 @@ public class CommentManagementImpl implements CommentManagement {
 
 			return Response.status(200).entity(commentModel).build();
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-			} else if (e instanceof UnauthorizationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			} else if (e instanceof NoSuchUserException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-			} else {
-				return Response.status(500).build();
-			}
-
+			return BusinessExceptionImpl.processException(e);
 		} finally {
 			try {
-				inputStream.close();
+				if (inputStream != null)
+					inputStream.close();
 			} catch (IOException e) {
 				_log.error(e);
 			}
@@ -221,16 +156,8 @@ public class CommentManagementImpl implements CommentManagement {
 				return Response.status(404).entity(error).build();
 			}
 
-			
-
 		} catch (Exception e) {
-			_log.error(e);
-
-			ErrorMsg error = new ErrorMsg();
-			error.setMessage("file not found!");
-			error.setCode(404);
-			error.setDescription("file not found!");
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -264,7 +191,10 @@ public class CommentManagementImpl implements CommentManagement {
 			params.put("keywords", query.getKeywords());
 			params.put("className", className);
 			params.put("classPK", String.valueOf(classPK));
-
+			if (Validator.isNotNull(query.getOpinion())) {
+				params.put(CommentTerm.OPINION, query.getOpinion());				
+			}
+			
 			Sort[] sorts = new Sort[] {
 					SortFactoryUtil.create(query.getSort() + "_sortable", Sort.STRING_TYPE, query.isOrder()) };
 
@@ -278,41 +208,7 @@ public class CommentManagementImpl implements CommentManagement {
 
 			return Response.status(200).entity(results).build();
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			} else if (e instanceof UnauthorizationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			} else if (e instanceof NoSuchUserException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			} else {
-				return Response.status(500).build();
-			}
-
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -326,7 +222,7 @@ public class CommentManagementImpl implements CommentManagement {
 
 		try {
 
-			CommentLocalServiceUtil.deleteComment(commentId, serviceContext);
+			CommentLocalServiceUtil.deleteComment(commentId);
 
 			JSONObject result = JSONFactoryUtil.createJSONObject();
 
@@ -334,44 +230,7 @@ public class CommentManagementImpl implements CommentManagement {
 
 			return Response.status(200).entity(result.toString()).build();
 		} catch (Exception e) {
-			_log.error(e);
-
-			if (e instanceof UnauthenticationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			} else if (e instanceof UnauthorizationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			else if (e instanceof NoSuchUserException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			} else {
-				return Response.status(500).build();
-			}
-
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -384,59 +243,21 @@ public class CommentManagementImpl implements CommentManagement {
 			String email = commentInputModel.getEmail();
 			// Truong hop co userId thi lay email va fullname tu user
 
-			if (!user.getEmailAddress().equals("default@liferay.com")) {
+			if (!"default@liferay.com".equals(user.getEmailAddress())) {
 				email = user.getEmailAddress();
 			}
 
 			Comment comment = CommentLocalServiceUtil.updateComment(commentId, commentInputModel.getClassName(),
 					commentInputModel.getClassPK(), email, -1, serviceContext);
 
-			CommentModel commentModel = new CommentModel();
+			CommentModel commentModel;
 
 			commentModel = CommentUtils.mappingComment(comment, serviceContext);
 
 			return Response.status(200).entity(commentModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			else if (e instanceof UnauthorizationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			else if (e instanceof NoSuchUserException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			} else {
-				return Response.status(500).build();
-			}
-
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -449,7 +270,7 @@ public class CommentManagementImpl implements CommentManagement {
 			String fullname = commentInputModel.getFullname();
 			// Truong hop co userId thi lay email va fullname tu user
 
-			if (!user.getEmailAddress().equals("default@liferay.com")) {
+			if (!"default@liferay.com".equals(user.getEmailAddress())) {
 				email = user.getEmailAddress();
 			}
 
@@ -458,53 +279,14 @@ public class CommentManagementImpl implements CommentManagement {
 					commentInputModel.getParent(), commentInputModel.getContent(), commentInputModel.getPings(),
 					serviceContext);
 
-			CommentModel commentModel = new CommentModel();
+			CommentModel commentModel;
 
 			commentModel = CommentUtils.mappingComment(comment, serviceContext);
 
 			return Response.status(200).entity(commentModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-
-			if (e instanceof UnauthenticationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			else if (e instanceof UnauthorizationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			else if (e instanceof NoSuchUserException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			} else {
-				return Response.status(500).build();
-			}
-
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -516,58 +298,21 @@ public class CommentManagementImpl implements CommentManagement {
 
 			String email = commentInputModel.getEmail();
 
-			if (!user.getEmailAddress().equals("default@liferay.com")) {
+			if (!"default@liferay.com".equals(user.getEmailAddress())) {
 				email = user.getEmailAddress();
 			}
 
 			Comment comment = CommentLocalServiceUtil.updateComment(commentId, commentInputModel.getClassName(),
 					commentInputModel.getClassPK(), email, 0, serviceContext);
 
-			CommentModel commentModel = new CommentModel();
+			CommentModel commentModel;
 
 			commentModel = CommentUtils.mappingComment(comment, serviceContext);
 
 			return Response.status(200).entity(commentModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-
-			if (e instanceof UnauthenticationException) {
-
-				ErrorMsg error = new ErrorMsg();
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			else if (e instanceof UnauthorizationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-			}
-
-			else if (e instanceof NoSuchUserException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			} else {
-				return Response.status(500).build();
-			}
-
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -603,41 +348,7 @@ public class CommentManagementImpl implements CommentManagement {
 			return Response.status(200).entity(results).build();
 			
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			} else if (e instanceof UnauthorizationException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			} else if (e instanceof NoSuchUserException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			} else {
-				return Response.status(500).build();
-			}
-
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 

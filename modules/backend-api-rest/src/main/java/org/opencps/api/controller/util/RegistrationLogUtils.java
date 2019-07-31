@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.opencps.api.registrationlog.model.RegistrationLogModel;
 import org.opencps.auth.utils.APIDateTimeUtils;
-import org.opencps.dossiermgt.constants.DossierLogTerm;
 import org.opencps.dossiermgt.constants.RegistrationLogTerm;
 import org.opencps.dossiermgt.model.RegistrationLog;
 
@@ -47,7 +46,7 @@ public class RegistrationLogUtils {
 			Date date = null;
 			
 			if (Validator.isNotNull(strDate)) {
-				date = APIDateTimeUtils.convertStringToDate(strDate, "yyyyMMddHHmmss");
+				date = APIDateTimeUtils.convertStringToDate(strDate, APIDateTimeUtils._LUCENE_PATTERN);
 			}
 			model.setCreateDate(date != null ? APIDateTimeUtils.convertDateToString(date, APIDateTimeUtils._TIMESTAMP): strDate);
 			model.setAuthor(document.get(RegistrationLogTerm.AUTHOR));

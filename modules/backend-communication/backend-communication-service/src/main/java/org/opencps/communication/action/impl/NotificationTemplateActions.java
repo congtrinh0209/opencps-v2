@@ -1,6 +1,7 @@
 package org.opencps.communication.action.impl;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.opencps.communication.action.NotificationTemplateInterface;
@@ -20,7 +21,6 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import backend.auth.api.exception.NotFoundException;
@@ -48,32 +48,34 @@ public class NotificationTemplateActions implements NotificationTemplateInterfac
 
 			result.put("total", total);
 
-			if (NotificationtemplateLocalServiceUtil.initTemplate(groupId)) {
+//			if (NotificationtemplateLocalServiceUtil.initTemplate(groupId)) {
 
 				// create init Templates
-				Map<String, String> initTemplates = NotificationMGTConstants.NOTIFICATION_TEMPLATE_INIT;
-
-				for (String key : initTemplates.keySet()) {
-
-					try {
-
-						NotificationtemplateLocalServiceUtil.addNotificationTemplate(userId, groupId, key,
-								initTemplates.get(key), initTemplates.get(key), initTemplates.get(key), Boolean.TRUE,
-								Boolean.FALSE, StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, Boolean.FALSE,
-								serviceContext);
-
-					} catch (Exception e) {
-						_log.error(e);
-					}
-
-				}
-
-			}
+//				Map<String, String> initTemplates = NotificationMGTConstants.NOTIFICATION_TEMPLATE_INIT;
+//
+//				for (String key : initTemplates.keySet()) {
+//
+//					try {
+//
+//						NotificationtemplateLocalServiceUtil.addNotificationTemplate(userId, groupId, key,
+//								initTemplates.get(key), initTemplates.get(key), initTemplates.get(key), Boolean.TRUE,
+//								Boolean.FALSE, StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, Boolean.FALSE,
+//								serviceContext);
+//
+//					} catch (Exception e) {
+//						_log.error(e);
+//					}
+//
+//				}
+//
+//			}
 
 		} catch (ParseException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		} catch (SearchException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		return result;
@@ -186,7 +188,7 @@ public class NotificationTemplateActions implements NotificationTemplateInterfac
 	public JSONObject getNotificationTypes() {
 		JSONObject result = JSONFactoryUtil.createJSONObject();
 
-		Map<String, String> initTemplates = NotificationMGTConstants.NOTIFICATION_TEMPLATE_INIT;
+		Map<String, String> initTemplates = NotificationMGTConstants.getNotificationTempMap();
 
 		result.put("data", initTemplates);
 
@@ -208,6 +210,31 @@ public class NotificationTemplateActions implements NotificationTemplateInterfac
 				Boolean.valueOf(grouping), serviceContext);
 
 		return ett;
+	}
+
+	@Override
+	public boolean deleteAllNotificationTemplate(long groupId, long userId, ServiceContext serviceContext) {
+		boolean flag = false;
+		List<Notificationtemplate> tempList = NotificationtemplateLocalServiceUtil.findByF_NotificationtemplateByGroup(groupId);
+		if (tempList != null && tempList.size() > 0) {
+			for (Notificationtemplate notiTemp : tempList) {
+				NotificationtemplateLocalServiceUtil.deleteNotificationtemplate(notiTemp);
+				flag = true;
+			}
+		} else {
+			flag = true;
+		}
+		return flag;
+	}
+
+	@Override
+	public void updateNotificationTemplateDB(long userId, long groupId, String notificationType, Boolean sendEmail,
+			String emailSubject, String emailBody, String textMessage, Boolean sendSMS, Integer expireDuration,
+			String interval, ServiceContext serviceContext) throws NoSuchUserException {
+
+		NotificationtemplateLocalServiceUtil.updateNotificationTemplateDB(userId, groupId, notificationType, sendEmail,
+				emailSubject, emailBody, textMessage, sendSMS, expireDuration, interval, serviceContext);
+
 	}
 
 }

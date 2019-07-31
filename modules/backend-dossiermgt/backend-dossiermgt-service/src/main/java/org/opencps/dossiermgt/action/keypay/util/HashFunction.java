@@ -1,14 +1,15 @@
 package org.opencps.dossiermgt.action.keypay.util;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 
 public class HashFunction {
 	private Log _log = LogFactoryUtil.getLog(HashFunction.class.getName());
@@ -18,7 +19,7 @@ public class HashFunction {
 
 	static final char[] HEX_TABLE_SHORT = new char[] { '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
 			'E', 'F' };
-	
+	// HASH MD5
 	public String hashAllFields(Map fields, String SECURE_SECRET) {
 		// create a list and sort it
 		List fieldNames = new ArrayList(fields.keySet());
@@ -44,14 +45,59 @@ public class HashFunction {
 		byte[] ba = null;
 		// create the md5 hash and UTF-8 encode it
 		try {
+//			md5 = MessageDigest.getInstance("SHA-256");
 			md5 = MessageDigest.getInstance("MD5");
 			ba = md5.digest(buf.toString().getBytes("UTF-8"));
 		} catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
 		} // wont happen
 			// return buf.toString();
-		return hex(ba);
-
+		if (ba != null)
+			return hex(ba);
+		else
+			return StringPool.BLANK;
 	}
+	
+	// HASH SSA
+//	public String hashAllFields(Map fields, String SECURE_SECRET) {
+//		// create a list and sort it
+//		List fieldNames = new ArrayList(fields.keySet());
+//		Collections.sort(fieldNames);
+//
+//		// create a buffer for the md5 input and add the secure secret first
+//		StringBuffer buf = new StringBuffer();
+//		buf.append(SECURE_SECRET);
+//
+//		// iterate through the list and add the remaining field values
+//		Iterator itr = fieldNames.iterator();
+//
+//		while (itr.hasNext()) {
+//			String fieldName = (String) itr.next();
+//			String fieldValue = (String) fields.get(fieldName);
+//			if ((fieldValue != null) && (fieldValue.length() > 0)) {
+//
+//				buf.append(fieldValue);
+//			}
+//		}
+//
+//		StringBuffer sb = new StringBuffer();
+//		try {
+//			MessageDigest md = MessageDigest.getInstance("SHA-256");
+//			byte[] ba = md.digest(buf.toString().getBytes("UTF-8"));
+//
+//			// convert the byte to hex format
+//
+//			for (int i = 0; i < ba.length; i++) {
+//				sb.append(Integer.toString((ba[i] & 0xff) + 0x100, 16)
+//						.substring(1));
+//			}
+//		} catch (Exception e) {
+//			_log.error(e);
+//		}
+//
+//		return sb.toString();
+//	}
 
 	/**
 	 * Returns Hex output of byte array

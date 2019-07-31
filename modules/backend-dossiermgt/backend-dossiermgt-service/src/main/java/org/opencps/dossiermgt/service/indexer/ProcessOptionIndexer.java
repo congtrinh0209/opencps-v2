@@ -15,6 +15,7 @@ import org.opencps.dossiermgt.service.DossierTemplateLocalServiceUtil;
 import org.opencps.dossiermgt.service.ProcessOptionLocalServiceUtil;
 import org.opencps.dossiermgt.service.ServiceConfigLocalServiceUtil;
 import org.opencps.dossiermgt.service.ServiceProcessLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
@@ -31,6 +32,10 @@ import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
 import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.util.GetterUtil;
 
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class ProcessOptionIndexer extends BaseIndexer<ProcessOption> {
 
 	public static final String CLASS_NAME = ProcessOption.class.getName();
@@ -96,7 +101,7 @@ public class ProcessOptionIndexer extends BaseIndexer<ProcessOption> {
 			jsonObj.put(ProcessOptionTerm.TEMPLATE_NO, dossierTemplate.getTemplateNo());
 			jsonObj.put(ProcessOptionTerm.TEMPLATE_NAME, dossierTemplate.getTemplateName());
 		} catch (Exception e) {
-
+			_log.error(e);
 		}
 
 		try {
@@ -105,7 +110,7 @@ public class ProcessOptionIndexer extends BaseIndexer<ProcessOption> {
 			jsonObj.put(ProcessOptionTerm.PROCESS_NAME, serviceProcess.getProcessName());
 
 		} catch (Exception e) {
-
+			_log.error(e);
 		}
 
 		try {
@@ -118,7 +123,7 @@ public class ProcessOptionIndexer extends BaseIndexer<ProcessOption> {
 				jsonObj.put(ActionKeys.APPLICANT_CTZ, Boolean.toString(serviceConfig.getForCitizen()));
 
 		} catch (Exception e) {
-
+			_log.error(e);
 		}
 
 		return jsonObj;

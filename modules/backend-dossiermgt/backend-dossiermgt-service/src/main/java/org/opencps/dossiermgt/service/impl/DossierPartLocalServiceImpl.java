@@ -14,17 +14,12 @@
 
 package org.opencps.dossiermgt.service.impl;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import org.opencps.dossiermgt.constants.DossierPartTerm;
-import org.opencps.dossiermgt.exception.HasExsistException;
-import org.opencps.dossiermgt.exception.NoSuchDossierPartException;
-import org.opencps.dossiermgt.model.DossierPart;
-import org.opencps.dossiermgt.service.base.DossierPartLocalServiceBaseImpl;
-
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
@@ -43,8 +38,17 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.generic.MultiMatchQuery;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.opencps.dossiermgt.constants.DossierPartTerm;
+import org.opencps.dossiermgt.exception.HasExsistException;
+import org.opencps.dossiermgt.exception.NoSuchDossierPartException;
+import org.opencps.dossiermgt.model.DossierPart;
+import org.opencps.dossiermgt.service.base.DossierPartLocalServiceBaseImpl;
 
 import aQute.bnd.annotation.ProviderType;
 
@@ -68,6 +72,7 @@ import aQute.bnd.annotation.ProviderType;
  */
 @ProviderType
 public class DossierPartLocalServiceImpl extends DossierPartLocalServiceBaseImpl {
+	private static Log _log = LogFactoryUtil.getLog(DossierPartLocalServiceImpl.class);
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
@@ -225,9 +230,8 @@ public class DossierPartLocalServiceImpl extends DossierPartLocalServiceBaseImpl
 			object.setESign(eSign);
 		}
 
-		dossierPartPersistence.update(object);
+		return dossierPartPersistence.update(object);
 
-		return object;
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -303,9 +307,8 @@ public class DossierPartLocalServiceImpl extends DossierPartLocalServiceBaseImpl
 
 		}
 
-		dossierPartPersistence.update(object);
+		return dossierPartPersistence.update(object);
 
-		return object;
 	}
 
 	public Hits searchLucene(LinkedHashMap<String, Object> params, Sort[] sorts, int start, int end,
@@ -567,15 +570,133 @@ public class DossierPartLocalServiceImpl extends DossierPartLocalServiceBaseImpl
 		// TODO add more logic here
 	}
 
-	public DossierPart getByPartTypeEsign(String templateNo,
-			String partNo, int partType, boolean eSign) {
+	public DossierPart getByPartTypeEsign(String templateNo, String partNo, int partType, boolean eSign) {
 		try {
 			return dossierPartPersistence.findByTP_NO_PART_ESIGN(templateNo, partNo, partType, eSign);
 		} catch (NoSuchDossierPartException e) {
+			 _log.debug(e);
 			return null;
 		}
 	}
 
+	// LamTV_ Process output DossierPart to DB
+	@Indexable(type = IndexableType.REINDEX)
+	public DossierPart updateDossierPartDB(long userId, long groupId, String templateNo, String partNo, String partName,
+			String partTip, Integer partType, boolean multiple, String formScript, String formReport, boolean required,
+			boolean esign, String fileTemplateNo, String deliverableType, Integer deliverableAction, boolean eForm,
+			String sampleData, Integer fileMark, ServiceContext serviceContext) throws PortalException {
+
+		Date now = new Date();
+		User userAction = userLocalService.getUser(userId);
+
+		long dossierPartId = counterLocalService.increment(CLASS_NAME);
+		DossierPart object = dossierPartPersistence.create(dossierPartId);
+
+		// Add audit fields
+		object.setCompanyId(serviceContext.getCompanyId());
+		object.setGroupId(groupId);
+		object.setCreateDate(now);
+		object.setModifiedDate(now);
+		object.setUserId(userAction.getUserId());
+		object.setUserName(userAction.getFullName());
+
+		// Add other fields
+		object.setTemplateNo(templateNo);
+		object.setPartNo(partNo);
+		object.setPartName(partName);
+		object.setPartName(partName);
+		object.setPartTip(partTip);
+		object.setPartType(partType);
+		object.setMultiple(multiple);
+		object.setFormScript(formScript);
+		object.setFormReport(formReport);
+		object.setSampleData(sampleData);
+		object.setRequired(required);
+		object.setFileTemplateNo(fileTemplateNo);
+		object.setESign(esign);
+		object.setDeliverableType(deliverableType);
+		object.setDeliverableAction(deliverableAction);
+		object.setSampleData(sampleData);
+		object.setEForm(eForm);
+		object.setFileMark(fileMark);
+
+		return dossierPartPersistence.update(object);
+	}
+
+	// LamTV_Get dossierPart by partNo and dossierId
+	public DossierPart getByTempAndPartNo(long groupId, String templateNo, String partNo) {
+		return dossierPartPersistence.fetchByTP_NO_PART(groupId, templateNo, partNo);
+	}
+
+	// super_admin Generators
+	@Indexable(type = IndexableType.DELETE)
+	public DossierPart adminProcessDelete(Long id) {
+
+		DossierPart object = dossierPartPersistence.fetchByPrimaryKey(id);
+
+		if (Validator.isNull(object)) {
+			return null;
+		} else {
+			dossierPartPersistence.remove(object);
+		}
+
+		return object;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public DossierPart adminProcessData(JSONObject objectData) {
+
+		DossierPart object = null;
+
+		if (objectData.getLong("dossierPartId") > 0) {
+
+			object = dossierPartPersistence.fetchByPrimaryKey(objectData.getLong("dossierPartId"));
+
+			object.setModifiedDate(new Date());
+
+		} else {
+
+			long id = CounterLocalServiceUtil.increment(DossierPart.class.getName());
+
+			object = dossierPartPersistence.create(id);
+
+			object.setGroupId(objectData.getLong("groupId"));
+			object.setCompanyId(objectData.getLong("companyId"));
+			object.setCreateDate(new Date());
+
+		}
+
+		object.setUserId(objectData.getLong("userId"));
+		object.setUserName(objectData.getString("userName"));
+
+		object.setTemplateNo(objectData.getString("templateNo"));
+		object.setPartNo(objectData.getString("partNo"));
+		object.setPartName(objectData.getString("partName"));
+		object.setPartTip(objectData.getString("partTip"));
+		object.setPartType(objectData.getInt("partType"));
+		object.setMultiple(objectData.getBoolean("multiple"));
+		object.setFormScript(objectData.getString("formScript"));
+		object.setFormReport(objectData.getString("formReport"));
+		object.setSampleData(objectData.getString("sampleData"));
+		object.setRequired(objectData.getBoolean("required"));
+		object.setFileTemplateNo(objectData.getString("fileTemplateNo"));
+		object.setESign(objectData.getBoolean("ESign"));
+		object.setDeliverableType(objectData.getString("deliverableType"));
+		object.setDeliverableAction(objectData.getInt("deliverableAction"));
+		object.setEForm(objectData.getBoolean("EForm"));
+		object.setFileMark(objectData.getInt("fileMark"));
+
+		dossierPartPersistence.update(object);
+
+		return object;
+	}
+	public DossierPart getByTempAndFileTempNo(long groupId, String templateNo, String fileTemplateNo) {
+		return dossierPartPersistence.fetchByGID_TN_FTN(groupId, templateNo, fileTemplateNo);
+	}
+
+	public List<DossierPart> findByG(long groupId) {
+		return dossierPartPersistence.findByG(groupId);
+	}
 	public static final String CLASS_NAME = DossierPart.class.getName();
 
 }

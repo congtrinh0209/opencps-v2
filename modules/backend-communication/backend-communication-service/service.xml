@@ -30,8 +30,10 @@
 		<column name="emailSubject" type="String" />
 		<column name="emailBody" type="String" />
 		<column name="textMessage" type="String" />
+		<column name="notifyMessage" type="String" />
 		<column name="sendSMS" type="boolean" />
 		<column name="sendEmail" type="boolean" />
+		<column name="sendNotification" type="boolean" />
 		<column name="expireDuration" type="int" />
 		<column name="userUrlPattern" type="String" />
 		<column name="guestUrlPattern" type="String" />
@@ -56,6 +58,17 @@
 		
 		<finder name="F_NotificationtemplateEmailSubject" return-type="Collection">
 			<finder-column name="emailSubject" />
+		</finder>
+		<finder name="F_expireDuration" return-type="Collection">
+			<finder-column name="expireDuration"></finder-column>
+		</finder>
+		<finder name="F_interval" return-type="Collection">
+			<finder-column name="interval"></finder-column>
+		</finder>
+		<finder name="F_GID_TYPE_INTER" return-type="Notificationtemplate">
+			<finder-column name="groupId" />
+			<finder-column name="notificationType" />
+			<finder-column name="interval" />
 		</finder>
 
 	</entity>
@@ -99,6 +112,54 @@
 			<order-column name="createDate" />
 		</order>
 
+		<finder name="G" return-type="Collection">
+			<finder-column name="groupId" />
+		</finder>
+		<finder name="F_GreaterThan_ExpireDate" return-type="Collection">
+			<finder-column name="expireDate" comparator="&lt;=" />
+		</finder>
+		<finder name="F_notificationType_LessThanExpireDate"
+			return-type="Collection">
+			<finder-column name="notificationType"></finder-column>
+			<finder-column name="expireDate" comparator="&gt;="></finder-column>
+		</finder>
+		<finder name="F_LessThan_ExpireDate"
+			return-type="Collection">
+			<finder-column name="expireDate" comparator="&gt;=" />
+		</finder>
+
+	</entity>
+
+	<entity name="Preferences" uuid="true" local-service="true"
+		remote-service="false" table="opencps_preferences">
+
+		<!-- PK fields -->
+
+		<column name="preferencesId" primary="true" type="long" />
+
+		<!-- Group instance -->
+
+		<column name="groupId" type="long" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="preferences" type="String" />
+
+		<order by="asc">
+			<order-column name="createDate"></order-column>
+		</order>
+
+		<finder return-type="Preferences" name="F_userId" unique="true">
+			<finder-column name="groupId"></finder-column>
+			<finder-column name="userId"></finder-column>
+		</finder>
 
 	</entity>
 	
@@ -123,6 +184,7 @@
 
 		<!-- Other fields -->
 
+		<column name="govAgencyCode" type="String" />
 		<column name="serverNo" type="String" />
 		<column name="serverName" type="String" />
 		<column name="protocol" type="String" />
@@ -138,6 +200,11 @@
 			<order-column name="createDate" />
 		</order>
 		
+		<finder return-type="ServerConfig" name="G_CF_CD">
+			<finder-column name="groupId"/>
+			<finder-column name="serverNo"/>
+		</finder>
+
 		<finder return-type="ServerConfig" name="CF_CD">
 			<finder-column name="serverNo"/>
 		</finder>
@@ -149,8 +216,68 @@
 			<finder-column name="groupId"/>
 		</finder>
 		
+		<finder return-type="Collection" name="G_P">
+			<finder-column name="groupId"/>
+			<finder-column name="protocol"/>
+		</finder>
+
+		<finder return-type="Collection" name="P">
+			<finder-column name="protocol"/>
+		</finder>
 	</entity>
-	
+
+	<entity name="ZaloMap" local-service="true"
+		remote-service="false" table="opencps_zalomap">
+
+		<!-- PK fields -->
+
+		<column name="zaloMapId" primary="true" type="long" />
+
+		<!-- Group instance -->
+
+		<column name="groupId" type="long" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<!-- UK fields -->
+		<column name="uId" type="String" />
+		<column name="telNo" type="String" />
+
+		<!-- Other fields -->
+		<column name="zaloOAId" type="String" />
+		<column name="isFollowed" type="int" />
+		<column name="payload" type="String" />
+
+		<order by="asc">
+			<order-column name="createDate" />
+		</order>
+		
+		<finder return-type="ZaloMap" name="F_UId">
+			<finder-column name="uId"/>
+		</finder>
+
+		<finder return-type="ZaloMap" name="F_TelNo">
+			<finder-column name="telNo"/>
+		</finder>
+
+		<finder return-type="Collection" name="F_GID">
+			<finder-column name="groupId"/>
+		</finder>
+		
+		<finder return-type="Collection" name="F_ZALO_OAID">
+			<finder-column name="zaloOAId"/>
+		</finder>
+		
+	</entity>
+
 	<exceptions>
 		<exception>ServerNo</exception>
 		<exception>ServerName</exception>

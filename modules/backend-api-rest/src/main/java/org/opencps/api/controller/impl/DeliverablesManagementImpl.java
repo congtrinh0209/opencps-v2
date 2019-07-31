@@ -1,34 +1,5 @@
 package org.opencps.api.controller.impl;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
-import org.apache.commons.httpclient.util.HttpURLConnection;
-import org.opencps.api.controller.DeliverablesManagement;
-import org.opencps.api.controller.exception.ErrorMsg;
-import org.opencps.api.controller.util.DeliverableUtils;
-import org.opencps.api.deliverable.model.DeliverableInputModel;
-import org.opencps.api.deliverable.model.DeliverableModel;
-import org.opencps.api.deliverable.model.DeliverableResultModel;
-import org.opencps.api.deliverable.model.DeliverableSearchModel;
-import org.opencps.api.deliverable.model.DeliverableUpdateModel;
-import org.opencps.auth.api.BackendAuth;
-import org.opencps.auth.api.BackendAuthImpl;
-import org.opencps.auth.api.exception.UnauthenticationException;
-import org.opencps.dossiermgt.action.DeliverableActions;
-import org.opencps.dossiermgt.action.DeliverableLogActions;
-import org.opencps.dossiermgt.action.impl.DeliverableActionsImpl;
-import org.opencps.dossiermgt.action.impl.DeliverableLogActionsImpl;
-import org.opencps.dossiermgt.constants.DeliverableTerm;
-import org.opencps.dossiermgt.constants.DossierTerm;
-import org.opencps.dossiermgt.model.Deliverable;
-import org.opencps.dossiermgt.model.DeliverableLog;
-
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -38,17 +9,56 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.Indexer;
+import com.liferay.portal.kernel.search.IndexerRegistryUtil;
+import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.SortFactoryUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+
+import org.opencps.api.controller.DeliverablesManagement;
+import org.opencps.api.controller.util.DeliverableUtils;
+import org.opencps.api.controller.util.OneGateUtils;
+import org.opencps.api.deliverable.model.DeliverableInputModel;
+import org.opencps.api.deliverable.model.DeliverableModel;
+import org.opencps.api.deliverable.model.DeliverableSearchModel;
+import org.opencps.api.deliverable.model.DeliverableUpdateModel;
+import org.opencps.api.dossier.model.DossierDetailModel;
+import org.opencps.auth.api.BackendAuth;
+import org.opencps.auth.api.BackendAuthImpl;
+import org.opencps.auth.api.exception.UnauthenticationException;
+import org.opencps.dossiermgt.action.DeliverableActions;
+import org.opencps.dossiermgt.action.DeliverableLogActions;
+import org.opencps.dossiermgt.action.impl.DeliverableActionsImpl;
+import org.opencps.dossiermgt.action.impl.DeliverableLogActionsImpl;
+import org.opencps.dossiermgt.action.impl.DossierActionsImpl;
+import org.opencps.dossiermgt.constants.DeliverableTerm;
+import org.opencps.dossiermgt.constants.DossierTerm;
+import org.opencps.dossiermgt.model.Deliverable;
+import org.opencps.dossiermgt.model.DeliverableLog;
+import org.opencps.dossiermgt.model.Dossier;
+import org.opencps.dossiermgt.model.DossierFile;
+import org.opencps.dossiermgt.service.DeliverableLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierFileLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
+
+import backend.auth.api.exception.BusinessExceptionImpl;
 
 public class DeliverablesManagementImpl implements DeliverablesManagement {
 
 	private static Log _log = LogFactoryUtil.getLog(DeliverablesManagementImpl.class);
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDeliverables(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, DeliverableSearchModel search) {
@@ -123,7 +133,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(results)).build();
 //			return Response.status(200).entity(results).build();
 		} catch (Exception e) {
-			return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(e).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -163,7 +173,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(result)).build();
 		} catch (Exception e) {
-			return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(e).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -175,7 +185,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 		// TODO Add Deliverable Type
 		BackendAuth auth = new BackendAuthImpl();
 
-		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+//		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
 		try {
 			if (!auth.isAuth(serviceContext)) {
@@ -183,7 +193,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			}
 
 			DeliverableActions actions = new DeliverableActionsImpl();
-			DeliverableModel results = new DeliverableModel();
+			DeliverableModel results;
 
 			Deliverable deliverableInfo = actions.getDetailById(id);
 
@@ -196,13 +206,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			return Response.status(200).entity(results).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -214,7 +218,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 		// TODO Add Deliverable Type
 		BackendAuth auth = new BackendAuthImpl();
 
-		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+//		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
 		try {
 			if (!auth.isAuth(serviceContext)) {
@@ -223,7 +227,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 
 //			_log.info("groupId: "+groupId +"*keyword*: "+ id);
 			DeliverableActions actions = new DeliverableActionsImpl();
-			DeliverableModel results = new DeliverableModel();
+			DeliverableModel results;
 
 			Deliverable deliverableInfo = actions.deleteById(id);
 //			_log.info("deliverableInfo: "+ deliverableInfo);
@@ -236,17 +240,12 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			return Response.status(200).entity(results).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 		
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getFormData(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, Long id) {
@@ -280,13 +279,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(results)).build();
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -313,13 +306,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(result)).build();
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -331,7 +318,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 		// TODO Add Deliverable Type
 		BackendAuth auth = new BackendAuthImpl();
 
-		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+//		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
 		try {
 			if (!auth.isAuth(serviceContext)) {
@@ -339,7 +326,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			}
 
 			DeliverableActions actions = new DeliverableActionsImpl();
-			String results = StringPool.BLANK;
+			String results;
 
 			Deliverable deliverableInfo = actions.getDetailById(id);
 
@@ -352,13 +339,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(results)).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -370,7 +351,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 		// TODO Add Deliverable Type
 		BackendAuth auth = new BackendAuthImpl();
 
-		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+//		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
 		try {
 			if (!auth.isAuth(serviceContext)) {
@@ -378,7 +359,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			}
 
 			DeliverableActions actions = new DeliverableActionsImpl();
-			String results = StringPool.BLANK;
+			String results;
 
 			Deliverable deliverableInfo = actions.getDetailById(id);
 
@@ -391,13 +372,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(results)).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -421,13 +396,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(log)).build();
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -461,18 +430,13 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(result)).build();
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
 
 	//18
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDataFormByTypeCode(HttpServletRequest request, HttpHeaders header, Company company,
 			Locale locale, User user, ServiceContext serviceContext, String agencyNo, String typeCode,
@@ -489,7 +453,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			
 			int startSearch = -1;
 			int endSearch = -1;
-			if (Validator.isNotNull(end) && !end.equals("0")) {
+			if (Validator.isNotNull(end) && !"0".equals(end)) {
 				startSearch = Integer.parseInt(start);
 				endSearch = Integer.parseInt(end);
 			}
@@ -546,13 +510,7 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(results)).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 
 	}
@@ -563,4 +521,82 @@ public class DeliverablesManagementImpl implements DeliverablesManagement {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public Response getDossierIdByCode(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
+			User user, ServiceContext serviceContext, Long id, String deliverableCode) {
+		_log.info("START*********1");
+		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+		_log.info("groupId: " + groupId);
+		BackendAuth auth = new BackendAuthImpl();
+
+		try {
+
+			if (!auth.isAuth(serviceContext)) {
+				throw new UnauthenticationException();
+			}
+
+			_log.info("deliverableCode: " + deliverableCode);
+			DossierDetailModel dossierInfo = null;
+			DossierFile dossierFile = DossierFileLocalServiceUtil.getByDeliverableCode(deliverableCode);
+			Dossier dossier = null;
+			if (dossierFile != null) {
+				dossier = DossierLocalServiceUtil.fetchDossier(dossierFile.getDossierId());
+			}
+			if (dossier != null) {
+				dossierInfo = OneGateUtils.mappingForGetDetail(dossier);
+			}
+
+
+			return Response.status(200).entity(dossierInfo).build();
+
+		} catch (Exception e) {
+			return BusinessExceptionImpl.processException(e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Response resolveConflictDeliverables(HttpServletRequest request, HttpHeaders header, Company company,
+			Locale locale, User user, ServiceContext serviceContext) {
+		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+//		long userId = user.getUserId();
+		DeliverableActions actions = new DeliverableActionsImpl();
+		Indexer<Deliverable> indexer = IndexerRegistryUtil
+				.nullSafeGetIndexer(Deliverable.class);
+		
+		LinkedHashMap<String, Object> params = new LinkedHashMap<String, Object>();
+		params.put(Field.GROUP_ID, String.valueOf(groupId));
+
+		//JSONObject jsonData = actions.getDossiers(user.getUserId(), company.getCompanyId(), groupId, params, null,
+		//			-1, -1, serviceContext);
+		
+		
+		// get JSON data deliverable
+		JSONObject jsonData = actions.getListDeliverable(user.getUserId(), serviceContext.getCompanyId(), params,
+				null, -1, -1, serviceContext);
+		
+		long total = jsonData.getLong("total");
+//		JSONArray dossierArr = JSONFactoryUtil.createJSONArray();
+		
+		if (total > 0) {
+			List<Document> lstDocuments = (List<Document>) jsonData.get("data");	
+			for (Document document : lstDocuments) {
+				long deliverableId = GetterUtil.getLong(document.get(DeliverableTerm.DELIVERABLE_ID));
+				long companyId = GetterUtil.getLong(document.get(Field.COMPANY_ID));
+				String uid = document.get(Field.UID);
+				Deliverable oldDeliverable = DeliverableLocalServiceUtil.fetchDeliverable(deliverableId);
+				if (oldDeliverable == null) {
+					try {
+						indexer.delete(companyId, uid);
+					} catch (SearchException e) {
+						_log.error(e);
+					}
+				}
+			}
+		}
+
+		return Response.status(200).entity("{}").build();
+	}
+
 }

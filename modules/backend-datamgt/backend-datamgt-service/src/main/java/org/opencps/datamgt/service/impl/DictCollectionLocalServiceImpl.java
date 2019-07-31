@@ -14,20 +14,12 @@
 
 package org.opencps.datamgt.service.impl;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import org.opencps.datamgt.constants.DictCollectionTerm;
-import org.opencps.datamgt.constants.DictItemTerm;
-import org.opencps.datamgt.exception.NoSuchDictCollectionException;
-import org.opencps.datamgt.model.DictCollection;
-import org.opencps.datamgt.model.DictItem;
-import org.opencps.datamgt.model.impl.DictCollectionImpl;
-import org.opencps.datamgt.service.base.DictCollectionLocalServiceBaseImpl;
-
 import com.liferay.asset.kernel.exception.DuplicateCategoryException;
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCachable;
 import com.liferay.portal.kernel.exception.NoSuchUserException;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -35,6 +27,7 @@ import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
 import com.liferay.portal.kernel.search.BooleanQueryFactoryUtil;
 import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.GroupBy;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.IndexSearcherHelperUtil;
 import com.liferay.portal.kernel.search.Indexable;
@@ -42,6 +35,7 @@ import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.search.ParseException;
+import com.liferay.portal.kernel.search.QueryConfig;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Sort;
@@ -52,10 +46,11 @@ import com.liferay.portal.kernel.search.generic.TermQueryImpl;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
-import aQute.bnd.annotation.ProviderType;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.opencps.auth.api.BackendAuthImpl;
 import org.opencps.auth.api.exception.NotFoundException;
@@ -63,6 +58,15 @@ import org.opencps.auth.api.exception.UnauthenticationException;
 import org.opencps.auth.api.exception.UnauthorizationException;
 import org.opencps.auth.api.keys.ActionKeys;
 import org.opencps.auth.api.keys.ModelNameKeys;
+import org.opencps.datamgt.constants.DictCollectionTerm;
+import org.opencps.datamgt.constants.DictItemTerm;
+import org.opencps.datamgt.exception.NoSuchDictCollectionException;
+import org.opencps.datamgt.model.DictCollection;
+import org.opencps.datamgt.model.DictItem;
+import org.opencps.datamgt.model.impl.DictCollectionImpl;
+import org.opencps.datamgt.service.base.DictCollectionLocalServiceBaseImpl;
+
+import aQute.bnd.annotation.ProviderType;
 
 /**
  * The implementation of the dict collection local service.
@@ -114,7 +118,8 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 			String collectionNameEN, String description, ServiceContext serviceContext)
 			throws DuplicateCategoryException, UnauthenticationException, UnauthorizationException,
 			NoSuchUserException {
-
+		
+		
 		DictCollection dictColl = dictCollectionPersistence.fetchByF_dictCollectionCode(collectionCode, groupId);
 
 		if (Validator.isNotNull(dictColl)) {
@@ -171,9 +176,9 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 
 		dictCollection.setExpandoBridgeAttributes(serviceContext);
 
-		dictCollectionPersistence.update(dictCollection);
+		return dictCollectionPersistence.update(dictCollection);
 
-		return dictCollection;
+//		return dictCollection;
 	}
 
 	/**
@@ -218,8 +223,8 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 			}
 
 		} catch (NoSuchDictCollectionException e) {
-
-			throw new NotFoundException();
+			_log.error(e);
+			//throw new NotFoundException();
 
 		}
 
@@ -299,9 +304,9 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 		
 		dictCollection.setExpandoBridgeAttributes(serviceContext);
 
-		dictCollectionPersistence.update(dictCollection);
+		return dictCollectionPersistence.update(dictCollection);
 
-		return dictCollection;
+//		return dictCollection;
 	}
 
 	/**
@@ -310,9 +315,10 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 	 * @param groupId
 	 * @return DictCollection
 	 */
+	@ThreadLocalCachable
 	public DictCollection fetchByF_dictCollectionCode(String collectionCode, long groupId) {
 		
-		if (collectionCode.equalsIgnoreCase("ADMINISTRATIVE_REGION")) {
+		if ("ADMINISTRATIVE_REGION".toLowerCase().equalsIgnoreCase(collectionCode)) {
 			groupId = 0;
 		}
 
@@ -367,7 +373,8 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 		String groupId = (String) params.get(DictCollectionTerm.GROUP_ID);
 		String userId = (String) params.get(DictCollectionTerm.USER_ID);
 		String collectionCode = (String) params.get(DictCollectionTerm.COLLECTION_CODE);
-
+		String status = (String) params.get(DictCollectionTerm.STATUS);
+		
 		Indexer<DictCollection> indexer = IndexerRegistryUtil.nullSafeGetIndexer(DictCollection.class);
 
 		searchContext.addFullQueryEntryClassName(DictCollection.class.getName());
@@ -420,7 +427,7 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 
 		}
 
-		if (Validator.isNotNull(groupId)) {
+		if (Validator.isNotNull(groupId) && !"0".equals(groupId)) {
 			BooleanQuery categoryQuery = Validator.isNotNull((String) keywords)
 					? BooleanQueryFactoryUtil.create((SearchContext) searchContext)
 					: indexer.getFullQuery(searchContext);
@@ -453,6 +460,16 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 
 		}
 
+		if (Validator.isNotNull(status)) {
+
+			MultiMatchQuery query = new MultiMatchQuery(status);
+
+			query.addFields(DictCollectionTerm.STATUS);
+
+			booleanQuery.add(query, BooleanClauseOccur.MUST);
+
+		}
+
 		booleanQuery.addRequiredTerm(Field.ENTRY_CLASS_NAME, DictCollection.class.getName());
 
 		return IndexSearcherHelperUtil.search(searchContext, booleanQuery);
@@ -467,7 +484,8 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 		String groupId = (String) params.get(DictCollectionTerm.GROUP_ID);
 		String userId = (String) params.get(DictCollectionTerm.USER_ID);
 		String collectionCode = (String) params.get(DictCollectionTerm.COLLECTION_CODE);
-
+		String status = (String) params.get(DictCollectionTerm.STATUS);
+		
 		Indexer<DictCollection> indexer = IndexerRegistryUtil.nullSafeGetIndexer(DictCollection.class);
 
 		searchContext.addFullQueryEntryClassName(DictCollection.class.getName());
@@ -517,7 +535,7 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 
 		}
 
-		if (Validator.isNotNull(groupId)) {
+		if (Validator.isNotNull(groupId) && !"0".equals(groupId)) {
 			BooleanQuery categoryQuery = Validator.isNotNull((String) keywords)
 					? BooleanQueryFactoryUtil.create((SearchContext) searchContext)
 					: indexer.getFullQuery(searchContext);
@@ -550,6 +568,16 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 
 		}
 
+		if (Validator.isNotNull(status)) {
+
+			MultiMatchQuery query = new MultiMatchQuery(status);
+
+			query.addFields(DictCollectionTerm.STATUS);
+
+			booleanQuery.add(query, BooleanClauseOccur.MUST);
+
+		}
+
 		booleanQuery.addRequiredTerm(Field.ENTRY_CLASS_NAME, DictCollection.class.getName());
 
 		return IndexSearcherHelperUtil.searchCount(searchContext, booleanQuery);
@@ -566,5 +594,190 @@ public class DictCollectionLocalServiceImpl extends DictCollectionLocalServiceBa
 	@Override
 	public long countOlderThanDate(Date date, long groupId) {
 		return dictCollectionPersistence.countByF_dictCollectionNewerThan(date, groupId);
+	}
+
+	//LamTV_ Process output DictCollection to DB
+	@Indexable(type = IndexableType.REINDEX)
+	public DictCollection updateDictCollectionDB(long userId, long groupId, String collectionCode, String collectionName,
+			String collectionNameEN, String description, Integer status) throws NoSuchUserException {
+		Date now = new Date();
+		User user = userPersistence.findByPrimaryKey(userId);
+
+		DictCollection dictCollection = dictCollectionPersistence.fetchByF_dictCollectionCode(collectionCode, groupId);
+//		_log.info("collectionCode: "+collectionCode);
+//		_log.info("dictCollection: "+dictCollection);
+		if (dictCollection != null) {
+			dictCollection.setModifiedDate(now);
+
+			// Other fields
+			if (Validator.isNotNull(collectionCode)) {
+				dictCollection.setCollectionCode(collectionCode);
+			}
+			if (Validator.isNotNull(collectionName)) {
+				dictCollection.setCollectionName(collectionName);
+			}
+			if (Validator.isNotNull(collectionNameEN)) {
+				dictCollection.setCollectionNameEN(collectionNameEN);
+			}
+			if (Validator.isNotNull(description)) {
+				dictCollection.setDescription(description);
+			}
+			if (Validator.isNotNull(status)) {
+				dictCollection.setStatus(status);
+			} else {
+				dictCollection.setStatus(1);
+			}
+		} else {
+			long dictCollectionId = counterLocalService.increment(DictCollection.class.getName());
+
+			dictCollection = dictCollectionPersistence.create(dictCollectionId);
+
+			// Group instance
+			dictCollection.setGroupId(groupId);
+
+			// Audit fields
+			dictCollection.setCompanyId(user.getCompanyId());
+			dictCollection.setUserId(user.getUserId());
+			dictCollection.setUserName(user.getFullName());
+			dictCollection.setCreateDate(now);
+			dictCollection.setModifiedDate(now);
+
+			// Other fields
+			dictCollection.setCollectionCode(collectionCode);
+			dictCollection.setCollectionName(collectionName);
+			dictCollection.setCollectionNameEN(collectionNameEN);
+			dictCollection.setDescription(description);
+			if (Validator.isNotNull(status)) {
+				dictCollection.setStatus(status);
+			} else {
+				dictCollection.setStatus(1);
+			}
+		}
+
+		return dictCollectionPersistence.update(dictCollection);
+	}
+	
+	@Indexable(type = IndexableType.REINDEX)
+	public DictCollection active(long dictCollectionId) {
+		DictCollection dc = dictCollectionPersistence.fetchByPrimaryKey(dictCollectionId);
+		if (dc != null) {
+			dc.setStatus(DictCollectionTerm.STATUS_ACTIVE);
+			return dictCollectionPersistence.update(dc);
+		}
+		else {
+			return dc;
+		}
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public DictCollection inactive(long dictCollectionId) {
+		DictCollection dc = dictCollectionPersistence.fetchByPrimaryKey(dictCollectionId);
+		if (dc != null) {
+			dc.setStatus(DictCollectionTerm.STATUS_INACTIVE);
+			return dictCollectionPersistence.update(dc);
+		}
+		else {
+			return dc;
+		}
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public DictCollection changeStatus(long dictCollectionId, int status) {
+		DictCollection dc = dictCollectionPersistence.fetchByPrimaryKey(dictCollectionId);
+		if (dc != null) {
+			dc.setStatus(status);
+			return dictCollectionPersistence.update(dc);
+		}
+		else {
+			return dc;
+		}
+	}
+	
+
+	// super_admin Generators
+	@Indexable(type = IndexableType.DELETE)
+	public DictCollection adminProcessDelete(Long id) {
+
+		DictCollection object = dictCollectionPersistence.fetchByPrimaryKey(id);
+
+		if (Validator.isNull(object)) {
+			return null;
+		} else {
+			dictCollectionPersistence.remove(object);
+		}
+
+		return object;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	public DictCollection adminProcessData(JSONObject objectData) {
+
+		DictCollection object = null;
+
+		if (objectData.getLong("dictCollectionId") > 0) {
+
+			object = dictCollectionPersistence.fetchByPrimaryKey(objectData.getLong("dictCollectionId"));
+
+			object.setModifiedDate(new Date());
+
+		} else {
+
+			long id = CounterLocalServiceUtil.increment(DictCollection.class.getName());
+
+			object = dictCollectionPersistence.create(id);
+
+			object.setGroupId(objectData.getLong("groupId"));
+			object.setCompanyId(objectData.getLong("companyId"));
+			object.setCreateDate(new Date());
+
+		}
+
+		object.setUserId(objectData.getLong("userId"));
+		
+		object.setCollectionCode(objectData.getString("collectionCode"));
+		object.setCollectionName(objectData.getString("collectionName"));
+		object.setCollectionNameEN(objectData.getString("collectionNameEN"));
+		object.setDescription(objectData.getString("description"));
+		object.setDataForm(objectData.getString("dataForm"));
+		object.setStatus(objectData.getInt("status"));
+
+		dictCollectionPersistence.update(object);
+
+		return object;
+	}
+
+	//Add DictCollection Publish
+	@Indexable(type = IndexableType.REINDEX)
+	public DictCollection updateDictCollectionPublish(long companyId, long userId, long groupId, String userName,
+			String collectionCode, String collectionName, String collectionNameEN, String description, int status) {
+
+		long dictCollectionId = counterLocalService.increment(DictCollection.class.getName());
+
+		DictCollection dictCollection = dictCollectionPersistence.create(dictCollectionId);
+
+		// Group instance
+		dictCollection.setGroupId(groupId);
+
+		// Audit fields
+		dictCollection.setCompanyId(companyId);
+		dictCollection.setUserId(userId);
+		dictCollection.setUserName(userName);
+		
+		Date now = new Date();
+		dictCollection.setCreateDate(now);
+		dictCollection.setModifiedDate(now);
+
+		// Other fields
+		dictCollection.setCollectionCode(collectionCode);
+		dictCollection.setCollectionName(collectionName);
+		dictCollection.setCollectionNameEN(collectionNameEN);
+		dictCollection.setDescription(description);
+		dictCollection.setStatus(status);
+
+		return dictCollectionPersistence.update(dictCollection);
+	}
+
+	public List<DictCollection> findByG(long groupId) {
+		return dictCollectionPersistence.findByF_dictCollectionByGroup(groupId);
 	}
 }

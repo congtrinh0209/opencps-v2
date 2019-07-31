@@ -1,5 +1,16 @@
 package org.opencps.api.controller.impl;
 
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.search.Document;
+import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.search.SortFactoryUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -19,26 +30,13 @@ import org.opencps.communication.action.NotificationTemplateInterface;
 import org.opencps.communication.action.impl.NotificationTemplateActions;
 import org.opencps.communication.model.Notificationtemplate;
 
-import com.liferay.portal.kernel.exception.NoSuchUserException;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.search.Document;
-import com.liferay.portal.kernel.search.Sort;
-import com.liferay.portal.kernel.search.SortFactoryUtil;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.Validator;
-
-import backend.auth.api.exception.UnauthenticationException;
-import backend.auth.api.exception.UnauthorizationException;
+import backend.auth.api.exception.BusinessExceptionImpl;
 
 public class NotificationTemplateImpl implements NotificationTemplateManagement {
 
-	private static final Log _log = LogFactoryUtil.getLog(NotificationTemplateImpl.class);
+//	private static final Log _log = LogFactoryUtil.getLog(NotificationTemplateImpl.class);
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getNotificationtemplates(HttpServletRequest request, HttpHeaders header, Company company,
 			Locale locale, User user, ServiceContext serviceContext, DataSearchModel query) {
@@ -48,11 +46,8 @@ public class NotificationTemplateImpl implements NotificationTemplateManagement 
 		try {
 
 			if (query.getEnd() == 0) {
-
 				query.setStart(-1);
-
 				query.setEnd(-1);
-
 			}
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
@@ -75,14 +70,7 @@ public class NotificationTemplateImpl implements NotificationTemplateManagement 
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			_log.error("/ @GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -91,7 +79,7 @@ public class NotificationTemplateImpl implements NotificationTemplateManagement 
 			ServiceContext serviceContext, String type) {
 
 		NotificationTemplateInterface actions = new NotificationTemplateActions();
-		NotificationtemplateModel notificationtemplateModel = new NotificationtemplateModel();
+		NotificationtemplateModel notificationtemplateModel;
 
 		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
@@ -126,57 +114,29 @@ public class NotificationTemplateImpl implements NotificationTemplateManagement 
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
-			Notificationtemplate notificationtemplate = actions.update(user.getUserId(), groupId, type,
-					input.getEmailBody(), input.getEmailSubject(), input.getSendEmail(), input.getTextMessage(),
-					input.getTextSMS(), input.getExpireDuration(), input.getUserUrlPattern(),
-					input.getGuestUrlPattern(), input.getInterval(), input.getGrouping(), serviceContext);
+			String sendEmail = String.valueOf(input.getSendEmail());
+			String notificationType = type;
+			String emailSubject = input.getEmailSubject();
+			String emailBody = input.getEmailBody();
+			String textMessage = input.getTextMessage();
+			String sendSMS = String.valueOf(input.getSendSMS());
+			String expireDuration = String.valueOf(input.getExpireDuration());
+			String userUrlPattern = input.getUserUrlPattern();
+			String guestUrlPattern = input.getGuestUrlPattern();
+			String interval = input.getInterval();
+			String grouping = String.valueOf(input.getGrouping());
+			
+			Notificationtemplate notificationtemplate = actions.update(user.getUserId(), groupId, notificationType,
+					emailBody, emailSubject, sendEmail, textMessage,
+					sendSMS, expireDuration, userUrlPattern,
+					guestUrlPattern, interval, grouping, serviceContext);
 
 			notificationtemplateModel = NotificationTemplateUtils.mapperNotificationtemplateModel(notificationtemplate);
 
 			return Response.status(200).entity(notificationtemplateModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -208,47 +168,7 @@ public class NotificationTemplateImpl implements NotificationTemplateManagement 
 			}
 
 		} catch (Exception e) {
-			_log.error("@DELETE: " + e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@DELETE: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@DELETE: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@DELETE: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -262,57 +182,29 @@ public class NotificationTemplateImpl implements NotificationTemplateManagement 
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
-			Notificationtemplate notificationtemplate = actions.create(user.getUserId(), groupId, input.getNotificationType(),
-					input.getEmailBody(), input.getEmailSubject(), input.getSendEmail(), input.getTextMessage(),
-					input.getTextSMS(), input.getExpireDuration(), input.getUserUrlPattern(),
-					input.getGuestUrlPattern(), input.getInterval(), input.getGrouping(), serviceContext);
+			String sendEmail = String.valueOf(input.getSendEmail());
+			String notificationType = input.getNotificationType();
+			String emailSubject = input.getEmailSubject();
+			String emailBody = input.getEmailBody();
+			String textMessage = input.getTextMessage();
+			String expireDuration = String.valueOf(input.getExpireDuration());
+			String userUrlPattern = input.getUserUrlPattern();
+			String guestUrlPattern = input.getGuestUrlPattern();
+			String interval = input.getInterval();
+			String grouping = String.valueOf(input.getGrouping());
+			String textSMS = input.getTextSMS();
+			
+			Notificationtemplate notificationtemplate = actions.create(user.getUserId(), groupId, notificationType,
+					emailBody, emailSubject, sendEmail, textMessage,
+					textSMS, expireDuration, userUrlPattern,
+					guestUrlPattern, interval, grouping, serviceContext);
 
 			notificationtemplateModel = NotificationTemplateUtils.mapperNotificationtemplateModel(notificationtemplate);
 
 			return Response.status(200).entity(notificationtemplateModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error(e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 

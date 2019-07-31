@@ -66,7 +66,8 @@ import javax.xml.bind.annotation.XmlType;
     "generatePassword",
     "directNotification",
     "serverNo",
-    "serverName"
+    "serverName",
+    "paymentFee"
 })
 public class ServiceProcessDataModel {
 
@@ -76,7 +77,7 @@ public class ServiceProcessDataModel {
     protected String processNo;
     protected String processName;
     protected String description;
-    protected Integer durationCount;
+    protected Double durationCount;
     protected Integer durationUnit;
     protected Integer counter;
     protected String generateDossierNo;
@@ -87,6 +88,15 @@ public class ServiceProcessDataModel {
     protected String directNotification;
     protected String serverNo;
     protected String serverName;
+    protected String paymentFee;
+
+    public String getPaymentFee() {
+		return paymentFee;
+	}
+
+	public void setPaymentFee(String paymentFee) {
+		this.paymentFee = paymentFee;
+	}
 
     /**
      * Gets the value of the serviceProcessId property.
@@ -240,7 +250,7 @@ public class ServiceProcessDataModel {
      *     {@link Integer }
      *     
      */
-    public Integer getDurationCount() {
+    public Double getDurationCount() {
         return durationCount;
     }
 
@@ -252,7 +262,7 @@ public class ServiceProcessDataModel {
      *     {@link Integer }
      *     
      */
-    public void setDurationCount(Integer value) {
+    public void setDurationCount(Double value) {
         this.durationCount = value;
     }
 

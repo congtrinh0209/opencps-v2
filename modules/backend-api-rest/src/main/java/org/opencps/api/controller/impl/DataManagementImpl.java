@@ -1,63 +1,8 @@
 package org.opencps.api.controller.impl;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
-import org.opencps.api.controller.DataManagement;
-import org.opencps.api.controller.exception.ErrorMsg;
-import org.opencps.api.controller.util.DataManagementUtils;
-import org.opencps.api.datamgt.model.DataSearchModel;
-import org.opencps.api.datamgt.model.DictCollectionInputModel;
-import org.opencps.api.datamgt.model.DictCollectionModel;
-import org.opencps.api.datamgt.model.DictCollectionResults;
-import org.opencps.api.datamgt.model.DictGroupInputModel;
-import org.opencps.api.datamgt.model.DictGroupItemModel;
-import org.opencps.api.datamgt.model.DictGroupItemResults;
-import org.opencps.api.datamgt.model.DictGroupResults;
-import org.opencps.api.datamgt.model.DictItemInputModel;
-import org.opencps.api.datamgt.model.DictItemModel;
-import org.opencps.api.datamgt.model.DictItemResults;
-import org.opencps.api.datamgt.model.Groups;
-import org.opencps.api.dictcollection.model.DictGroupModel;
-import org.opencps.auth.api.exception.DataInUsedException;
-import org.opencps.auth.api.exception.NotFoundException;
-import org.opencps.auth.api.exception.UnauthenticationException;
-import org.opencps.auth.api.exception.UnauthorizationException;
-import org.opencps.communication.model.ServerConfig;
-import org.opencps.communication.service.ServerConfigLocalServiceUtil;
-import org.opencps.datamgt.action.DictcollectionInterface;
-import org.opencps.datamgt.action.impl.DictCollectionActions;
-import org.opencps.datamgt.constants.DictGroupTerm;
-import org.opencps.datamgt.constants.DictItemTerm;
-import org.opencps.datamgt.model.DictCollection;
-import org.opencps.datamgt.model.DictGroup;
-import org.opencps.datamgt.model.DictItem;
-import org.opencps.datamgt.model.DictItemGroup;
-import org.opencps.datamgt.service.DictCollectionLocalServiceUtil;
-import org.opencps.datamgt.service.DictGroupLocalServiceUtil;
-import org.opencps.datamgt.service.DictItemGroupLocalServiceUtil;
-import org.opencps.datamgt.service.DictItemLocalServiceUtil;
-import org.opencps.synchronization.action.DictCollectionTempInterface;
-import org.opencps.synchronization.action.PushDictGroupInterface;
-import org.opencps.synchronization.action.PushDictItemInterface;
-import org.opencps.synchronization.action.impl.PushDictGroupActions;
-import org.opencps.synchronization.action.impl.PushDictItemActions;
-import org.opencps.synchronization.constants.DataMGTTempConstants;
-import org.opencps.synchronization.constants.SyncServerTerm;
-import org.opencps.synchronization.model.DictCollectionTemp;
-import org.opencps.synchronization.model.DictGroupTemp;
-import org.opencps.synchronization.model.DictItemTemp;
-import org.opencps.synchronization.service.DictItemTempLocalServiceUtil;
-
 import com.liferay.asset.kernel.exception.DuplicateCategoryException;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -73,15 +18,77 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.SortFactoryUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+
+import org.opencps.api.controller.DataManagement;
+import org.opencps.api.controller.exception.ErrorMsg;
+import org.opencps.api.controller.util.DataManagementUtils;
+import org.opencps.api.datamgt.model.DataSearchModel;
+import org.opencps.api.datamgt.model.DictCollectionInputModel;
+import org.opencps.api.datamgt.model.DictCollectionModel;
+import org.opencps.api.datamgt.model.DictCollectionResults;
+import org.opencps.api.datamgt.model.DictCollectionShortModel;
+import org.opencps.api.datamgt.model.DictGroupInputModel;
+import org.opencps.api.datamgt.model.DictGroupItemModel;
+import org.opencps.api.datamgt.model.DictGroupItemResults;
+import org.opencps.api.datamgt.model.DictGroupResults;
+import org.opencps.api.datamgt.model.DictItemInputModel;
+import org.opencps.api.datamgt.model.DictItemModel;
+import org.opencps.api.datamgt.model.DictItemResults;
+import org.opencps.api.datamgt.model.Groups;
+import org.opencps.api.dictcollection.model.DictGroupModel;
+import org.opencps.auth.api.exception.NotFoundException;
+import org.opencps.communication.model.ServerConfig;
+import org.opencps.communication.service.ServerConfigLocalServiceUtil;
+import org.opencps.datamgt.action.DictcollectionInterface;
+import org.opencps.datamgt.action.impl.DictCollectionActions;
+import org.opencps.datamgt.constants.DictGroupTerm;
+import org.opencps.datamgt.constants.DictItemTerm;
+import org.opencps.datamgt.model.DictCollection;
+import org.opencps.datamgt.model.DictGroup;
+import org.opencps.datamgt.model.DictItem;
+import org.opencps.datamgt.model.DictItemGroup;
+import org.opencps.datamgt.service.DictCollectionLocalServiceUtil;
+import org.opencps.datamgt.service.DictGroupLocalServiceUtil;
+import org.opencps.datamgt.service.DictItemGroupLocalServiceUtil;
+import org.opencps.datamgt.service.DictItemLocalServiceUtil;
+import org.opencps.dossiermgt.action.util.OpenCPSConfigUtil;
+import org.opencps.synchronization.action.DictCollectionTempInterface;
+import org.opencps.synchronization.action.PushDictGroupInterface;
+import org.opencps.synchronization.action.PushDictItemInterface;
+import org.opencps.synchronization.action.impl.PushDictGroupActions;
+import org.opencps.synchronization.action.impl.PushDictItemActions;
+import org.opencps.synchronization.constants.DataMGTTempConstants;
+import org.opencps.synchronization.constants.SyncServerTerm;
+import org.opencps.synchronization.model.DictCollectionTemp;
+import org.opencps.synchronization.model.DictGroupTemp;
+import org.opencps.synchronization.model.DictItemTemp;
+import org.opencps.synchronization.service.DictItemTempLocalServiceUtil;
+
+import backend.auth.api.exception.BusinessExceptionImpl;
 
 public class DataManagementImpl implements DataManagement {
 
 	Log _log = LogFactoryUtil.getLog(DataManagementImpl.class);
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDictCollection(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
-			User user, ServiceContext serviceContext, DataSearchModel query) {
+			User user, ServiceContext serviceContext, DataSearchModel query, String status) {
 		DictcollectionInterface dictItemDataUtil = new DictCollectionActions();
 		DictCollectionResults result = new DictCollectionResults();
 
@@ -99,6 +106,7 @@ public class DataManagementImpl implements DataManagement {
 
 			params.put("groupId", String.valueOf(groupId));
 			params.put("keywords", query.getKeywords());
+			params.put("status", status);
 
 			Sort[] sorts = new Sort[] {
 					SortFactoryUtil.create(query.getSort() + "_sortable", Sort.STRING_TYPE, false) };
@@ -113,42 +121,37 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			_log.error("@GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
 	@Override
 	public Response getDictCollectionDetail(HttpServletRequest request, HttpHeaders header, Company company,
-			Locale locale, User user, ServiceContext serviceContext, String code) {
+			Locale locale, User user, ServiceContext serviceContext, String code, Request requestCC) {
 		DictcollectionInterface dictItemDataUtil = new DictCollectionActions();
 		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 
 		DictCollection dictCollection = dictItemDataUtil.getDictCollectionDetail(code, groupId);
-
+		EntityTag etag = new EntityTag(Integer.toString(Long.valueOf(groupId).hashCode()));
+	    ResponseBuilder builder = requestCC.evaluatePreconditions(etag);	
+	    
 		if (Validator.isNotNull(dictCollection)) {
-
-			// return json object after update
 			DictCollectionModel dictCollectionModel = DataManagementUtils.mapperDictCollectionModel(dictCollection);
+			if (OpenCPSConfigUtil.isHttpCacheEnable() && builder == null) {
+				builder = Response.status(200);
+				CacheControl cc = new CacheControl();
+				cc.setMaxAge(OpenCPSConfigUtil.getHttpCacheMaxAge());
+				cc.setPrivate(true);	
+				// return json object after update
 
-			return Response.status(200).entity(dictCollectionModel).build();
+				return builder.entity(dictCollectionModel).cacheControl(cc).build();				
+			}
+			else {
+				return builder.entity(dictCollectionModel).build();
+			}
 
 		} else {
-
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(409).entity(error).build();
-
+			return null;
 		}
 	}
 
@@ -162,20 +165,24 @@ public class DataManagementImpl implements DataManagement {
 		try {
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
-
+			String collectionCode = HtmlUtil.escape(input.getCollectionCode());
+			String collectionName = HtmlUtil.escape(input.getCollectionName());
+			String collectionNameEN = HtmlUtil.escape(input.getCollectionNameEN());
+			String description = HtmlUtil.escape(input.getDescription());
+			
 			DictCollection dictCollection = dictItemDataUtil.addDictCollection(user.getUserId(), groupId,
-					input.getCollectionCode(), input.getCollectionName(), input.getCollectionNameEN(),
-					input.getDescription(), serviceContext);
+					collectionCode, collectionName, collectionNameEN,
+					description, serviceContext);
 
 			DictCollectionTemp oldCollectionTemp = dictItemDataTempUtil.getDictCollectionTempDetail(input.getCollectionCode(), groupId);
 			
 			if (oldCollectionTemp == null) {
-			dictItemDataTempUtil.addDictCollectionTemp(user.getUserId(), groupId,
-					input.getCollectionCode(), input.getCollectionName(), input.getCollectionNameEN(),
-						input.getDescription(), DataMGTTempConstants.DATA_STATUS_ACTIVE, DataMGTTempConstants.DATA_MUST_SYNCHRONIZED, serviceContext);				
+				dictItemDataTempUtil.addDictCollectionTemp(user.getUserId(), groupId,
+					collectionCode, collectionName, collectionNameEN,
+						description, DataMGTTempConstants.DATA_STATUS_ACTIVE, DataMGTTempConstants.DATA_MUST_SYNCHRONIZED, serviceContext);				
 			}
 			else {
-				dictItemDataTempUtil.updateDictCollectionTemp(user.getUserId(), groupId, input.getCollectionCode(), input.getCollectionCode(), input.getCollectionName(), input.getCollectionNameEN(), input.getDescription(), DataMGTTempConstants.DATA_STATUS_ACTIVE, DataMGTTempConstants.DATA_MUST_SYNCHRONIZED, serviceContext);
+				dictItemDataTempUtil.updateDictCollectionTemp(user.getUserId(), groupId, collectionCode, collectionCode, collectionName, collectionNameEN, description, DataMGTTempConstants.DATA_STATUS_ACTIVE, DataMGTTempConstants.DATA_MUST_SYNCHRONIZED, serviceContext);
 			}
 			
 			// return json object after update
@@ -184,60 +191,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(dictCollectionModel).build();
 
 		} catch (Exception e) {
-			_log.error("@POST: " + e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -251,26 +205,32 @@ public class DataManagementImpl implements DataManagement {
 		try {
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+			String collectionCode = HtmlUtil.escape(input.getCollectionCode());
+			String collectionName = HtmlUtil.escape(input.getCollectionName());
+			String collectionNameEN = HtmlUtil.escape(input.getCollectionNameEN());
+			String description = HtmlUtil.escape(input.getDescription());
 
+			String oldCode = HtmlUtil.escape(code);
+			
 			_log.info("Update dict collection: " + code);
 			
-			DictCollection dictCollection = dictItemDataUtil.updateDictCollection(user.getUserId(), groupId, code,
-					input.getCollectionCode(), input.getCollectionName(), input.getCollectionNameEN(),
-					input.getDescription(), serviceContext);
+			DictCollection dictCollection = dictItemDataUtil.updateDictCollection(user.getUserId(), groupId, oldCode,
+					collectionCode, collectionName, collectionNameEN,
+					description, serviceContext);
 
-			DictCollectionTemp temp = dictItemDataTempUtil.getDictCollectionTempDetail(code, groupId);
+			DictCollectionTemp temp = dictItemDataTempUtil.getDictCollectionTempDetail(oldCode, groupId);
 			if (temp != null) {
-			dictItemDataTempUtil.updateDictCollectionTemp(user.getUserId(), groupId, code,
-					input.getCollectionCode(), input.getCollectionName(), input.getCollectionNameEN(),
-					input.getDescription(), 
+			dictItemDataTempUtil.updateDictCollectionTemp(user.getUserId(), groupId, oldCode,
+					collectionCode, collectionName, collectionNameEN,
+					description, 
 					DataMGTTempConstants.DATA_STATUS_ACTIVE,
 					DataMGTTempConstants.DATA_MUST_SYNCHRONIZED,
 						serviceContext);				
 			}
 			else {
-				dictItemDataTempUtil.addDictCollectionTemp(user.getUserId(), groupId, code,
-						input.getCollectionName(), input.getCollectionNameEN(),
-						input.getDescription(), 
+				dictItemDataTempUtil.addDictCollectionTemp(user.getUserId(), groupId, oldCode,
+						collectionName, collectionNameEN,
+						description, 
 						DataMGTTempConstants.DATA_STATUS_ACTIVE,
 						DataMGTTempConstants.DATA_MUST_SYNCHRONIZED,
 						serviceContext);								
@@ -281,47 +241,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(dictCollectionModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -356,59 +276,7 @@ public class DataManagementImpl implements DataManagement {
 			}
 
 		} catch (Exception e) {
-
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NotFoundException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("not found!");
-				error.setCode(404);
-				error.setDescription("not found!");
-
-				return Response.status(404).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -459,69 +327,17 @@ public class DataManagementImpl implements DataManagement {
 							serviceContext);					
 				}
 
-				return Response.status(200).entity(dictCollection.getDataForm()).build();				
+				return Response.status(200).entity(dictCollection != null ? dictCollection.getDataForm() : StringPool.BLANK).build();				
 			}
 			else {
 				throw new DuplicateCategoryException();
 			}
 		} catch (Exception e) {
-			_log.error("@POST: " + e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDictgroups(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext, String code, DataSearchModel query) {
@@ -559,14 +375,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			_log.error("@GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -606,60 +415,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(dictGroupModel).build();
 
 		} catch (Exception e) {
-			_log.error("@POST: " + e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -697,47 +453,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(dictGroupModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -777,74 +493,11 @@ public class DataManagementImpl implements DataManagement {
 
 		} catch (Exception e) {
 
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NotFoundException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("not found!");
-				error.setCode(404);
-				error.setDescription("not found!");
-
-				return Response.status(404).entity(error).build();
-
-			}
-
-			if (e instanceof DataInUsedException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("data is in used!");
-				error.setCode(406);
-				error.setDescription("data is in used!");
-
-				return Response.status(406).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDictgroupsDictItems(HttpServletRequest request, HttpHeaders header, Company company,
 			Locale locale, User user, ServiceContext serviceContext, String code, String groupCode, boolean full) {
@@ -873,14 +526,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(result).build();
 
 		} catch (Exception e) {
-			_log.error("@GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -904,7 +550,8 @@ public class DataManagementImpl implements DataManagement {
 					groupCode, itemCode, serviceContext);
 			}
 			catch (DuplicateCategoryException e) {
-				e.printStackTrace();
+//				e.printStackTrace();
+				_log.error(e);
 			}
 			try {
 				List<ServerConfig> lstServers = ServerConfigLocalServiceUtil.getServerConfigs(QueryUtil.ALL_POS,
@@ -921,7 +568,7 @@ public class DataManagementImpl implements DataManagement {
 									&& configObj.getString(SyncServerTerm.SERVER_TYPE)
 											.equals(SyncServerTerm.SYNC_SERVER_TYPE)
 									&& configObj.has(SyncServerTerm.SERVER_USERNAME)
-									&& configObj.has(SyncServerTerm.SERVER_PASSWORD)
+									&& configObj.has(SyncServerTerm.SERVER_SECRET)
 									&& configObj.has(SyncServerTerm.SERVER_URL)
 									&& (configObj.has(SyncServerTerm.PUSH) && configObj.getBoolean(SyncServerTerm.PUSH))) {
 								if (groupId == sc.getGroupId()) {
@@ -947,60 +594,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(dictGroupItemModel).build();
 
 		} catch (Exception e) {
-			_log.error("@POST: " + e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -1019,7 +613,7 @@ public class DataManagementImpl implements DataManagement {
 			try {
 				collection = DictCollectionLocalServiceUtil.fetchByF_dictCollectionCode(code, groupId);
 			} catch (Exception e) {
-
+				_log.error(e);
 			}
 			DictGroup group = null;
 			try {
@@ -1027,7 +621,7 @@ public class DataManagementImpl implements DataManagement {
 					group = DictGroupLocalServiceUtil.getByGC_GI_DCI(groupCode, groupId, collection.getDictCollectionId());					
 				}
 			} catch (Exception e) {
-
+				_log.error(e);
 			}
 			DictItem item = null;
 
@@ -1036,7 +630,7 @@ public class DataManagementImpl implements DataManagement {
 					item = DictItemLocalServiceUtil.fetchByF_dictItemCode(itemCode, collection.getDictCollectionId(),
 							groupId);
 			} catch (Exception e) {
-
+				_log.error(e);
 			}
 			DictItemGroup dictItemGroup = null;
 
@@ -1045,7 +639,7 @@ public class DataManagementImpl implements DataManagement {
 					dictItemGroup = DictItemGroupLocalServiceUtil.fetchByF_dictItemId_dictGroupId(groupId,
 							group.getDictGroupId(), item.getDictItemId());
 			} catch (Exception e) {
-
+				_log.error(e);
 			}
 			boolean flag = dictItemDataUtil.deleteDictgroupsDictItems(groupId, code, groupCode, itemCode,
 					serviceContext);
@@ -1055,7 +649,7 @@ public class DataManagementImpl implements DataManagement {
 					serviceContext);
 			}
 			catch (NotFoundException e) {
-				e.printStackTrace();
+				_log.error(e);
 			}
 			try {
 				List<ServerConfig> lstServers = ServerConfigLocalServiceUtil.getServerConfigs(QueryUtil.ALL_POS,
@@ -1071,7 +665,7 @@ public class DataManagementImpl implements DataManagement {
 										&& configObj.getString(SyncServerTerm.SERVER_TYPE)
 												.equals(SyncServerTerm.SYNC_SERVER_TYPE)
 										&& configObj.has(SyncServerTerm.SERVER_USERNAME)
-										&& configObj.has(SyncServerTerm.SERVER_PASSWORD)
+										&& configObj.has(SyncServerTerm.SERVER_SECRET)
 										&& configObj.has(SyncServerTerm.SERVER_URL)
 										&& (configObj.has(SyncServerTerm.PUSH) && configObj.getBoolean(SyncServerTerm.PUSH))) {
 									if (groupId == sc.getGroupId()) {
@@ -1111,65 +705,14 @@ public class DataManagementImpl implements DataManagement {
 			}
 
 		} catch (Exception e) {
-			_log.error("@DELETE: " + e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NotFoundException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("not found!");
-				error.setCode(404);
-				error.setDescription("not found!");
-
-				return Response.status(404).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Response getDictItems(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
-			User user, ServiceContext serviceContext, String code, DataSearchModel query) {
+			User user, ServiceContext serviceContext, String code, DataSearchModel query, Request requestCC) {
 		DictcollectionInterface dictItemDataUtil = new DictCollectionActions();
 		DictItemResults result = new DictItemResults();
 		SearchContext searchContext = new SearchContext();
@@ -1188,7 +731,7 @@ public class DataManagementImpl implements DataManagement {
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 			LinkedHashMap<String, Object> params = new LinkedHashMap<String, Object>();
 
-			if (code.equalsIgnoreCase("ADMINISTRATIVE_REGION"))
+			if ("ADMINISTRATIVE_REGION".equalsIgnoreCase(code))
 				groupId = 0;
 
 			params.put("groupId", groupId);
@@ -1197,8 +740,16 @@ public class DataManagementImpl implements DataManagement {
 			params.put(DictItemTerm.PARENT_ITEM_CODE, query.getParent());
 			params.put(DictItemTerm.DICT_COLLECTION_CODE, code);
 
-			Sort[] sorts = new Sort[] {
+			Sort[] sorts = null;
+			
+			if (Validator.isNull(query.getSort())) {
+				sorts = new Sort[] {
+						SortFactoryUtil.create(DictItemTerm.SIBLING_SEARCH + "_Number_sortable", Sort.INT_TYPE, false) };
+			} else {
+				sorts = new Sort[] {
 					SortFactoryUtil.create(query.getSort() + "_sortable", Sort.STRING_TYPE, false) };
+			}
+			
 
 			JSONObject jsonData = dictItemDataUtil.getDictItems(user.getUserId(), company.getCompanyId(), groupId,
 					params, sorts, query.getStart(), query.getEnd(), serviceContext);
@@ -1207,17 +758,19 @@ public class DataManagementImpl implements DataManagement {
 			result.getDictItemModel()
 					.addAll(DataManagementUtils.mapperDictItemModelList((List<Document>) jsonData.get("data")));
 
-			return Response.status(200).entity(result).build();
+			EntityTag etag = new EntityTag(Integer.toString(Long.valueOf(groupId).hashCode()));
+			ResponseBuilder builder = requestCC.evaluatePreconditions(etag);
+			if (OpenCPSConfigUtil.isHttpCacheEnable() && builder == null) {
+				CacheControl cc = new CacheControl();
+				cc.setMaxAge(OpenCPSConfigUtil.getHttpCacheMaxAge());
+				cc.setPrivate(true);
+				return Response.status(200).entity(result).cacheControl(cc).build();
+			} else {
+				return Response.status(200).entity(result).build();
+			}
 
 		} catch (Exception e) {
-			_log.error("@GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -1232,16 +785,23 @@ public class DataManagementImpl implements DataManagement {
 		try {
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
-
+			String itemCode = HtmlUtil.escape(input.getItemCode());
+			String itemName = HtmlUtil.escape(input.getItemName());
+			String itemNameEN = HtmlUtil.escape(input.getItemNameEN());
+			String itemDescription = HtmlUtil.escape(input.getItemDescription());
+			String parentItemCode = HtmlUtil.escape(input.getParentItemCode());
+			String sibling = input.getSibling();
+			String metaData = HtmlUtil.escape(input.getMetaData());
+			
 			DictItem dictItem = dictItemDataUtil.addDictItems(user.getUserId(), groupId, code,
-					input.getParentItemCode(), input.getItemCode(), input.getItemName(), input.getItemNameEN(),
-					input.getItemDescription(), input.getSibling(), input.getLevel(), input.getMetaData(),
+					parentItemCode, itemCode, itemName, itemNameEN,
+					itemDescription, sibling, input.getLevel(), metaData,
 					serviceContext);
-			DictItemTemp temp = dictItemDataTempUtil.getDictItemTempByItemCode(code, input.getItemCode(), groupId, serviceContext);
+			DictItemTemp temp = dictItemDataTempUtil.getDictItemTempByItemCode(code, itemCode, groupId, serviceContext);
 			if (temp == null) {
 			dictItemDataTempUtil.addDictItemsTemp(user.getUserId(), groupId, code,
-					input.getParentItemCode(), input.getItemCode(), input.getItemName(), input.getItemNameEN(),
-					input.getItemDescription(), input.getSibling(), input.getLevel(), input.getMetaData(),
+					parentItemCode, itemCode, itemName, itemNameEN,
+					itemDescription, sibling, input.getLevel(), metaData,
 					DataMGTTempConstants.DATA_STATUS_ACTIVE,
 						serviceContext);				
 			}
@@ -1250,19 +810,19 @@ public class DataManagementImpl implements DataManagement {
 						user.getUserId(), groupId, 
 						serviceContext,
 						code,
-						input.getItemCode(), 
-						input.getItemCode(),
-						input.getItemName(), input.getItemNameEN(),
-						input.getItemDescription(), input.getSibling(),
-						input.getParentItemCode(),
+						itemCode, 
+						itemCode,
+						itemName, itemNameEN,
+						itemDescription, sibling,
+						parentItemCode,
 						DataMGTTempConstants.DATA_STATUS_ACTIVE);								
 			}
 
 			try {
 				List<ServerConfig> lstServers = ServerConfigLocalServiceUtil.getServerConfigs(QueryUtil.ALL_POS,
 						QueryUtil.ALL_POS);
-				DictItem item = dictItemDataUtil.getDictItemByItemCode(code, input.getItemCode(), groupId,
-						serviceContext);
+				//DictItem item = dictItemDataUtil.getDictItemByItemCode(code, input.getItemCode(), groupId,
+				//		serviceContext);
 
 				for (ServerConfig sc : lstServers) {
 					String configs = sc.getConfigs();
@@ -1273,15 +833,15 @@ public class DataManagementImpl implements DataManagement {
 									&& configObj.getString(SyncServerTerm.SERVER_TYPE)
 											.equals(SyncServerTerm.SYNC_SERVER_TYPE)
 									&& configObj.has(SyncServerTerm.SERVER_USERNAME)
-									&& configObj.has(SyncServerTerm.SERVER_PASSWORD)
+									&& configObj.has(SyncServerTerm.SERVER_SECRET)
 									&& configObj.has(SyncServerTerm.SERVER_URL)
 									&& (configObj.has(SyncServerTerm.PUSH) && configObj.getBoolean(SyncServerTerm.PUSH))) {
 								if (groupId == sc.getGroupId()) {
 									pushDictItemUtil.addPushDictItem(user.getUserId(), groupId, 
 											sc.getServerNo(),
 											code,
-											input.getItemCode(), item.getItemName(), item.getItemNameEN(),
-											item.getItemDescription(), input.getParentItemCode(), item.getSibling(),
+											itemCode, itemName, itemNameEN,
+											itemDescription, parentItemCode, sibling,
 											SyncServerTerm.METHOD_CREATE, "", serviceContext);
 								}
 							}
@@ -1301,60 +861,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(dictItemModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -1371,8 +878,10 @@ public class DataManagementImpl implements DataManagement {
 
 			DictItemModel dictItemModel = DataManagementUtils.mapperDictItemModel(dictItem, dictItemDataUtil,
 					user.getUserId(), company.getCompanyId(), groupId, serviceContext);
-
-			return Response.status(200).entity(dictItemModel).build();
+			CacheControl cc = new CacheControl();
+			cc.setMaxAge(86400);
+			cc.setPrivate(true);	
+			return Response.status(200).entity(dictItemModel).cacheControl(cc).build();
 
 		} else {
 
@@ -1399,21 +908,28 @@ public class DataManagementImpl implements DataManagement {
 		try {
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+			String newItemCode = HtmlUtil.escape(input.getItemCode());
+			String itemName = HtmlUtil.escape(input.getItemName());
+			String itemNameEN = HtmlUtil.escape(input.getItemNameEN());
+			String itemDescription = HtmlUtil.escape(input.getItemDescription());
+			String parentItemCode = HtmlUtil.escape(input.getParentItemCode());
+			String sibling = input.getSibling();
+			String metaData = HtmlUtil.escape(input.getMetaData());
 
 			DictItem ett = dictItemDataUtil.updateDictItemByItemCode(user.getUserId(), groupId, serviceContext, code,
-					itemCode, input.getItemCode(), input.getItemName(), input.getItemNameEN(),
-					input.getItemDescription(), input.getSibling(), input.getParentItemCode());
+					itemCode, newItemCode, itemName, itemNameEN,
+					itemDescription, sibling, parentItemCode);
 
 			DictItemTemp temp = dictItemDataTempUtil.getDictItemTempByItemCode(code, itemCode, groupId, serviceContext);
 			if (temp != null) {
 			dictItemDataTempUtil.updateDictItemTempByItemCode(user.getUserId(), groupId, serviceContext, code,
-					itemCode, input.getItemCode(), input.getItemName(), input.getItemNameEN(),
-						input.getItemDescription(), input.getSibling(), input.getParentItemCode(), DataMGTTempConstants.DATA_STATUS_ACTIVE);				
+					itemCode, newItemCode, itemName, itemNameEN,
+						itemDescription, sibling, parentItemCode, DataMGTTempConstants.DATA_STATUS_ACTIVE);				
 			}
 			else {
 				dictItemDataTempUtil.addDictItemsTemp(user.getUserId(), groupId, code,
-						input.getParentItemCode(), input.getItemCode(), input.getItemName(), input.getItemNameEN(),
-						input.getItemDescription(), input.getSibling(), input.getLevel(), input.getMetaData(),
+						parentItemCode, newItemCode, itemName, itemNameEN,
+						itemDescription, sibling, input.getLevel(), metaData,
 						DataMGTTempConstants.DATA_STATUS_ACTIVE,
 						serviceContext);				
 			}
@@ -1429,15 +945,15 @@ public class DataManagementImpl implements DataManagement {
 								&& configObj.getString(SyncServerTerm.SERVER_TYPE)
 										.equals(SyncServerTerm.SYNC_SERVER_TYPE)
 								&& configObj.has(SyncServerTerm.SERVER_USERNAME)
-								&& configObj.has(SyncServerTerm.SERVER_PASSWORD)
+								&& configObj.has(SyncServerTerm.SERVER_SECRET)
 								&& configObj.has(SyncServerTerm.SERVER_URL)
 								&& (configObj.has(SyncServerTerm.PUSH) && configObj.getBoolean(SyncServerTerm.PUSH))) {
 							if (groupId == sc.getGroupId()) {
 								pushDictItemUtil.addPushDictItem(user.getUserId(), groupId, 
 										sc.getServerNo(),
 										code, itemCode,
-										input.getItemName(), input.getItemNameEN(), input.getItemDescription(),
-										input.getParentItemCode(), input.getSibling(), SyncServerTerm.METHOD_UPDATE, "",
+										itemName, itemNameEN, itemDescription,
+										parentItemCode, sibling, SyncServerTerm.METHOD_UPDATE, "",
 										serviceContext);
 							}
 						}
@@ -1468,60 +984,7 @@ public class DataManagementImpl implements DataManagement {
 			}
 
 		} catch (Exception e) {
-			_log.info(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -1555,7 +1018,8 @@ public class DataManagementImpl implements DataManagement {
 				DictItemTempLocalServiceUtil.deleteDictItemTemp(groupId, itemCode, serviceContext);
 				}
 				catch (NotFoundException e) {
-					e.printStackTrace();
+//					e.printStackTrace();
+					_log.error(e);
 				}
 				try {
 					List<ServerConfig> lstServers = ServerConfigLocalServiceUtil.getServerConfigs(QueryUtil.ALL_POS,
@@ -1570,9 +1034,9 @@ public class DataManagementImpl implements DataManagement {
 										&& configObj.getString(SyncServerTerm.SERVER_TYPE)
 												.equals(SyncServerTerm.SYNC_SERVER_TYPE)
 										&& configObj.has(SyncServerTerm.SERVER_USERNAME)
-										&& configObj.has(SyncServerTerm.SERVER_PASSWORD)
+										&& configObj.has(SyncServerTerm.SERVER_SECRET)
 										&& configObj.has(SyncServerTerm.SERVER_URL)
-										& (configObj.has(SyncServerTerm.PUSH) && configObj.getBoolean(SyncServerTerm.PUSH))) {
+										&& (configObj.has(SyncServerTerm.PUSH) && configObj.getBoolean(SyncServerTerm.PUSH))) {
 									if (groupId == sc.getGroupId()) {
 										pushDictItemUtil.addPushDictItem(user.getUserId(), groupId, 
 												sc.getServerNo(),
@@ -1594,59 +1058,7 @@ public class DataManagementImpl implements DataManagement {
 			}
 
 		} catch (Exception e) {
-			_log.error("@DELETE: " + e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NotFoundException) {
-
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("not found!");
-				error.setCode(404);
-				error.setDescription("not found!");
-
-				return Response.status(404).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -1708,7 +1120,8 @@ public class DataManagementImpl implements DataManagement {
 
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+//				e.printStackTrace();
+				_log.error(e);
 			}
 
 			return Response.status(200).entity(value).build();
@@ -1745,22 +1158,24 @@ public class DataManagementImpl implements DataManagement {
 		try {
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
-
+			String metaData = HtmlUtil.escape(input.getMetaData());
+			
 			DictItem ett = dictItemDataUtil.updateMetaDataByItemCode(user.getUserId(), groupId, serviceContext, code,
-					itemCode, input.getMetaData());
+					itemCode, metaData);
 			
 			try {
 			dictItemDataTempUtil.updateMetaDataByItemCode(user.getUserId(), groupId, serviceContext, code,
 					itemCode, input.getMetaData());
 			}
 			catch (DuplicateCategoryException | NotFoundException e) {
-				e.printStackTrace();
+//				e.printStackTrace();
+				_log.error(e);
 			}
 			DictItem parentEtt = null;
 			try {
 				parentEtt = DictItemLocalServiceUtil.fetchDictItem(ett.getParentItemId());
 			} catch (Exception e) {
-
+				_log.error(e);
 			}
 			try {
 				List<ServerConfig> lstServers = ServerConfigLocalServiceUtil.getServerConfigs(QueryUtil.ALL_POS,
@@ -1775,7 +1190,7 @@ public class DataManagementImpl implements DataManagement {
 									&& configObj.getString(SyncServerTerm.SERVER_TYPE)
 											.equals(SyncServerTerm.SYNC_SERVER_TYPE)
 									&& configObj.has(SyncServerTerm.SERVER_USERNAME)
-									&& configObj.has(SyncServerTerm.SERVER_PASSWORD)
+									&& configObj.has(SyncServerTerm.SERVER_SECRET)
 									&& configObj.has(SyncServerTerm.SERVER_URL)
 									&& (configObj.has(SyncServerTerm.PUSH) && configObj.getBoolean(SyncServerTerm.PUSH))) {
 								if (groupId == sc.getGroupId()) {
@@ -1814,47 +1229,7 @@ public class DataManagementImpl implements DataManagement {
 			}
 
 		} catch (Exception e) {
-			_log.info(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -1876,17 +1251,25 @@ public class DataManagementImpl implements DataManagement {
 			try {
 				oldEtt = dictItemDataUtil.getDictItemByItemCode(code, itemCode, groupId, serviceContext);
 			} catch (Exception e) {
-
+				_log.error(e);
 			}
 
+			String newItemCode = HtmlUtil.escape(input.getItemCode());
+			String itemName = HtmlUtil.escape(input.getItemName());
+			String itemNameEN = HtmlUtil.escape(input.getItemNameEN());
+			String itemDescription = HtmlUtil.escape(input.getItemDescription());
+			String parentItemCode = HtmlUtil.escape(input.getParentItemCode());
+			String sibling = input.getSibling();
+			String metaData = HtmlUtil.escape(input.getMetaData());
+			
 			DictItem ett = null;
 
 			if (oldEtt != null) {
 				if (modifiedDateTime != 0 && oldEtt.getModifiedDate().compareTo(new Date(modifiedDateTime)) < 0) {
 					//Update DictItem
 					ett = dictItemDataUtil.updateDictItemByItemCode(user.getUserId(), groupId, serviceContext, code,
-							itemCode, input.getItemCode(), input.getItemName(), input.getItemNameEN(),
-							input.getItemDescription(), input.getSibling(), input.getParentItemCode());
+							itemCode, newItemCode, itemName, itemNameEN,
+							itemDescription, sibling, parentItemCode);
 					// TODO: Reindex dictItemGroup
 					List<DictItemGroup> digList = DictItemGroupLocalServiceUtil.findByF_dictItemId(
 							groupId, ett.getDictItemId());
@@ -1902,13 +1285,13 @@ public class DataManagementImpl implements DataManagement {
 					DictItemTemp temp = dictItemDataTempUtil.getDictItemTempByItemCode(code, itemCode, groupId, serviceContext);
 					if (temp != null) {
 					dictItemDataTempUtil.updateDictItemTempByItemCode(user.getUserId(), groupId, serviceContext, code,
-							itemCode, input.getItemCode(), input.getItemName(), input.getItemNameEN(),
-							input.getItemDescription(), input.getSibling(), input.getParentItemCode(), DataMGTTempConstants.DATA_STATUS_ACTIVE);	
+							itemCode, newItemCode, itemName, itemNameEN,
+							itemDescription, sibling, parentItemCode, DataMGTTempConstants.DATA_STATUS_ACTIVE);	
 				}
 				else {
 						dictItemDataTempUtil.addDictItemsTemp(user.getUserId(), groupId, code,
-								input.getParentItemCode(), input.getItemCode(), input.getItemName(), input.getItemNameEN(),
-								input.getItemDescription(), input.getSibling(), input.getLevel(), input.getMetaData(),
+								parentItemCode, newItemCode, itemName, itemNameEN,
+								itemDescription, sibling, input.getLevel(), metaData,
 								DataMGTTempConstants.DATA_STATUS_ACTIVE,
 								serviceContext);										
 					}
@@ -1918,9 +1301,9 @@ public class DataManagementImpl implements DataManagement {
 				}
 			} else {
 				//Update DictItem
-				ett = dictItemDataUtil.addDictItems(user.getUserId(), groupId, code, input.getParentItemCode(),
-						itemCode, input.getItemName(), input.getItemNameEN(), input.getItemDescription(),
-						input.getSibling(), input.getLevel(), input.getMetaData(), serviceContext);
+				ett = dictItemDataUtil.addDictItems(user.getUserId(), groupId, code, parentItemCode,
+						itemCode, itemName, itemNameEN, itemDescription,
+						sibling, input.getLevel(), metaData, serviceContext);
 				// TODO: Reindex dictItemGroup
 				List<DictItemGroup> digList = DictItemGroupLocalServiceUtil.findByF_dictItemId(
 						groupId, ett.getDictItemId());
@@ -1935,14 +1318,14 @@ public class DataManagementImpl implements DataManagement {
 				//Update DictItemTemp
 				DictItemTemp temp = dictItemDataTempUtil.getDictItemTempByItemCode(code, itemCode, groupId, serviceContext);
 				if (temp == null) {
-				dictItemDataTempUtil.addDictItemsTemp(user.getUserId(), groupId, code, input.getParentItemCode(),
-						itemCode, input.getItemName(), input.getItemNameEN(), input.getItemDescription(),
-							input.getSibling(), input.getLevel(), input.getMetaData(), DataMGTTempConstants.DATA_STATUS_ACTIVE, serviceContext);					
+				dictItemDataTempUtil.addDictItemsTemp(user.getUserId(), groupId, code, parentItemCode,
+						itemCode, itemName, itemNameEN, itemDescription,
+							sibling, input.getLevel(), metaData, DataMGTTempConstants.DATA_STATUS_ACTIVE, serviceContext);					
 				}
 				else {
 					dictItemDataTempUtil.updateDictItemTempByItemCode(user.getUserId(), groupId, serviceContext, code,
-							itemCode, input.getItemCode(), input.getItemName(), input.getItemNameEN(),
-							input.getItemDescription(), input.getSibling(), input.getParentItemCode(), DataMGTTempConstants.DATA_STATUS_ACTIVE);												
+							itemCode, newItemCode, itemName, itemNameEN,
+							itemDescription, sibling, parentItemCode, DataMGTTempConstants.DATA_STATUS_ACTIVE);												
 				}
 			}
 
@@ -1967,60 +1350,7 @@ public class DataManagementImpl implements DataManagement {
 			}
 
 		} catch (Exception e) {
-			_log.info(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			if (e instanceof DuplicateCategoryException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -2036,6 +1366,10 @@ public class DataManagementImpl implements DataManagement {
 		try {
 
 			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+			String collectionCode = HtmlUtil.escape(input.getCollectionCode());
+			String collectionName = HtmlUtil.escape(input.getCollectionName());
+			String collectionNameEN = HtmlUtil.escape(input.getCollectionNameEN());
+			String description = HtmlUtil.escape(input.getDescription());
 
 			DictCollection oldDictCollection = null;
 
@@ -2050,19 +1384,19 @@ public class DataManagementImpl implements DataManagement {
 				if (modifiedDateTime != 0
 						&& oldDictCollection.getModifiedDate().compareTo(new Date(modifiedDateTime)) < 0) {
 					dictCollection = dictItemDataUtil.updateDictCollection(user.getUserId(), groupId, code,
-							input.getCollectionCode(), input.getCollectionName(), input.getCollectionNameEN(),
-							input.getDescription(), serviceContext);
+							collectionCode, collectionName, collectionNameEN,
+							description, serviceContext);
 					DictCollectionTemp temp = dictItemDataTempUtil.getDictCollectionTempDetail(code, groupId);
 					if (temp != null) {
 					dictItemDataTempUtil.updateDictCollectionTemp(user.getUserId(), groupId, code,
-							input.getCollectionCode(), input.getCollectionName(), input.getCollectionNameEN(),
-							input.getDescription(), DataMGTTempConstants.DATA_STATUS_ACTIVE, 
+							collectionCode, collectionName, collectionNameEN,
+							description, DataMGTTempConstants.DATA_STATUS_ACTIVE, 
 							DataMGTTempConstants.DATA_MUST_SYNCHRONIZED,
 								serviceContext);						
 					}
 					else {
 						dictItemDataTempUtil.addDictCollectionTemp(user.getUserId(), groupId, code,
-								input.getCollectionName(), input.getCollectionNameEN(), input.getDescription(), 
+								collectionName, collectionNameEN, description, 
 								DataMGTTempConstants.DATA_STATUS_ACTIVE, 
 								DataMGTTempConstants.DATA_MUST_SYNCHRONIZED,
 								serviceContext);						
@@ -2073,19 +1407,19 @@ public class DataManagementImpl implements DataManagement {
 				}
 			} else {
 				dictCollection = dictItemDataUtil.addDictCollection(user.getUserId(), groupId, code,
-						input.getCollectionName(), input.getCollectionNameEN(), input.getDescription(), serviceContext);
+						collectionName, collectionNameEN, description, serviceContext);
 				DictCollectionTemp temp = dictItemDataTempUtil.getDictCollectionTempDetail(code, groupId);
 				if (temp == null) {
 				dictItemDataTempUtil.addDictCollectionTemp(user.getUserId(), groupId, code,
-						input.getCollectionName(), input.getCollectionNameEN(), input.getDescription(), 
+						collectionName, collectionNameEN, description, 
 						DataMGTTempConstants.DATA_STATUS_ACTIVE, 
 						DataMGTTempConstants.DATA_MUST_SYNCHRONIZED,
 							serviceContext);					
 				}
 				else {
 					dictItemDataTempUtil.updateDictCollectionTemp(user.getUserId(), groupId, code,
-							input.getCollectionCode(), input.getCollectionName(), input.getCollectionNameEN(),
-							input.getDescription(), DataMGTTempConstants.DATA_STATUS_ACTIVE, 
+							collectionCode, collectionName, collectionNameEN,
+							description, DataMGTTempConstants.DATA_STATUS_ACTIVE, 
 							DataMGTTempConstants.DATA_MUST_SYNCHRONIZED,
 							serviceContext);											
 				}
@@ -2096,47 +1430,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(dictCollectionModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -2176,14 +1470,7 @@ public class DataManagementImpl implements DataManagement {
 
 			return Response.status(200).entity(result).build();
 		} catch (Exception e) {
-			_log.error("@GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -2222,14 +1509,7 @@ public class DataManagementImpl implements DataManagement {
 
 			return Response.status(200).entity(result).build();
 		} catch (Exception e) {
-			_log.error("@GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -2268,14 +1548,7 @@ public class DataManagementImpl implements DataManagement {
 
 			return Response.status(200).entity(result).build();
 		} catch (Exception e) {
-			_log.error("@GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -2349,47 +1622,7 @@ public class DataManagementImpl implements DataManagement {
 			return Response.status(200).entity(dictGroupModel).build();
 
 		} catch (Exception e) {
-			_log.error(e);
-			if (e instanceof UnauthenticationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("authentication failed!");
-				error.setCode(401);
-				error.setDescription("authentication failed!");
-
-				return Response.status(401).entity(error).build();
-
-			}
-
-			if (e instanceof UnauthorizationException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("permission denied!");
-				error.setCode(403);
-				error.setDescription("permission denied!");
-
-				return Response.status(403).entity(error).build();
-
-			}
-
-			if (e instanceof NoSuchUserException) {
-
-				_log.error("@POST: " + e);
-				ErrorMsg error = new ErrorMsg();
-
-				error.setMessage("conflict!");
-				error.setCode(409);
-				error.setDescription("conflict!");
-
-				return Response.status(409).entity(error).build();
-
-			}
-
-			return Response.status(500).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -2429,14 +1662,7 @@ public class DataManagementImpl implements DataManagement {
 
 			return Response.status(200).entity(result).build();
 		} catch (Exception e) {
-			_log.error("@GET: " + e);
-			ErrorMsg error = new ErrorMsg();
-
-			error.setMessage("not found!");
-			error.setCode(404);
-			error.setDescription("not found!");
-
-			return Response.status(404).entity(error).build();
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -2466,6 +1692,182 @@ public class DataManagementImpl implements DataManagement {
 
 			return Response.status(409).entity(error).build();
 
+		}
+	}
+
+	@Override
+	public Response activeDictCollection(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
+			User user, ServiceContext serviceContext, String code) {
+		DictcollectionInterface dictItemDataUtil = new DictCollectionActions();
+		DictCollectionModel dictCollectionModel = new DictCollectionModel();
+
+		try {
+
+			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+
+			DictCollection dictCollection = dictItemDataUtil.getDictCollectionDetail(code, groupId);
+
+			if (dictCollection != null) {
+				dictCollection = DictCollectionLocalServiceUtil.active(dictCollection.getDictCollectionId());
+			}
+			dictCollectionModel = DataManagementUtils.mapperDictCollectionModel(dictCollection);
+
+			return Response.status(200).entity(dictCollectionModel).build();
+
+		} catch (Exception e) {
+			return BusinessExceptionImpl.processException(e);
+		}
+	}
+
+	@Override
+	public Response inActiveDictCollection(HttpServletRequest request, HttpHeaders header, Company company,
+			Locale locale, User user, ServiceContext serviceContext, String code) {
+		DictcollectionInterface dictItemDataUtil = new DictCollectionActions();
+		DictCollectionModel dictCollectionModel = new DictCollectionModel();
+
+		try {
+
+			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+
+			DictCollection dictCollection = dictItemDataUtil.getDictCollectionDetail(code, groupId);
+
+			if (dictCollection != null) {
+				dictCollection = DictCollectionLocalServiceUtil.inactive(dictCollection.getDictCollectionId());
+			}
+			dictCollectionModel = DataManagementUtils.mapperDictCollectionModel(dictCollection);
+
+			return Response.status(200).entity(dictCollectionModel).build();
+
+		} catch (Exception e) {
+			return BusinessExceptionImpl.processException(e);
+		}
+	}
+
+	/** LGSP - START */
+	@SuppressWarnings("unchecked")
+	@Override
+	public Response getDictCollectionLGSP(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
+			User user, ServiceContext serviceContext, DataSearchModel query, String status) {
+		DictcollectionInterface dictItemDataUtil = new DictCollectionActions();
+		DictCollectionResults result = new DictCollectionResults();
+
+		try {
+
+			if (query.getEnd() == 0) {
+				query.setStart(-1);
+				query.setEnd(-1);
+			}
+
+			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+			LinkedHashMap<String, Object> params = new LinkedHashMap<String, Object>();
+
+			//params.put("groupId", String.valueOf(groupId));
+			params.put("keywords", query.getKeywords());
+			params.put("status", status);
+
+			Sort[] sorts = new Sort[] {
+					SortFactoryUtil.create(query.getSort() + "_sortable", Sort.STRING_TYPE, false) };
+
+			JSONObject jsonData = dictItemDataUtil.getDictCollectionLGSP(user.getUserId(), company.getCompanyId(), groupId,
+					params, sorts, query.getStart(), query.getEnd(), serviceContext);
+
+			List<DictCollectionShortModel> dictCollectionList = DataManagementUtils
+					.mapperDictCollectionLGSPModelList((List<Document>) jsonData.get("data"));
+			if (dictCollectionList != null && dictCollectionList.size() > 0) {
+				result.getDictCollectionShortModel().addAll(dictCollectionList);
+				result.setTotal(dictCollectionList.size());
+			}
+			
+
+			return Response.status(200).entity(result).build();
+
+		} catch (Exception e) {
+			return BusinessExceptionImpl.processException(e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Response getDictgroupsLGSP(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
+			User user, ServiceContext serviceContext, String code, DataSearchModel query) {
+		DictcollectionInterface dictItemDataUtil = new DictCollectionActions();
+		DictGroupResults result = new DictGroupResults();
+		SearchContext searchContext = new SearchContext();
+		searchContext.setCompanyId(company.getCompanyId());
+
+		try {
+
+			if (query.getEnd() == 0) {
+				query.setStart(-1);
+				query.setEnd(-1);
+			}
+
+			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+			LinkedHashMap<String, Object> params = new LinkedHashMap<String, Object>();
+
+			params.put("groupId", String.valueOf(groupId));
+			params.put("keywords", query.getKeywords());
+			params.put(DictGroupTerm.DICT_COLLECTION_CODE, code);
+
+			Sort[] sorts = new Sort[] {
+					SortFactoryUtil.create(query.getSort() + "_sortable", Sort.STRING_TYPE, false) };
+
+			JSONObject jsonData = dictItemDataUtil.getDictgroupsLGSP(user.getUserId(), company.getCompanyId(), groupId,
+					params, sorts, query.getStart(), query.getEnd(), serviceContext);
+
+			result.setTotal(jsonData.getLong("total"));
+			result.getGroups().addAll(DataManagementUtils.mapperGroupsList((List<Document>) jsonData.get("data")));
+
+			return Response.status(200).entity(result).build();
+
+		} catch (Exception e) {
+			return BusinessExceptionImpl.processException(e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Response getDictItemsLGSP(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
+			User user, ServiceContext serviceContext, String code, DataSearchModel query) {
+		DictcollectionInterface dictItemDataUtil = new DictCollectionActions();
+		DictItemResults result = new DictItemResults();
+		SearchContext searchContext = new SearchContext();
+		searchContext.setCompanyId(company.getCompanyId());
+
+		try {
+
+			if (query.getEnd() == 0) {
+				query.setStart(-1);
+				query.setEnd(-1);
+			}
+
+			long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+			LinkedHashMap<String, Object> params = new LinkedHashMap<String, Object>();
+
+			if ("ADMINISTRATIVE_REGION".equalsIgnoreCase(code)) groupId = 0;
+
+			params.put("groupId", groupId);
+			params.put("keywords", query.getKeywords());
+			params.put("itemLv", query.getLevel());
+			params.put(DictItemTerm.PARENT_ITEM_CODE, query.getParent());
+			params.put(DictItemTerm.DICT_COLLECTION_CODE, code);
+
+			Sort[] sorts = new Sort[] {
+					SortFactoryUtil.create(query.getSort() + "_sortable", Sort.STRING_TYPE, false) };
+
+			JSONObject jsonData = dictItemDataUtil.getDictItemsLGSP(user.getUserId(), company.getCompanyId(), groupId,
+					params, sorts, query.getStart(), query.getEnd(), serviceContext);
+
+			List<DictItemModel> dictItemList = DataManagementUtils
+					.mapperDictItemModelListLGSP((List<Document>) jsonData.get("data"), code);
+			if (dictItemList != null && dictItemList.size() > 0) {
+				result.getDictItemModel().addAll(dictItemList);
+				result.setTotal(dictItemList.size());
+			}
+			return Response.status(200).entity(result).build();
+
+		} catch (Exception e) {
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 }

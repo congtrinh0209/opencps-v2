@@ -1,5 +1,15 @@
 package org.opencps.dossiermgt.listenner;
 
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 import java.util.Calendar;
 import java.util.Date;
 
@@ -18,23 +28,13 @@ import org.opencps.usermgt.model.Applicant;
 import org.opencps.usermgt.model.Employee;
 import org.opencps.usermgt.service.ApplicantLocalServiceUtil;
 
-import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
-
 public class DossierListennerUltils {
 
 	static void createDossierLog(Dossier model, boolean isUpdated, boolean isChangedStatus) {
 
 		try {
 
-			String content = StringPool.BLANK;
+			String content;
 			String notificationType = StringPool.BLANK;
 			String payload = DossierLogUtils.createPayload(null, null, model);
 			Applicant applicant = ApplicantLocalServiceUtil.fetchByMappingID(model.getUserId());
@@ -93,8 +93,8 @@ public class DossierListennerUltils {
 					content, notificationType, payload, serviceContext);
 
 		} catch (Exception e) {
-			e.printStackTrace();
-
+//			e.printStackTrace();
+			_log.error(e);
 		}
 
 	}
@@ -294,7 +294,8 @@ public class DossierListennerUltils {
 			return StringUtil.replace(emailBody, oldSubs, newSubs);
 
 		} catch (Exception e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 			return StringPool.BLANK;
 		}
 

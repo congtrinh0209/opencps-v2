@@ -1,16 +1,6 @@
 package org.opencps.usermgt.service.indexer;
 
-import java.util.LinkedHashMap;
-import java.util.Locale;
-
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-
-import org.opencps.usermgt.constants.ResourceRoleTerm;
-import org.opencps.usermgt.constants.ResourceUserTerm;
-import org.opencps.usermgt.model.ResourceRole;
-import org.opencps.usermgt.service.ResourceRoleLocalServiceUtil;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -28,9 +18,23 @@ import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.LinkedHashMap;
+import java.util.Locale;
+
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
+
+import org.opencps.usermgt.constants.ResourceRoleTerm;
+import org.opencps.usermgt.model.ResourceRole;
+import org.opencps.usermgt.service.ResourceRoleLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
+
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class ResourceRoleIndexer extends BaseIndexer<ResourceRole> {
 
 	public static final String CLASS_NAME = ResourceRole.class.getName();

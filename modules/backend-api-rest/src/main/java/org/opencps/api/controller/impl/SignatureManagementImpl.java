@@ -1,49 +1,11 @@
 package org.opencps.api.controller.impl;
 
-import java.io.File;
-import java.net.HttpURLConnection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
-import org.opencps.api.controller.SignatureManagement;
-import org.opencps.api.controller.exception.ErrorMsg;
-import org.opencps.api.digitalsignature.model.DigitalSignatureInputModel;
-import org.opencps.auth.api.BackendAuth;
-import org.opencps.auth.api.BackendAuthImpl;
-import org.opencps.auth.api.exception.NotFoundException;
-import org.opencps.auth.api.exception.UnauthenticationException;
-import org.opencps.auth.api.exception.UnauthorizationException;
-import org.opencps.dossiermgt.action.DossierActions;
-import org.opencps.dossiermgt.action.impl.DossierActionsImpl;
-import org.opencps.dossiermgt.model.Deliverable;
-import org.opencps.dossiermgt.model.Dossier;
-import org.opencps.dossiermgt.model.DossierFile;
-import org.opencps.dossiermgt.model.DossierPart;
-import org.opencps.dossiermgt.model.ProcessAction;
-import org.opencps.dossiermgt.model.ProcessOption;
-import org.opencps.dossiermgt.model.ProcessStep;
-import org.opencps.dossiermgt.model.ServiceConfig;
-import org.opencps.dossiermgt.scheduler.InvokeREST;
-import org.opencps.dossiermgt.scheduler.RESTFulConfiguration;
-import org.opencps.dossiermgt.service.DeliverableLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierFileLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
-import org.opencps.dossiermgt.service.ProcessActionLocalServiceUtil;
-import org.opencps.dossiermgt.service.ProcessOptionLocalServiceUtil;
-import org.opencps.dossiermgt.service.ProcessStepLocalServiceUtil;
-import org.opencps.dossiermgt.service.ServiceConfigLocalServiceUtil;
-
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.service.DLAppLocalServiceUtil;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
@@ -53,10 +15,43 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.servlet.HttpMethods;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.kernel.json.JSONArray;
+
+import java.io.File;
+import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+
+import org.opencps.api.controller.SignatureManagement;
+import org.opencps.api.controller.util.DossierUtils;
+import org.opencps.api.digitalsignature.model.DigitalSignatureInputModel;
+import org.opencps.auth.api.BackendAuth;
+import org.opencps.auth.api.BackendAuthImpl;
+import org.opencps.auth.api.exception.UnauthenticationException;
+import org.opencps.dossiermgt.action.DossierActions;
+import org.opencps.dossiermgt.action.impl.DossierActionsImpl;
+import org.opencps.dossiermgt.model.ActionConfig;
+import org.opencps.dossiermgt.model.Deliverable;
+import org.opencps.dossiermgt.model.Dossier;
+import org.opencps.dossiermgt.model.DossierFile;
+import org.opencps.dossiermgt.model.DossierPart;
+import org.opencps.dossiermgt.model.ProcessAction;
+import org.opencps.dossiermgt.model.ProcessOption;
+import org.opencps.dossiermgt.scheduler.InvokeREST;
+import org.opencps.dossiermgt.scheduler.RESTFulConfiguration;
+import org.opencps.dossiermgt.service.ActionConfigLocalServiceUtil;
+import org.opencps.dossiermgt.service.DeliverableLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierFileLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
+import backend.auth.api.exception.BusinessExceptionImpl;
+import backend.auth.api.exception.ErrorMsgModel;
 
 public class SignatureManagementImpl implements SignatureManagement{
 
@@ -164,9 +159,9 @@ public class SignatureManagementImpl implements SignatureManagement{
 						if (Validator.isNotNull(deliverableCode)) {
 							Deliverable deliverable = DeliverableLocalServiceUtil.getByCode(deliverableCode);
 							if (deliverable != null) {
-								String deliState = deliverable.getDeliverableState();
+								String deliState = String.valueOf(deliverable.getDeliverableState());
 								if (!"2".equals(deliState)) {
-									deliverable.setDeliverableState("2");
+									deliverable.setDeliverableState(2);
 									DeliverableLocalServiceUtil.updateDeliverable(deliverable);
 								}
 							}
@@ -225,10 +220,10 @@ public class SignatureManagementImpl implements SignatureManagement{
 			}
 
 			String strIdArr = input.getStrIdArr();
-//			_log.info("array Id: "+strIdArr);
+			//_log.info("array Id: "+strIdArr);
 
 			String[] idSplit = strIdArr.split(StringPool.SEMICOLON);
-//			_log.info("idSplit Id: "+idSplit);
+			//_log.info("idSplit Id: "+idSplit);
 
 			JSONObject hashComputed = JSONFactoryUtil.createJSONObject();
 			JSONObject results = null;
@@ -252,9 +247,10 @@ public class SignatureManagementImpl implements SignatureManagement{
 						_log.info("fileEntryId: "+fileEntryId);
 
 						try {
+							//_log.info("START CALL HASHCOMPUTE: ");
 							JSONObject newHashComputedResult = callHashComputedSync(groupId, user, fileEntryId, input.getActionCode(),
 									input.getPostStepCode(), serviceContext);
-//							_log.info("Obj: " + newHashComputedResult.toJSONString());
+							//_log.info("Obj: " + newHashComputedResult);
 							String newHashComputedStr = newHashComputedResult.getString("message");
 							
 							JSONObject newHashComputed = JSONFactoryUtil.createJSONObject(newHashComputedStr);
@@ -324,32 +320,7 @@ public class SignatureManagementImpl implements SignatureManagement{
 			return Response.status(200).entity(JSONFactoryUtil.looseSerialize(results)).build();
 
 		} catch (Exception e) {
-			ErrorMsg error = new ErrorMsg();
-
-			if (e instanceof UnauthenticationException) {
-				error.setMessage("Non-Authoritative Information.");
-				error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-				error.setDescription("Non-Authoritative Information.");
-
-				return Response.status(HttpURLConnection.HTTP_NOT_AUTHORITATIVE).entity(error).build();
-			} else {
-				if (e instanceof UnauthorizationException) {
-					error.setMessage("Unauthorized.");
-					error.setCode(HttpURLConnection.HTTP_NOT_AUTHORITATIVE);
-					error.setDescription("Unauthorized.");
-
-					return Response.status(HttpURLConnection.HTTP_UNAUTHORIZED).entity(error).build();
-
-				} else {
-
-					error.setMessage("Internal Server Error");
-					error.setCode(HttpURLConnection.HTTP_FORBIDDEN);
-					error.setDescription(e.getMessage());
-
-					return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(error).build();
-
-				}
-			}
+			return BusinessExceptionImpl.processException(e);
 		}
 	}
 
@@ -379,57 +350,58 @@ public class SignatureManagementImpl implements SignatureManagement{
 
 	}
 
-	private ProcessOption getProcessOption(String serviceInfoCode, String govAgencyCode, String dossierTemplateNo,
-			long groupId) throws PortalException {
-
-		ServiceConfig config = ServiceConfigLocalServiceUtil.getBySICodeAndGAC(groupId, serviceInfoCode, govAgencyCode);
-
-		return ProcessOptionLocalServiceUtil.getByDTPLNoAndServiceCF(groupId, dossierTemplateNo,
-				config.getServiceConfigId());
-	}
-
-	protected ProcessAction getProcessAction(long groupId, long dossierId, String refId, String actionCode,
-			long serviceProcessId) throws PortalException {
-		
-		_log.info("GET PROCESS ACTION____");
-		
-		ProcessAction action = null;
-		
-		try {
-			List<ProcessAction> actions = ProcessActionLocalServiceUtil.getByActionCode(groupId, actionCode,
-					serviceProcessId);
-
-			Dossier dossier = getDossier(groupId, dossierId, refId);
-
-			String dossierStatus = dossier.getDossierStatus();
-
-			String dossierSubStatus = dossier.getDossierSubStatus();
-
-			for (ProcessAction act : actions) {
-
-				String preStepCode = act.getPreStepCode();
-
-				ProcessStep step = ProcessStepLocalServiceUtil.fetchBySC_GID(preStepCode, groupId, serviceProcessId);
-
-				if (Validator.isNull(step)) {
-					action = act;
-					break;
-				} else {
-					if (step.getDossierStatus().contentEquals(dossierStatus)
-							&& StringUtil.containsIgnoreCase(step.getDossierSubStatus(), dossierSubStatus)) {
-
-						action = act;
-						break;
-					}
-				}
-			}
-
-		} catch (Exception e) {
-			throw new NotFoundException("NotProcessActionFound");
-		}
-
-		return action;
-	}
+//	private ProcessOption getProcessOption(String serviceInfoCode, String govAgencyCode, String dossierTemplateNo,
+//			long groupId) throws PortalException {
+//
+//		ServiceConfig config = ServiceConfigLocalServiceUtil.getBySICodeAndGAC(groupId, serviceInfoCode, govAgencyCode);
+//
+//		return ProcessOptionLocalServiceUtil.getByDTPLNoAndServiceCF(groupId, dossierTemplateNo,
+//				config.getServiceConfigId());
+//	}
+//
+//	protected ProcessAction getProcessAction(long groupId, long dossierId, String refId, String actionCode,
+//			long serviceProcessId) throws PortalException {
+//		
+//		_log.info("GET PROCESS ACTION____");
+//		
+//		ProcessAction action = null;
+//		
+//		try {
+//			List<ProcessAction> actions = ProcessActionLocalServiceUtil.getByActionCode(groupId, actionCode,
+//					serviceProcessId);
+//
+//			Dossier dossier = getDossier(groupId, dossierId, refId);
+//
+//			String dossierStatus = dossier.getDossierStatus();
+//
+//			String dossierSubStatus = dossier.getDossierSubStatus();
+//
+//			for (ProcessAction act : actions) {
+//
+//				String preStepCode = act.getPreStepCode();
+//
+//				ProcessStep step = ProcessStepLocalServiceUtil.fetchBySC_GID(preStepCode, groupId, serviceProcessId);
+//
+//				if (Validator.isNull(step)) {
+//					action = act;
+//					break;
+//				} else {
+//					if (step.getDossierStatus().contentEquals(dossierStatus)
+//							&& StringUtil.containsIgnoreCase(step.getDossierSubStatus(), dossierSubStatus)) {
+//
+//						action = act;
+//						break;
+//					}
+//				}
+//			}
+//
+//		} catch (Exception e) {
+//			_log.error(e);
+//			throw new NotFoundException("NotProcessActionFound");
+//		}
+//
+//		return action;
+//	}
 
 	protected Dossier getDossier(long groupId, long dossierId, String refId) throws PortalException {
 
@@ -447,11 +419,14 @@ public class SignatureManagementImpl implements SignatureManagement{
 	@Override
 	public Response updateDossierFilesBySignature(HttpServletRequest request, HttpHeaders header, Company company,
 			Locale locale, User user, ServiceContext serviceContext, long id, DigitalSignatureInputModel input)
-			throws PortalException {
+			throws PortalException, Exception {
 		BackendAuth auth = new BackendAuthImpl();
+		
+		_log.info("SONDT SIGNNATUREMGT_IMPL ==============  " + JSONFactoryUtil.looseSerialize(input));
 
 		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 		long dossierId = Long.valueOf(id);
+		long userId = user.getUserId();
 
 		if (!auth.isAuth(serviceContext)) {
 			throw new UnauthenticationException();
@@ -461,16 +436,17 @@ public class SignatureManagementImpl implements SignatureManagement{
 		String signs = input.getSign();
 		String signFieldNames = input.getSignFieldName();
 		String fileNames = input.getFileName();
-		_log.info("Sign: " + signs + ", field name: " + signFieldNames + ", file name: " + fileNames + ", file entry id: " + fileEntryIds);
+		//_log.info("Sign: " + signs + ", field name: " + signFieldNames + ", file name: " + fileNames + ", file entry id: " + fileEntryIds);
 		String[] fileEntryIdArr = StringUtil.split(fileEntryIds);
 		String[] signArr = StringUtil.split(signs);
-		String[] signFieldNameArr = StringUtil.split(signFieldNames);
-		String[] fileNameArr = StringUtil.split(fileNames);
+		String[] signFieldNameArr = Validator.isNotNull(signFieldNames) ? StringUtil.split(signFieldNames): new String[fileEntryIdArr.length];
+		String[] fileNameArr = Validator.isNotNull(fileNames) ? StringUtil.split(fileNames): new String[fileEntryIdArr.length];
 		String actionCode = input.getActionCode();
-		String actionUser = input.getActionUser();
-		String actionNote = input.getActionNote();
-		long assignUserId = Long.valueOf(input.getAssignUserId());
-		String subUsers = input.getSubUsers();
+		//String actionUser = input.getActionUser();
+		//String actionNote = input.getActionNote();
+		//String strAssignUserId = input.getAssignUserId() != null ? input.getAssignUserId(): "0";
+		//long assignUserId = Long.valueOf(strAssignUserId);
+		//String subUsers = input.getSubUsers();
 		JSONObject result = JSONFactoryUtil.createJSONObject();
 		boolean signOk = true;
 		
@@ -511,12 +487,9 @@ public class SignatureManagementImpl implements SignatureManagement{
 		//			_log.info("fileSigned Path: "+fileSigned.getAbsolutePath());
 		//			_log.info("fileSigned Name: "+fileSigned.getName());
 					DLFileEntry dlFileEntry = DLFileEntryLocalServiceUtil.fetchDLFileEntry(fileEntryId);
-		//			_log.info("dlFileEntry: "+dlFileEntry.getFileName());
-		
 					DLAppLocalServiceUtil.updateFileEntry(user.getUserId(), dlFileEntry.getFileEntryId(), dlFileEntry.getTitle(),
 							dlFileEntry.getMimeType(), dlFileEntry.getTitle(), dlFileEntry.getDescription(),
 							StringPool.BLANK, true, fileSigned, serviceContext);
-		
 					// Update deliverable with deliverableType
 					DossierFile dossierFile = DossierFileLocalServiceUtil.getByFileEntryId(fileEntryId);
 					if (dossierFile != null) {
@@ -524,14 +497,14 @@ public class SignatureManagementImpl implements SignatureManagement{
 						if (Validator.isNotNull(deliverableCode)) {
 							Deliverable deliverable = DeliverableLocalServiceUtil.getByCode(deliverableCode);
 							if (deliverable != null) {
-								String deliState = deliverable.getDeliverableState();
+								String deliState = String.valueOf(deliverable.getDeliverableState());
 								if (!"2".equals(deliState)) {
-									deliverable.setDeliverableState("2");
+									deliverable.setDeliverableState(2);
 									DeliverableLocalServiceUtil.updateDeliverable(deliverable);
 								}
 							}
 						}
-					}					
+					}
 				}
 			} else {
 //				result.put("msg", "fileEntryId");
@@ -550,27 +523,55 @@ public class SignatureManagementImpl implements SignatureManagement{
 //			_log.info("assignUserId: "+assignUserId);
 //			_log.info("subUsers: "+subUsers);
 			DossierActions dossierAction = new DossierActionsImpl();
-			dossierAction.doAction(groupId, dossierId, dossier.getReferenceUid(), actionCode,
-			0L, actionUser, actionNote, assignUserId, user.getUserId(), subUsers,
-			serviceContext);
+//			dossierAction.doAction(groupId, dossierId, dossier.getReferenceUid(), actionCode,
+//			0L, actionUser, actionNote, assignUserId, user.getUserId(), subUsers,
+//			serviceContext);
+			if (Validator.isNotNull(actionCode)) {
+				ActionConfig actConfig = ActionConfigLocalServiceUtil.getByCode(groupId, actionCode);
+				_log.info("Action config: " + actConfig);
+				String serviceCode = dossier.getServiceCode();
+				String govAgencyCode = dossier.getGovAgencyCode();
+				String dossierTempNo = dossier.getDossierTemplateNo();
+				ErrorMsgModel errorModel = new ErrorMsgModel();
+				if (actConfig != null) {
+					boolean insideProcess = actConfig.getInsideProcess();
+					ProcessOption option = DossierUtils.getProcessOption(serviceCode, govAgencyCode,
+							dossierTempNo, groupId);
+					if (insideProcess) {
+						if (option != null) {
+							long serviceProcessId = option.getServiceProcessId();
+							ProcessAction proAction = DossierUtils.getProcessAction(groupId, dossier, actionCode,
+									serviceProcessId);
+							if (proAction != null) {
+								dossierAction.doAction(groupId, userId, dossier, option, proAction,
+										actionCode, input.getActionUser(), input.getActionNote(),
+										input.getPayload(), input.getAssignUsers(), input.getPayment(),
+										actConfig.getSyncType(), serviceContext, errorModel);
+							}
+						}
+					} else {
+						dossierAction.doAction(groupId, userId, dossier, option, null, actionCode,
+								input.getActionUser(), input.getActionNote(), input.getPayload(),
+								input.getAssignUsers(), input.getPayment(), actConfig.getSyncType(),
+								serviceContext, errorModel);
+					}
+					//Process send email or sms
+				} else {
+					ProcessOption option = DossierUtils.getProcessOption(serviceCode, govAgencyCode, dossierTempNo,
+							groupId);
+					if (option != null) {
+						long serviceProcessId = option.getServiceProcessId();
+						ProcessAction proAction = DossierUtils.getProcessAction(groupId, dossier, actionCode,
+								serviceProcessId);
+						if (proAction != null) {
+							dossierAction.doAction(groupId, userId, dossier, option, proAction,
+									actionCode, input.getActionUser(), input.getActionNote(), input.getPayload(),
+									input.getAssignUsers(), input.getPayment(), 0, serviceContext, errorModel);
+						}
+					}
+				}
+			}
 
-//			if (TYPE_KYSO.contains(actionCode)) {
-//				dossierAction.doAction(groupId, dossierId, dossier.getReferenceUid(), actionCode,
-//						0L, actionUser, actionNote, assignUserId, user.getUserId(), subUsers,
-//						serviceContext);
-//			} else if(TYPE_DONGDAU.contains(actionCode)) {
-//				ProcessOption option = getProcessOption(dossier.getServiceCode(), dossier.getGovAgencyCode(),
-//						dossier.getDossierTemplateNo(), groupId);
-//	
-//				ProcessAction action = getProcessAction(groupId, dossier.getDossierId(), dossier.getReferenceUid(),
-//						input.getActionCode(), option.getServiceProcessId());
-//	
-//				dossierAction.doAction(groupId, dossierId, dossier.getReferenceUid(), actionCode,
-//						action.getProcessActionId(), actionUser, actionNote, assignUserId, user.getUserId(), subUsers,
-//						serviceContext);
-//			} else {
-//				//TODO
-//			}
 			// Process success
 			result.put("msg", "success");
 		}
@@ -581,4 +582,320 @@ public class SignatureManagementImpl implements SignatureManagement{
 		return Response.status(200).entity(JSONFactoryUtil.looseSerialize(result)).build();
 	}
 
+	@Override
+	public Response updateDossierFileByCaptcha(HttpServletRequest request, HttpHeaders header, Company company,
+			Locale locale, User user, ServiceContext serviceContext, Long id, DigitalSignatureInputModel input)
+			throws PortalException {
+		BackendAuth auth = new BackendAuthImpl();
+
+		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+		long dossierId = Long.valueOf(id);
+
+		if (!auth.isAuth(serviceContext)) {
+			throw new UnauthenticationException();
+		}
+
+		long fileEntryId = Long.valueOf(input.getFileEntryId());
+		JSONObject result = JSONFactoryUtil.createJSONObject();
+		if (fileEntryId > 0) {
+			String actionCode = input.getActionCode();
+			String actionUser = input.getActionUser();
+			String actionNote = input.getActionNote();
+			long assignUserId = Long.valueOf(input.getAssignUserId());
+			String subUsers = input.getSubUsers();
+	
+				//Next action
+				Dossier dossier = DossierLocalServiceUtil.fetchDossier(dossierId);
+				if (dossier != null) {
+					DossierActions dossierAction = new DossierActionsImpl();
+						dossierAction.doAction(groupId, dossierId, dossier.getReferenceUid(), actionCode,
+								0L, actionUser, actionNote, assignUserId, user.getUserId(), subUsers,
+								serviceContext);
+
+					DossierFile dossierFile = DossierFileLocalServiceUtil.getByFileEntryId(fileEntryId);
+					if (dossierFile != null) {
+						String deliverableCode = dossierFile.getDeliverableCode();
+						if (Validator.isNotNull(deliverableCode)) {
+							Deliverable deliverable = DeliverableLocalServiceUtil.getByCode(deliverableCode);
+							if (deliverable != null) {
+								String deliState = String.valueOf(deliverable.getDeliverableState());
+								if (!"2".equals(deliState)) {
+									deliverable.setDeliverableState(2);
+									DeliverableLocalServiceUtil.updateDeliverable(deliverable);
+								}
+							}
+						}
+					}
+					// Process success
+					result.put("msg", "success");
+				}
+			}
+
+		return Response.status(200).entity(JSONFactoryUtil.looseSerialize(result)).build();
+	}
+
+	@Override
+	public Response updateDossierFilesByCaptcha(HttpServletRequest request, HttpHeaders header, Company company,
+			Locale locale, User user, ServiceContext serviceContext, long id, DigitalSignatureInputModel input)
+			throws PortalException, Exception {
+		BackendAuth auth = new BackendAuthImpl();
+		
+		_log.info("SONDT SIGNNATUREMGT_IMPL ==============  " + JSONFactoryUtil.looseSerialize(input));
+
+		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+		long dossierId = Long.valueOf(id);
+		long userId = user.getUserId();
+
+		if (!auth.isAuth(serviceContext)) {
+			throw new UnauthenticationException();
+		}
+
+		String fileEntryIds = input.getFileEntryId();
+		//_log.info("Sign: " + signs + ", field name: " + signFieldNames + ", file name: " + fileNames + ", file entry id: " + fileEntryIds);
+		String[] fileEntryIdArr = StringUtil.split(fileEntryIds);
+		String actionCode = input.getActionCode();
+		//String actionUser = input.getActionUser();
+		//String actionNote = input.getActionNote();
+		//String strAssignUserId = input.getAssignUserId() != null ? input.getAssignUserId(): "0";
+		//long assignUserId = Long.valueOf(strAssignUserId);
+		//String subUsers = input.getSubUsers();
+		JSONObject result = JSONFactoryUtil.createJSONObject();
+		boolean signOk = true;
+		
+		for (int i = 0; i < fileEntryIdArr.length; i++) {
+			long fileEntryId = Long.valueOf(fileEntryIdArr[i]);
+			if (fileEntryId > 0) {
+					DossierFile dossierFile = DossierFileLocalServiceUtil.getByFileEntryId(fileEntryId);
+					if (dossierFile != null) {
+						String deliverableCode = dossierFile.getDeliverableCode();
+						if (Validator.isNotNull(deliverableCode)) {
+							Deliverable deliverable = DeliverableLocalServiceUtil.getByCode(deliverableCode);
+							if (deliverable != null) {
+								String deliState = String.valueOf(deliverable.getDeliverableState());
+								if (!"2".equals(deliState)) {
+									deliverable.setDeliverableState(2);
+									DeliverableLocalServiceUtil.updateDeliverable(deliverable);
+								}
+							}
+						}
+					}
+				}
+		}
+
+		//Next action
+		Dossier dossier = DossierLocalServiceUtil.fetchDossier(dossierId);
+		if (dossier != null) {
+			DossierActions dossierAction = new DossierActionsImpl();
+			if (Validator.isNotNull(actionCode)) {
+				ActionConfig actConfig = ActionConfigLocalServiceUtil.getByCode(groupId, actionCode);
+				String serviceCode = dossier.getServiceCode();
+				String govAgencyCode = dossier.getGovAgencyCode();
+				String dossierTempNo = dossier.getDossierTemplateNo();
+				ErrorMsgModel errorModel = new ErrorMsgModel();
+				if (actConfig != null) {
+					boolean insideProcess = actConfig.getInsideProcess();
+					ProcessOption option = DossierUtils.getProcessOption(serviceCode, govAgencyCode,
+							dossierTempNo, groupId);
+					if (insideProcess) {
+						if (option != null) {
+							long serviceProcessId = option.getServiceProcessId();
+							ProcessAction proAction = DossierUtils.getProcessAction(groupId, dossier, actionCode,
+									serviceProcessId);
+							if (proAction != null) {
+								dossierAction.doAction(groupId, userId, dossier, option, proAction,
+										actionCode, input.getActionUser(), input.getActionNote(),
+										input.getPayload(), input.getAssignUsers(), input.getPayment(),
+										actConfig.getSyncType(), serviceContext, errorModel);
+							}
+						}
+					} else {
+						dossierAction.doAction(groupId, userId, dossier, option, null, actionCode,
+								input.getActionUser(), input.getActionNote(), input.getPayload(),
+								input.getAssignUsers(), input.getPayment(), actConfig.getSyncType(),
+								serviceContext, errorModel);
+					}
+					//Process send email or sms
+				} else {
+					ProcessOption option = DossierUtils.getProcessOption(serviceCode, govAgencyCode, dossierTempNo,
+							groupId);
+					if (option != null) {
+						long serviceProcessId = option.getServiceProcessId();
+						ProcessAction proAction = DossierUtils.getProcessAction(groupId, dossier, actionCode,
+								serviceProcessId);
+						if (proAction != null) {
+							dossierAction.doAction(groupId, userId, dossier, option, proAction,
+									actionCode, input.getActionUser(), input.getActionNote(), input.getPayload(),
+									input.getAssignUsers(), input.getPayment(), 0, serviceContext, errorModel);
+						}
+					}
+				}
+			}
+
+			// Process success
+			result.put("msg", "success");
+		}
+		
+		if (!signOk) {
+			result.put("msg", "fileEntryId");
+		}
+		return Response.status(200).entity(JSONFactoryUtil.looseSerialize(result)).build();
+	}
+	@Override
+	public Response updateDossierFileBySignatureDefault(HttpServletRequest request, HttpHeaders header, Company company,
+			Locale locale, User user, ServiceContext serviceContext, Long id, DigitalSignatureInputModel input)
+			throws PortalException {
+		BackendAuth auth = new BackendAuthImpl();
+
+		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+		long dossierId = Long.valueOf(id);
+
+		if (!auth.isAuth(serviceContext)) {
+			throw new UnauthenticationException();
+		}
+
+		long fileEntryId = Long.valueOf(input.getFileEntryId());
+		JSONObject result = JSONFactoryUtil.createJSONObject();
+		if (fileEntryId > 0) {
+			String actionCode = input.getActionCode();
+			String actionUser = input.getActionUser();
+			String actionNote = input.getActionNote();
+			long assignUserId = Long.valueOf(input.getAssignUserId());
+			String subUsers = input.getSubUsers();
+	
+				//Next action
+				Dossier dossier = DossierLocalServiceUtil.fetchDossier(dossierId);
+				if (dossier != null) {
+					DossierActions dossierAction = new DossierActionsImpl();
+						dossierAction.doAction(groupId, dossierId, dossier.getReferenceUid(), actionCode,
+								0L, actionUser, actionNote, assignUserId, user.getUserId(), subUsers,
+								serviceContext);
+
+					DossierFile dossierFile = DossierFileLocalServiceUtil.getByFileEntryId(fileEntryId);
+					if (dossierFile != null) {
+						String deliverableCode = dossierFile.getDeliverableCode();
+						if (Validator.isNotNull(deliverableCode)) {
+							Deliverable deliverable = DeliverableLocalServiceUtil.getByCode(deliverableCode);
+							if (deliverable != null) {
+								String deliState = String.valueOf(deliverable.getDeliverableState());
+								if (!"2".equals(deliState)) {
+									deliverable.setDeliverableState(2);
+									DeliverableLocalServiceUtil.updateDeliverable(deliverable);
+								}
+							}
+						}
+					}
+					// Process success
+					result.put("msg", "success");
+				}
+			}
+
+		return Response.status(200).entity(JSONFactoryUtil.looseSerialize(result)).build();
+	}
+
+	@Override
+	public Response updateDossierFilesBySignatureDefault(HttpServletRequest request, HttpHeaders header,
+			Company company, Locale locale, User user, ServiceContext serviceContext, long id,
+			DigitalSignatureInputModel input) throws PortalException, Exception {
+		BackendAuth auth = new BackendAuthImpl();
+		
+		_log.info("SONDT SIGNNATUREMGT_IMPL ==============  " + JSONFactoryUtil.looseSerialize(input));
+
+		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+		long dossierId = Long.valueOf(id);
+		long userId = user.getUserId();
+
+		if (!auth.isAuth(serviceContext)) {
+			throw new UnauthenticationException();
+		}
+
+		String fileEntryIds = input.getFileEntryId();
+		//_log.info("Sign: " + signs + ", field name: " + signFieldNames + ", file name: " + fileNames + ", file entry id: " + fileEntryIds);
+		String[] fileEntryIdArr = StringUtil.split(fileEntryIds);
+		String actionCode = input.getActionCode();
+		//String actionUser = input.getActionUser();
+		//String actionNote = input.getActionNote();
+		//String strAssignUserId = input.getAssignUserId() != null ? input.getAssignUserId(): "0";
+		//long assignUserId = Long.valueOf(strAssignUserId);
+		//String subUsers = input.getSubUsers();
+		JSONObject result = JSONFactoryUtil.createJSONObject();
+		boolean signOk = true;
+		
+		for (int i = 0; i < fileEntryIdArr.length; i++) {
+			long fileEntryId = Long.valueOf(fileEntryIdArr[i]);
+			if (fileEntryId > 0) {
+					DossierFile dossierFile = DossierFileLocalServiceUtil.getByFileEntryId(fileEntryId);
+					if (dossierFile != null) {
+						String deliverableCode = dossierFile.getDeliverableCode();
+						if (Validator.isNotNull(deliverableCode)) {
+							Deliverable deliverable = DeliverableLocalServiceUtil.getByCode(deliverableCode);
+							if (deliverable != null) {
+								String deliState = String.valueOf(deliverable.getDeliverableState());
+								if (!"2".equals(deliState)) {
+									deliverable.setDeliverableState(2);
+									DeliverableLocalServiceUtil.updateDeliverable(deliverable);
+								}
+							}
+						}
+					}
+				}
+		}
+
+		//Next action
+		Dossier dossier = DossierLocalServiceUtil.fetchDossier(dossierId);
+		if (dossier != null) {
+			DossierActions dossierAction = new DossierActionsImpl();
+			if (Validator.isNotNull(actionCode)) {
+				ActionConfig actConfig = ActionConfigLocalServiceUtil.getByCode(groupId, actionCode);
+				String serviceCode = dossier.getServiceCode();
+				String govAgencyCode = dossier.getGovAgencyCode();
+				String dossierTempNo = dossier.getDossierTemplateNo();
+				ErrorMsgModel errorModel = new ErrorMsgModel();
+				if (actConfig != null) {
+					boolean insideProcess = actConfig.getInsideProcess();
+					ProcessOption option = DossierUtils.getProcessOption(serviceCode, govAgencyCode,
+							dossierTempNo, groupId);
+					if (insideProcess) {
+						if (option != null) {
+							long serviceProcessId = option.getServiceProcessId();
+							ProcessAction proAction = DossierUtils.getProcessAction(groupId, dossier, actionCode,
+									serviceProcessId);
+							if (proAction != null) {
+								dossierAction.doAction(groupId, userId, dossier, option, proAction,
+										actionCode, input.getActionUser(), input.getActionNote(),
+										input.getPayload(), input.getAssignUsers(), input.getPayment(),
+										actConfig.getSyncType(), serviceContext, errorModel);
+							}
+						}
+					} else {
+						dossierAction.doAction(groupId, userId, dossier, option, null, actionCode,
+								input.getActionUser(), input.getActionNote(), input.getPayload(),
+								input.getAssignUsers(), input.getPayment(), actConfig.getSyncType(),
+								serviceContext, errorModel);
+					}
+					//Process send email or sms
+				} else {
+					ProcessOption option = DossierUtils.getProcessOption(serviceCode, govAgencyCode, dossierTempNo,
+							groupId);
+					if (option != null) {
+						long serviceProcessId = option.getServiceProcessId();
+						ProcessAction proAction = DossierUtils.getProcessAction(groupId, dossier, actionCode,
+								serviceProcessId);
+						if (proAction != null) {
+							dossierAction.doAction(groupId, userId, dossier, option, proAction,
+									actionCode, input.getActionUser(), input.getActionNote(), input.getPayload(),
+									input.getAssignUsers(), input.getPayment(), 0, serviceContext, errorModel);
+						}
+					}
+				}
+			}
+
+			// Process success
+			result.put("msg", "success");
+		}
+		
+		if (!signOk) {
+			result.put("msg", "fileEntryId");
+		}
+		return Response.status(200).entity(JSONFactoryUtil.looseSerialize(result)).build();
+	}
 }

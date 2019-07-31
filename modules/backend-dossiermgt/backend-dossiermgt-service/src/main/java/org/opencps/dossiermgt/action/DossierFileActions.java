@@ -47,5 +47,17 @@ public interface DossierFileActions {
 	public DossierFile getDossierFileByDeliverableCode(long groupId, String deliverableCode);
 
 	public DossierFile getDossierFileByFileTemplateNo(long id, String fileTemplateNo);
-	
+
+	public void uploadFileEntry(String name, InputStream inputStream, ServiceContext serviceContext);
+
+	public DossierFile addDossierFileEForm(long groupId, long dossierId, String referenceUid, String dossierTemplateNo,
+			String dossierPartNo, String fileTemplateNo, String displayName, String sourceFileName, long fileSize,
+			InputStream inputStream, String fileType, String isSync, ServiceContext serviceContext)
+		throws SystemException, PortalException ;
+
+	public DossierFile addDossierFile(long groupId, long dossierId, String referenceUid, String dossierTemplateNo,
+			String dossierPartNo, String fileTemplateNo, String displayName, String sourceFileName, long fileSize,
+			InputStream inputStream, String fileType, String isSync, String formScript, String formReport,
+			boolean eForm, String formData, ServiceContext serviceContext) throws SystemException, PortalException;
+
 }

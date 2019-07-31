@@ -15,13 +15,15 @@ import org.opencps.dossiermgt.model.DossierPart;
 import org.opencps.dossiermgt.model.DossierTemplate;
 import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 public class DossierTemplateUtils {
-
+	private static final Log _log = LogFactoryUtil.getLog(DossierTemplateUtils.class);
 	public static List<DossierTemplateDataModel> mappingToDossierTemplateList(List<Document> documents) {
 		List<DossierTemplateDataModel> outputs = new ArrayList<DossierTemplateDataModel>();
 
@@ -34,6 +36,7 @@ public class DossierTemplateUtils {
 			model.setTemplateName(doc.get(DossierTemplateTerm.TEMPLATE_NAME));
 			model.setTemplateNo(doc.get(DossierTemplateTerm.TEMPLATE_NO));
 			model.setDescription(doc.get(DossierTemplateTerm.DESCRIPTION));
+			model.setNewFormScript(doc.get(DossierTemplateTerm.NEWFORM_SCRIPT));
 
 			outputs.add(model);
 		}
@@ -48,6 +51,7 @@ public class DossierTemplateUtils {
 		output.setDescription(dossierTemplate.getDescription());
 		output.setTemplateName(dossierTemplate.getTemplateName());
 		output.setTemplateNo(dossierTemplate.getTemplateNo());
+		output.setNewFormScript(dossierTemplate.getNewFormScript());
 
 		return output;
 	}
@@ -63,12 +67,13 @@ public class DossierTemplateUtils {
 				APIDateTimeUtils._NORMAL_PARTTERN));
 		output.setModifiedDate(APIDateTimeUtils.convertDateToString(dossierTemplate.getModifiedDate(),
 				APIDateTimeUtils._NORMAL_PARTTERN));
-
+		output.setNewFormScript(dossierTemplate.getNewFormScript());
+		
 		List<DossierTemplatePartDataModel> inputs = new ArrayList<DossierTemplatePartDataModel>();
 
 		try {
 
-			List<DossierPart> dossierParts = new ArrayList<DossierPart>();
+			List<DossierPart> dossierParts;
 
 			dossierParts = DossierPartLocalServiceUtil.getByTemplateNo(dossierTemplate.getGroupId(),
 					dossierTemplate.getTemplateNo());
@@ -84,23 +89,24 @@ public class DossierTemplateUtils {
 				elm.setRequired(Boolean.toString(dp.getRequired()));
 				elm.setEsign(Boolean.toString(dp.getESign()));
 				elm.setFileTemplateNo(dp.getFileTemplateNo());
+				elm.setFileMark(dp.getFileMark());
 
-				boolean hasForm = false;
+//				boolean hasForm = false;
+//
+//				if (Validator.isNotNull(dp.getFormScript())) {
+//					hasForm = true;
+//				}
 
-				if (Validator.isNotNull(dp.getFormScript())) {
-					hasForm = true;
-				}
-
-				elm.setHasForm(Boolean.toString(hasForm));
+				elm.setHasForm(Boolean.toString(dp.isEForm()));
 
 				inputs.add(elm);
 			}
 
 		} catch (Exception e) {
-
+			_log.error(e);
 		}
 
-		output.getDossierParts_0020().addAll(inputs);
+		output.getDossierParts().addAll(inputs);
 
 		return output;
 	}
@@ -123,6 +129,7 @@ public class DossierTemplateUtils {
 			model.setFileTemplateNo(doc.get(DossierPartTerm.FILE_TEMPLATE_NO));
 			model.setTypeCode(doc.get(DossierPartTerm.DELIVERABLE_TYPE));
 			model.setDeliverableAction(GetterUtil.getInteger(doc.get(DossierPartTerm.DELIVERABLE_ACTION)));
+			model.seteForm(doc.get(DossierPartTerm.EFORM));
 			
 			boolean hasForm = false;
 
@@ -153,6 +160,7 @@ public class DossierTemplateUtils {
 		
 		output.setTypeCode(object.getDeliverableType());
 		output.setDeliverableAction(object.getDeliverableAction());
+		output.seteForm(Boolean.toString(object.getEForm()));
 
 		return output;
 	}

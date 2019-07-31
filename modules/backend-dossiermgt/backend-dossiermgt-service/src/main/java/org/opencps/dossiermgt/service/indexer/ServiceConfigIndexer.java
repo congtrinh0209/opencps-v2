@@ -10,6 +10,7 @@ import org.opencps.dossiermgt.model.ServiceConfig;
 import org.opencps.dossiermgt.model.ServiceInfo;
 import org.opencps.dossiermgt.service.ServiceConfigLocalServiceUtil;
 import org.opencps.dossiermgt.service.ServiceInfoLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
@@ -25,6 +26,10 @@ import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class ServiceConfigIndexer extends BaseIndexer<ServiceConfig> {
 
 	public static final String CLASS_NAME = ServiceConfig.class.getName();
@@ -56,6 +61,7 @@ public class ServiceConfigIndexer extends BaseIndexer<ServiceConfig> {
 		// add number fields
 		document.addNumberSortable(ServiceConfigTerm.SERVICE_LEVEL, object.getServiceLevel());
 		document.addNumberSortable(ServiceConfigTerm.SERVICEINFO_ID, object.getServiceInfoId());
+		document.addNumberSortable(ServiceConfigTerm.SERVICECONFIG_ID, object.getServiceConfigId());
 
 		// add text fields
 		document.addTextSortable(ServiceConfigTerm.GOVAGENCY_CODE, object.getGovAgencyCode());
@@ -66,6 +72,7 @@ public class ServiceConfigIndexer extends BaseIndexer<ServiceConfig> {
 		document.addTextSortable(ServiceConfigTerm.FOR_BUSINESS, Boolean.toString(object.getForBusiness()));
 		document.addTextSortable(ServiceConfigTerm.POSTAL_SERVICE, Boolean.toString(object.getPostService()));
 		document.addTextSortable(ServiceConfigTerm.REGISTRATION, Boolean.toString(object.getRegistration()));
+		
 
 		// add extend fields
 
@@ -74,10 +81,10 @@ public class ServiceConfigIndexer extends BaseIndexer<ServiceConfig> {
 		try {
 			serviceInfo = ServiceInfoLocalServiceUtil.getServiceInfo(object.getServiceInfoId());
 		} catch (Exception e) {
-
+			_log.info(e);
 		}
 
-		if (Validator.isNotNull(serviceInfo)) {
+		if (serviceInfo != null && Validator.isNotNull(serviceInfo)) {
 			document.addTextSortable(ServiceConfigTerm.SERVICE_CODE, serviceInfo.getServiceCode());
 			document.addTextSortable(ServiceConfigTerm.SERVICE_NAME, serviceInfo.getServiceName());
 			document.addTextSortable(ServiceConfigTerm.DOMAIN_CODE, serviceInfo.getDomainCode());

@@ -72,7 +72,10 @@ import javax.xml.bind.annotation.XmlType;
     "rollbackable",
     "createDossierNo",
     "eSignature",
-    "configNote"
+    "configNote",
+    "createDossiers",
+    "dossierTemplateNo",
+    "signatureType"
 })
 @XmlRootElement(name = "ProcessActionReturnModel")
 public class ProcessActionReturnModel {
@@ -97,7 +100,10 @@ public class ProcessActionReturnModel {
     protected boolean createDossierNo;
     protected boolean eSignature;
     protected String configNote;
-
+    protected String createDossiers;
+    protected String dossierTemplateNo;
+    protected String signatureType;
+    
     public String getConfigNote() {
 		return configNote;
 	}
@@ -540,4 +546,27 @@ public class ProcessActionReturnModel {
         this.rollbackable = value;
     }
 
+    public String getCreateDossiers() {
+    	return createDossiers;
+    }
+    
+    public void setCreateDossiers(String value) {
+    	this.createDossiers = value;
+    }
+    
+    public String getDossierTemplateNo() {
+    	return dossierTemplateNo;
+    }
+    
+    public void setDossierTemplateNo(String value) {
+    	this.dossierTemplateNo = value;
+    }
+    
+    public String getSignatureType() {
+    	return signatureType;
+    }
+    
+    public void setSignatureType(String value) {
+    	this.signatureType = value;
+    }
 }

@@ -5,10 +5,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-
+import org.opencps.auth.api.exception.DataInUsedException;
+import org.opencps.auth.api.exception.NotFoundException;
+import org.opencps.auth.api.exception.UnauthenticationException;
+import org.opencps.auth.api.exception.UnauthorizationException;
 import org.opencps.datamgt.action.DictcollectionInterface;
-import org.opencps.datamgt.constants.DataMGTConstants;
 import org.opencps.datamgt.constants.DictCollectionTerm;
 import org.opencps.datamgt.constants.DictGroupTerm;
 import org.opencps.datamgt.constants.DictItemGroupTerm;
@@ -42,11 +43,6 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
-import org.opencps.auth.api.exception.DataInUsedException;
-import org.opencps.auth.api.exception.NotFoundException;
-import org.opencps.auth.api.exception.UnauthenticationException;
-import org.opencps.auth.api.exception.UnauthorizationException;
-
 public class DictCollectionActions implements DictcollectionInterface {
 
 	/**
@@ -75,6 +71,8 @@ public class DictCollectionActions implements DictcollectionInterface {
 
 			hits = DictCollectionLocalServiceUtil.luceneSearchEngine(
 				params, sorts, start, end, searchContext);
+			//_log.info("data: "+hits);
+			//_log.info("hits.toList(): "+hits.toList());
 
 			result.put("data", hits.toList());
 
@@ -83,21 +81,27 @@ public class DictCollectionActions implements DictcollectionInterface {
 
 			result.put("total", total);
 
+			/*
 			if (DictCollectionLocalServiceUtil.initDictCollection(groupId)) {
 
 				// create init dictcollection
-				Map<String, String> initDictCollection =
-					DataMGTConstants.DICTCOLLECTION_INIT;
+//				Map<String, String> initDictCollection = new HashMap<String, String>();
+//				for (Map.Entry<String, String> entry : map.entrySet()) {
+//		            System.out.println("Key : " + entry.getKey() + " Value : " + entry.getValue());
+//		        }
+//				DataMGTConstants.DICTCOLLECTION_INIT;
+
+				// create init dictcollection
+				Map<String, String> initDictCollection = new HashMap<String, String>();
+				initDictCollection.put(DataMGTConstants.ACTIVITY_TYPE, DataMGTConstants.VALUE_ACTIVITY_TYPE);
+				initDictCollection.put(DataMGTConstants.DOCUMENT_TYPE, DataMGTConstants.VALUE_DOCUMENT_TYPE);
 
 				for (String key : initDictCollection.keySet()) {
-
 					try {
-
 						DictCollectionLocalServiceUtil.addDictCollection(
 							userId, groupId, key, initDictCollection.get(key),
 							initDictCollection.get(key),
 							initDictCollection.get(key), serviceContext);
-
 					}
 					catch (Exception e) {
 						_log.error(e);
@@ -106,13 +110,16 @@ public class DictCollectionActions implements DictcollectionInterface {
 				}
 
 			}
+			*/
 
 		}
 		catch (ParseException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 		catch (SearchException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		return result;
@@ -342,10 +349,12 @@ public class DictCollectionActions implements DictcollectionInterface {
 
 		}
 		catch (ParseException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 		catch (SearchException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		return result;
@@ -387,10 +396,12 @@ public class DictCollectionActions implements DictcollectionInterface {
 
 		}
 		catch (ParseException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 		catch (SearchException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		return result;
@@ -537,13 +548,7 @@ public class DictCollectionActions implements DictcollectionInterface {
 
 		boolean flag = false;
 
-		DictCollection collection = null;
-		try {
-			collection = getDictCollectionDetail(collectionCode, groupId);
-		}
-		catch (Exception e) {
-			
-		}
+		DictCollection collection = getDictCollectionDetail(collectionCode, groupId);
 		if (collection != null) {
 			DictGroup dictColl = DictGroupLocalServiceUtil.getByGC_GI_DCI(groupCode, groupId, collection.getDictCollectionId());
 
@@ -588,9 +593,11 @@ public class DictCollectionActions implements DictcollectionInterface {
 				itemCode, dictCollection.getDictCollectionId(), groupId);
 		}
 
-		dictItemGroup = DictItemGroupLocalServiceUtil.addDictItemGroup(
-			userId, groupId, dictGroup.getDictGroupId(),
-			dictItem.getDictItemId(), groupCode, serviceContext);
+		if (dictGroup != null && dictItem != null) {
+			dictItemGroup = DictItemGroupLocalServiceUtil.addDictItemGroup(
+					userId, groupId, dictGroup.getDictGroupId(),
+					dictItem.getDictItemId(), groupCode, serviceContext);
+		}
 
 		return dictItemGroup;
 	}
@@ -663,7 +670,7 @@ public class DictCollectionActions implements DictcollectionInterface {
 
 				List<Document> list = hits.toList();
 
-				_log.info(params);
+				//_log.info(params);
 
 				for (Document document : list) {
 
@@ -680,7 +687,7 @@ public class DictCollectionActions implements DictcollectionInterface {
 
 					}
 
-					_log.info(document);
+					//_log.info(document);
 
 					document.addTextSortable(
 						DictItemGroupTerm.SELECTED, selected);
@@ -716,10 +723,12 @@ public class DictCollectionActions implements DictcollectionInterface {
 
 		}
 		catch (ParseException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 		catch (SearchException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		return result;
@@ -749,10 +758,12 @@ public class DictCollectionActions implements DictcollectionInterface {
 
 		}
 		catch (ParseException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 		catch (SearchException e) {
-			_log.error(e);
+			_log.debug(e);
+			//_log.error(e);
 		}
 
 		return result;
@@ -933,7 +944,9 @@ public class DictCollectionActions implements DictcollectionInterface {
 			}
 		}
 		catch (Exception e) {
-			_log.warn(
+			_log.debug(e);
+			//_log.error(e);
+			_log.info(
 				"Can't not get DictItemGroups by groupId, dictItemId " +
 					groupId + "|" + dictItemId);
 		}
@@ -957,8 +970,8 @@ public class DictCollectionActions implements DictcollectionInterface {
 							groupCodeList.add(arrGroupCode[i]);
 						}
 						catch (Exception e) {
-							continue;
-
+							_log.debug(e);
+							//_log.error(e);
 						}
 					}
 
@@ -1075,7 +1088,8 @@ public class DictCollectionActions implements DictcollectionInterface {
 				collectionCode = collection.getCollectionCode();
 			}
 			catch (Exception e) {
-				
+				_log.debug(e);
+				//_log.error(e);
 			}
 			obj.put(DictGroupTerm.DICT_COLLECTION_CODE, collectionCode);
 			obj.put(DictGroupTerm.GROUP_CODE, dg.getGroupCode());
@@ -1134,7 +1148,8 @@ public class DictCollectionActions implements DictcollectionInterface {
 			collection = getDictCollectionDetail(collectionCode, groupId);
 		}
 		catch (Exception e) {
-			
+			_log.debug(e);
+			//_log.error(e);
 		}
 		if (collection != null) {
 			DictGroup dictColl = DictGroupLocalServiceUtil.getByGC_GI_DCI(groupCode, groupId, collection.getDictCollectionId());
@@ -1172,7 +1187,8 @@ public class DictCollectionActions implements DictcollectionInterface {
 			collection = DictCollectionLocalServiceUtil.fetchByF_dictCollectionCode(dictCollectionCode, groupId);
 		}
 		catch (Exception e) {
-			
+			_log.debug(e);
+			//_log.error(e);
 		}
 		if (collection != null) {
 			DictGroup dictGroup = DictGroupLocalServiceUtil.getByGC_GI_DCI(groupCode, groupId, collection.getDictCollectionId());
@@ -1181,4 +1197,173 @@ public class DictCollectionActions implements DictcollectionInterface {
 		return null;
 	}
 
+	@Override
+	public long updateDictCollectionDB(long userId, long groupId, String collectionCode, String collectionName,
+			String collectionNameEN, String description, Integer status) throws NoSuchUserException {
+
+		DictCollection dict = DictCollectionLocalServiceUtil.updateDictCollectionDB(userId, groupId, collectionCode, collectionName,
+				collectionNameEN, description, status);
+		if (dict != null) {
+			return dict.getDictCollectionId();
+		}
+		return 0;
+	}
+
+	@Override
+	public long getDictItemByItemCode(long dictCollectionId, String parent, long groupId) {
+
+		DictItem dictItem = DictItemLocalServiceUtil.fetchByF_dictItemCode(parent, dictCollectionId, groupId);
+		if (dictItem != null) {
+			return dictItem.getDictItemId();
+		}
+		return 0;
+	}
+
+	@Override
+	public void updateDictItemDB(long userId, long groupId, long dictCollectionId, String itemCode, String itemName,
+			String itemNameEN, String itemDescription, long dictItemParentId, Integer level, String sibling,
+			String metadata) throws NoSuchUserException {
+
+		DictItemLocalServiceUtil.updateDictItemDB(userId, groupId, dictCollectionId, itemCode, itemName, itemNameEN,
+				itemDescription, dictItemParentId, level, sibling, metadata);
+	}
+
+	@Override
+	public boolean deleteAllDictItem(long userId, long groupId, long dictCollectionId) {
+		boolean flag = false;
+		try {
+			//_log.info("STARTTTTT");
+			List<DictItem> itemList = DictItemLocalServiceUtil.findByF_dictCollectionId(dictCollectionId);
+			//_log.info("itemList: "+itemList);
+			//_log.info("STARTTTTT");
+			if (itemList != null && itemList.size() > 0) {
+				for (DictItem item : itemList) {
+					DictItemLocalServiceUtil.deleteDictItem(item);
+					flag = true;
+				}
+			} else {
+				//_log.info("STARTTTTT");
+				flag = true;
+			}
+		}catch (Exception e) {
+			_log.debug(e);
+			//_log.error(e);
+			return false;
+		}
+
+		return flag;
+	}
+
+	@Override
+	public boolean deleteAllDictGroup(long userId, long groupId, long dictCollectionId) {
+		boolean flag = false;
+		List<DictGroup> groupList = DictGroupLocalServiceUtil.getDictGroupByDictCollection(groupId, dictCollectionId,
+				-1, -1);
+		if (groupList != null && groupList.size() > 0) {
+			for (DictGroup group : groupList) {
+				DictGroupLocalServiceUtil.deleteDictGroup(group);
+				flag = true;
+			}
+		} else {
+			flag = true;
+		}
+
+		return flag;
+	}
+
+	@Override
+	public void updateDictGroupDB(long userId, long groupId, long dictCollectionId, String groupCode, String groupName,
+			String groupNameEN, String groupDescription, ServiceContext serviceContext) throws NoSuchUserException {
+
+		DictGroupLocalServiceUtil.updateDictGroupDB(userId, groupId, dictCollectionId, groupCode, groupName,
+				groupNameEN, groupDescription, serviceContext);
+	}
+
+	//LGSP
+	public JSONObject getDictCollectionLGSP(long userId, long companyId, long groupId,
+			LinkedHashMap<String, Object> params, Sort[] sorts, int start, int end, ServiceContext serviceContext) {
+
+		JSONObject result = JSONFactoryUtil.createJSONObject();
+		SearchContext searchContext = new SearchContext();
+		searchContext.setCompanyId(companyId);
+
+		try {
+
+			Hits hits = DictCollectionLocalServiceUtil.luceneSearchEngine(params, sorts, start, end, searchContext);
+			// _log.info("data: "+hits);
+			// _log.info("hits.toList(): "+hits.toList());
+			result.put("data", hits.toList());
+
+			long total = DictCollectionLocalServiceUtil.countLuceneSearchEngine(params, searchContext);
+			result.put("total", total);
+
+		} catch (Exception e) {
+			_log.debug(e);
+			// _log.error(e);
+		}
+
+		return result;
+	}
+
+	public JSONObject getDictgroupsLGSP(long userId, long companyId, long groupId, LinkedHashMap<String, Object> params,
+			Sort[] sorts, int start, int end, ServiceContext serviceContext) {
+
+			JSONObject result = JSONFactoryUtil.createJSONObject();
+			Hits hits = null;
+			SearchContext searchContext = new SearchContext();
+			searchContext.setCompanyId(companyId);
+
+			try {
+
+				hits = DictGroupLocalServiceUtil.luceneSearchEngine(
+					params, sorts, start, end, searchContext);
+
+				result.put("data", hits.toList());
+
+				long total = DictGroupLocalServiceUtil.countLuceneSearchEngine(
+					params, searchContext);
+
+				result.put("total", total);
+
+			}
+			catch (ParseException e) {
+				_log.debug(e);
+				//_log.error(e);
+			}
+			catch (SearchException e) {
+				_log.debug(e);
+				//_log.error(e);
+			}
+
+			return result;
+		}
+
+	public JSONObject getDictItemsLGSP(long userId, long companyId, long groupId, LinkedHashMap<String, Object> params,
+			Sort[] sorts, int start, int end, ServiceContext serviceContext) {
+
+		JSONObject result = JSONFactoryUtil.createJSONObject();
+		Hits hits = null;
+		SearchContext searchContext = new SearchContext();
+		searchContext.setCompanyId(companyId);
+
+		try {
+
+			hits = DictItemLocalServiceUtil.luceneSearchEngine(params, sorts, start, end, searchContext);
+
+			result.put("data", hits.toList());
+
+			long total = DictItemLocalServiceUtil.countLuceneSearchEngine(params, searchContext);
+
+			result.put("total", total);
+
+		} catch (ParseException e) {
+			_log.debug(e);
+			// _log.error(e);
+		} catch (SearchException e) {
+			_log.debug(e);
+			// _log.error(e);
+		}
+
+		return result;
+	}
 }

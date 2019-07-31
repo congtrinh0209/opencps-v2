@@ -14,6 +14,8 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.HttpMethods;
 
 /**
@@ -24,6 +26,7 @@ import com.liferay.portal.kernel.servlet.HttpMethods;
  *
  */
 public class MultipartUtility {
+	private Log _log = LogFactoryUtil.getLog(MultipartUtility.class);
 	private final String boundary;
 	private static final String LINE_FEED = "\r\n";
 	private HttpURLConnection httpConn;
@@ -127,20 +130,77 @@ public class MultipartUtility {
 		writer.append("Content-Transfer-Encoding: binary").append(LINE_FEED);
 		writer.append(LINE_FEED);
 		writer.flush();
-
-		FileInputStream inputStream = new FileInputStream(uploadFile);
+		FileInputStream inputStream = null;
+		try {
+			inputStream = new FileInputStream(uploadFile);
 		byte[] buffer = new byte[4096];
 		int bytesRead = -1;
 		while ((bytesRead = inputStream.read(buffer)) != -1) {
 			outputStream.write(buffer, 0, bytesRead);
 		}
 		outputStream.flush();
+		} catch (Exception e) {
+			// TODO: handle exception
+			_log.error(e);
+		} finally{
+			if (inputStream != null) {
+                try {
 		inputStream.close();
+                } catch (IOException ex1) {
+                    //TODO:
+                	_log.error(ex1);
+                }
+            }
+		}
 
 		writer.append(LINE_FEED);
 		writer.flush();
 	}
 
+	/**
+	 * Adds a upload file section to the request
+	 * 
+	 * @param fieldName
+	 *            name attribute in <input type="file" name="..." />
+	 * @param uploadFile
+	 *            a File to be uploaded
+	 * @throws IOException
+	 */
+	public void addFilePartWithFileName(String fieldName, File uploadFile, String fileName) throws IOException {
+		writer.append("--" + boundary).append(LINE_FEED);
+		writer.append("Content-Disposition: form-data; name=\"" + fieldName + "\"; filename=\"" + fileName + "\"")
+				.append(LINE_FEED);
+		writer.append("Content-Type: " + URLConnection.guessContentTypeFromName(fileName)).append(LINE_FEED);
+		writer.append("Content-Transfer-Encoding: binary").append(LINE_FEED);
+		writer.append(LINE_FEED);
+		writer.flush();
+		FileInputStream inputStream = null;
+		try {
+			inputStream = new FileInputStream(uploadFile);
+		byte[] buffer = new byte[4096];
+		int bytesRead = -1;
+		while ((bytesRead = inputStream.read(buffer)) != -1) {
+			outputStream.write(buffer, 0, bytesRead);
+		}
+		outputStream.flush();
+		} catch (Exception e) {
+			// TODO: handle exception
+			_log.error(e);
+		} finally{
+			if (inputStream != null) {
+                try {
+		inputStream.close();
+                } catch (IOException ex1) {
+                    //TODO:
+                	_log.error(ex1);
+                }
+            }
+		}
+
+		writer.append(LINE_FEED);
+		writer.flush();
+	}
+	
 	/**
 	 * Adds a header field to the request.
 	 * 
@@ -170,6 +230,7 @@ public class MultipartUtility {
 
 		// checks server's status code first
 		int status = httpConn.getResponseCode();
+		_log.debug("Status: " + status);
 		if (status == HttpURLConnection.HTTP_OK) {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(httpConn.getInputStream()));
 			String line = null;

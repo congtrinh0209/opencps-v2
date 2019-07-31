@@ -14,27 +14,34 @@
 
 package org.opencps.dossiermgt.service.impl;
 
-import aQute.bnd.annotation.ProviderType;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-
-import org.opencps.dossiermgt.action.FileUploadUtils;
-import org.opencps.dossiermgt.model.ServiceFileTemplate;
-import org.opencps.dossiermgt.service.base.ServiceFileTemplateLocalServiceBaseImpl;
-import org.opencps.dossiermgt.service.persistence.ServiceFileTemplatePK;
-
-import com.liferay.document.library.kernel.service.DLAppServiceUtil;
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.search.Indexable;
+import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.List;
+
+import org.opencps.datamgt.constants.DataMGTConstants;
+import org.opencps.datamgt.model.DictItem;
+import org.opencps.datamgt.utils.DictCollectionUtils;
+import org.opencps.dossiermgt.model.ServiceFileTemplate;
+import org.opencps.dossiermgt.model.ServiceInfo;
+import org.opencps.dossiermgt.service.base.ServiceFileTemplateLocalServiceBaseImpl;
+import org.opencps.dossiermgt.service.persistence.ServiceFileTemplatePK;
+
+import aQute.bnd.annotation.ProviderType;
 
 /**
  * The implementation of the file template local service.
@@ -77,14 +84,12 @@ public class ServiceFileTemplateLocalServiceImpl extends ServiceFileTemplateLoca
 
 		return fileTemplate;
 	}
-	
-	public ServiceFileTemplate addServiceFileTemplate(long serviceInfoId, String fileTemplateNo, String templateName, long fileEntryId,
-			ServiceContext serviceContext) throws PortalException, IOException {
 
+	public ServiceFileTemplate addServiceFileTemplate(long serviceInfoId, String fileTemplateNo, String templateName,
+			long fileEntryId, ServiceContext serviceContext) throws PortalException, IOException {
 
 		serviceContext.setAddGroupPermissions(true);
 		serviceContext.setAddGuestPermissions(true);
-
 
 		ServiceFileTemplatePK fileTemplatePK = new ServiceFileTemplatePK(serviceInfoId, fileTemplateNo);
 
@@ -115,17 +120,16 @@ public class ServiceFileTemplateLocalServiceImpl extends ServiceFileTemplateLoca
 			// sourceFileName, mimeType,
 			// sourceFileName, sourceFileName, sourceFileName,
 			// inputStream, size, serviceContext);
-			
+
 			try {
-				FileEntry fileEntry = dlAppLocalService.addFileEntry(userId, groupId, folderId, sourceFileName, mimeType,
-						sourceFileName, sourceFileName, sourceFileName, inputStream, size, serviceContext);
+				FileEntry fileEntry = dlAppLocalService.addFileEntry(userId, groupId, folderId, sourceFileName,
+						mimeType, sourceFileName, sourceFileName, sourceFileName, inputStream, size, serviceContext);
 
 				fileEntryId = fileEntry.getFileEntryId();
 			} catch (Exception e) {
 				_log.error(e);
 			}
-			
-			
+
 		}
 
 		ServiceFileTemplatePK fileTemplatePK = new ServiceFileTemplatePK(serviceInfoId, fileTemplateNo);
@@ -168,7 +172,71 @@ public class ServiceFileTemplateLocalServiceImpl extends ServiceFileTemplateLoca
 
 		return serviceFileTemplatePersistence.update(serviceFileTemplate);
 	}
-	
-	
+
+	@Indexable(type = IndexableType.REINDEX)
+	public ServiceFileTemplate updateServiceFileTemplateDB(long serviceInfoId, String fileTemplateNo,
+			String fileTemplateName, String fileName, long fileEntryId, boolean eForm, long formScriptFileId,
+			long formReportFileId, String eFormNoPattern, String eFormNamePattern) {
+		ServiceFileTemplatePK fileTemplatePK = new ServiceFileTemplatePK(serviceInfoId, fileTemplateNo);
+
+		ServiceFileTemplate object = serviceFileTemplatePersistence.fetchByPrimaryKey(fileTemplatePK);
+		if (object == null) {
+			object = serviceFileTemplatePersistence.create(fileTemplatePK);
+
+			object.setTemplateName(fileTemplateName);
+			object.setFileEntryId(fileEntryId);
+			object.setEForm(eForm);
+			object.setFormReportFileId(formReportFileId);
+			object.setFormScriptFileId(formScriptFileId);
+			object.setEFormNoPattern(eFormNoPattern);
+			object.setEFormNamePattern(eFormNamePattern);
+		} else {
+			if(Validator.isNotNull(fileTemplateName))
+				object.setTemplateName(fileTemplateName);
+			if(fileEntryId > 0)
+				object.setFileEntryId(fileEntryId);
+			if(Validator.isNotNull(eForm))
+				object.setEForm(eForm);
+			if(formReportFileId > 0)
+				object.setFormReportFileId(formReportFileId);
+			if(formScriptFileId > 0)
+				object.setFormScriptFileId(formScriptFileId);
+			if(Validator.isNotNull(eFormNoPattern))
+				object.setEFormNoPattern(eFormNoPattern);
+			if(Validator.isNotNull(eFormNamePattern))
+				object.setEFormNamePattern(eFormNamePattern);
+		}
+
+		return serviceFileTemplatePersistence.update(object);
+	}
+
+	public ServiceFileTemplate fetchByF_serviceInfoId_fileTemplateNo(long serviceInfoId, String fileTemplateNo) {
+
+		return serviceFileTemplatePersistence.fetchByF_serviceInfoId_fileTemplateNo(serviceInfoId,
+				fileTemplateNo);
+	}
+
+	public int countByService_EForm(long serviceInfoId, boolean eForm) {
+		return serviceFileTemplatePersistence.countByF_SCID_FORM(serviceInfoId, eForm);
+	}
+
+	public List<ServiceFileTemplate> getByService_EForm(long serviceInfoId, boolean eForm, int start, int end) {
+		try {
+			return serviceFileTemplatePersistence.findByF_SCID_FORM(serviceInfoId, eForm, start, end);
+		} catch (Exception e) {
+			_log.debug(e);
+			return null;
+		}
+	}
+
+	public List<ServiceFileTemplate> getByService(long serviceInfoId, int start, int end) {
+		try {
+			return serviceFileTemplatePersistence.findByServiceInfoId(serviceInfoId, start, end);
+		} catch (Exception e) {
+			_log.debug(e);
+			return null;
+		}
+	}
+
 	Log _log = LogFactoryUtil.getLog(ServiceFileTemplateLocalServiceImpl.class);
 }

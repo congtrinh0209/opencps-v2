@@ -2,7 +2,8 @@
 <!DOCTYPE service-builder PUBLIC "-//Liferay//DTD Service Builder 7.0.0//EN" "http://www.liferay.com/dtd/liferay-service-builder_7_0_0.dtd">
 
 <service-builder auto-namespace-tables="false"
-	package-path="org.opencps.dossiermgt">
+	package-path="org.opencps.dossiermgt"
+>
 	<author>huymq</author>
 	<namespace>dossiermgt</namespace>
 	<entity name="ServiceInfo" table="opencps_serviceinfo"
@@ -66,8 +67,14 @@
 			<finder-column name="domainCode" />
 			<finder-column name="groupId" />
 		</finder>
-
-
+		<finder name="GI_PUB" return-type="Collection">
+			<finder-column name="groupId" />
+			<finder-column name="public_" />
+		</finder>
+		<finder name="F_GID_SC" return-type="Collection">
+			<finder-column name="groupId" />
+			<finder-column name="serviceCode" arrayable-operator="OR"/>
+		</finder>
 		<!-- References -->
 
 	</entity>
@@ -82,6 +89,11 @@
 
 		<column name="templateName" type="String" />
 		<column name="fileEntryId" type="long" />
+		<column name="eForm" type="boolean" />
+		<column name="formScriptFileId" type="long" />
+		<column name="formReportFileId" type="long" />
+		<column name="eFormNoPattern" type="String" />
+		<column name="eFormNamePattern" type="String" />
 
 		<!-- Order -->
 
@@ -91,10 +103,109 @@
 			<finder-column name="serviceInfoId" />
 		</finder>
 
+		<finder name="F_serviceInfoId_fileTemplateNo" return-type="ServiceFileTemplate">
+			<finder-column name="serviceInfoId" />
+			<finder-column name="fileTemplateNo" />
+		</finder>
+		<finder name="F_SCID_FORM" return-type="Collection">
+			<finder-column name="serviceInfoId" />
+			<finder-column name="eForm" />
+		</finder>
+
 		<!-- References -->
 
 		<reference entity="DLApp" package-path="com.liferay.portlet.documentlibrary" />
 		<reference entity="DLFileEntry" package-path="com.liferay.portlet.documentlibrary" />
+	</entity>
+
+	<entity name="EForm" table="opencps_eform"
+		local-service="true" remote-service="false" uuid="true">
+
+		<!-- PK fields -->
+		<column name="eFormId" primary="true" type="long" />
+
+		<!-- Group instance -->
+		<column name="groupId" type="long" />
+		<column name="companyId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="eFormNo" type="String" />
+		<column name="serviceCode" type="String" />
+		<column name="fileTemplateNo" type="String" />
+		<column name="eFormName" type="String" />
+		<column name="formScriptFileId" type="long" />
+		<column name="formReportFileId" type="long" />
+		<column name="eFormData" type="String" />
+		<column name="email" type="String" />
+		<column name="secret" type="String" />
+<!-- 		<column name="checkinDate" type="Date" /> -->
+<!-- 		<column name="gateNumber" type="String" /> -->
+<!-- 		<column name="state" type="int" /> -->
+
+		<!-- Order -->
+
+		<!-- Finder methods -->
+<!-- 		<finder name="F_GID_STATE" return-type="Collection"> -->
+<!-- 			<finder-column name="groupId" /> -->
+<!-- 			<finder-column name="state" arrayable-operator="OR"/> -->
+<!-- 		</finder> -->
+		<finder name="F_GID_SC" return-type="Collection">
+			<finder-column name="groupId" />
+			<finder-column name="serviceCode" />
+		</finder>
+		<finder name="F_GID_FORM" return-type="EForm">
+			<finder-column name="groupId" />
+			<finder-column name="eFormNo" />
+		</finder>
+
+	</entity>
+
+	<entity name="Booking" table="opencps_booking"
+		local-service="true" remote-service="false" uuid="true">
+
+		<!-- PK fields -->
+		<column name="bookingId" primary="true" type="long" />
+
+		<!-- Group instance -->
+		<column name="groupId" type="long" />
+		<column name="companyId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="className" type="String" />
+		<column name="classPK" type="long" />
+		<column name="serviceCode" type="String" />
+		<column name="codeNumber" type="String" />
+		<column name="bookingName" type="String" />
+		<column name="checkinDate" type="Date" />
+		<column name="gateNumber" type="String" />
+		<column name="state" type="int" />
+		<column name="bookingDate" type="Date" />
+		<column name="speaking" type="boolean" />
+
+		<!-- Order -->
+
+		<!-- Finder methods -->
+		<finder name="F_CLASS_NAME_PK" return-type="Booking">
+			<finder-column name="className" />
+			<finder-column name="classPK" />
+		</finder>
+<!-- 		<finder name="F_GID_SC" return-type="Collection"> -->
+<!-- 			<finder-column name="groupId" /> -->
+<!-- 			<finder-column name="serviceCode" /> -->
+<!-- 		</finder> -->
+<!-- 		<finder name="F_GID_FORM" return-type="EForm"> -->
+<!-- 			<finder-column name="groupId" /> -->
+<!-- 			<finder-column name="eFormNo" /> -->
+<!-- 		</finder> -->
+
 	</entity>
 
 	<entity name="DossierTemplate" table="opencps_dossiertemplate"
@@ -121,6 +232,7 @@
 		<column name="templateName" type="String" />
 		<column name="description" type="String" />
 		<column name="templateNo" type="String" />
+		<column name="newFormScript" type="String" />
 
 		<!-- Order -->
 
@@ -143,6 +255,9 @@
 		</finder>
 
 		<!-- References -->
+		<finder return-type="Collection" name="G">
+			<finder-column name="groupId" />
+		</finder>
 
 	</entity>
 
@@ -181,6 +296,8 @@
 		<column name="eSign" type="boolean" />
 		<column name="deliverableType" type="String"/>
 		<column name="deliverableAction" type="int"/>
+		<column name="eForm" type="boolean" />
+		<column name="fileMark" type="int" />
 		<!-- Order -->
 
 		<!-- Finder methods -->
@@ -208,8 +325,16 @@
 			<finder-column name="eSign" />
 		</finder>
 
+		<finder return-type="DossierPart" name="GID_TN_FTN">
+			<finder-column name="groupId" />
+			<finder-column name="templateNo" />
+			<finder-column name="fileTemplateNo" />
+		</finder>
 		<!-- References -->
 
+		<finder return-type="Collection" name="G">
+			<finder-column name="groupId" />
+		</finder>
 	</entity>
 
 	<entity name="ServiceConfig" table="opencps_serviceconfig"
@@ -250,6 +375,24 @@
 			<finder-column name="govAgencyCode" />
 		</finder>
 
+		<finder return-type="Collection" name="G_">
+			<finder-column name="groupId"/>
+		</finder>
+
+		<finder return-type="Collection" name="F_GID_SID">
+			<finder-column name="groupId" />
+			<finder-column name="serviceInfoId" />
+		</finder>
+
+		<finder return-type="Collection" name="F_GAC">
+			<finder-column name="govAgencyCode" />
+		</finder>
+
+		<finder return-type="Collection" name="GID_LEVEL">
+			<finder-column name="groupId" />
+			<finder-column name="serviceLevel" />
+		</finder>
+
 	</entity>
 
 	<entity name="ProcessOption" table="opencps_processoption"
@@ -281,6 +424,8 @@
 		<column name="serviceProcessId" type="long" />
 		<column name="instructionNote" type="String" />
 		<column name="submissionNote" type="String" />
+		<column name="sampleCount" type="long" />
+		<column name="registerBookCode" type="String"></column>
 
 		<finder return-type="Collection" name="SC_ID">
 			<finder-column name="serviceConfigId" />
@@ -296,6 +441,10 @@
 			<finder-column name="dossierTemplateId" />
 		</finder>
 
+		<finder return-type="ProcessOption" name="SP_DT">
+			<finder-column name="serviceProcessId" />
+			<finder-column name="dossierTemplateId" />
+		</finder>
 	</entity>
 
 	<entity name="Dossier" table="opencps_dossier" local-service="true"
@@ -320,8 +469,11 @@
 		<!-- Other fields -->
 
 		<column name="referenceUid" type="String" />
-		<column name="counter" type="int" />
+		<column name="counter" type="long" />
+		<column name="registerBookCode" type="String"/>
+		<column name="registerBookName" type="String"/>
 		<column name="dossierRegister" type="String"/>
+		<column name="processNo" type="String"/>
 		<column name="serviceCode" type="String" />
 		<column name="serviceName" type="String" />
 		<column name="govAgencyCode" type="String" />
@@ -360,6 +512,7 @@
 		<column name="briefNote" type="String" />
 		<column name="dossierNo" type="String" />
 		<column name="submitting" type="boolean" />
+		<column name="processDate" type="Date" />
 		<column name="submitDate" type="Date" />
 		<column name="receiveDate" type="Date" />
 		<column name="dueDate" type="Date" />
@@ -392,6 +545,16 @@
 		<column name="serverNo" type="String" />
 		<column name="endorsementDate" type="Date" />
 		<column name="lockState" type="String" />
+		<column name="originality" type="int" />
+		<column name="originDossierId" type="long" />
+		<column name="sampleCount" type="long" />
+		<column name="durationUnit" type="int" />
+		<column name="durationCount" type="double" />
+		<column name="dossierName" type ="String" />
+		<column name="originDossierNo" type="String" />
+		<column name="groupDossierId" type="long" />
+		<column name="metaData" type="String" />
+		
 		<!-- Order -->
 		
 		<!-- Finder methods -->
@@ -425,16 +588,151 @@
 			<finder-column name="dossierId" />
 		</finder>
 
-		<!-- References -->
-        <finder name="G_C_GAC_SC_DTNO_NOTDS" return-type="Collection">
+		<finder return-type="Collection" name="NOTO_DS">
+			<finder-column name="originality" comparator="!=" arrayable-operator="AND"/>
+			<finder-column name="dossierStatus" />
+		</finder>
+
+		<finder return-type="Collection" name="F_OG_DS">
+			<finder-column name="originality" />
+			<finder-column name="dossierStatus" />
+		</finder>
+
+			<!-- References -->
+		<finder name="G_C_GAC_SC_DTNO_NOTDS" return-type="Collection">
+			<finder-column name="groupId"></finder-column>
+			<finder-column name="companyId"></finder-column>
+			<finder-column name="govAgencyCode"></finder-column>
+			<finder-column name="serviceCode"></finder-column>
+			<finder-column name="dossierTemplateNo"></finder-column>
+			<finder-column name="dossierStatus" comparator="!="></finder-column>
+		</finder>
+
+		<finder name="F_GID_GOV_DID" return-type="Dossier">
+			<finder-column name="groupId" />
+			<finder-column name="govAgencyCode" />
+			<finder-column name="serviceCode" />
+			<finder-column name="dossierId" />
+		</finder>
+		<finder name="G_NOTO_DS_SC_GC" return-type="Collection">
+			<finder-column name="groupId"></finder-column>
+			<finder-column name="originality" comparator="!="></finder-column>
+			<finder-column name="dossierStatus"></finder-column>
+			<finder-column name="serviceCode"></finder-column>
+			<finder-column name="govAgencyCode"></finder-column>
+		</finder>
+
+		<finder name="GID_GC_SC_DTN_DS_APP_ORI" return-type="Collection">
+			<finder-column name="groupId" />
+			<finder-column name="govAgencyCode" />
+			<finder-column name="serviceCode" />
+			<finder-column name="dossierTemplateNo" />
+			<finder-column name="dossierStatus" arrayable-operator="OR"/>
+<!-- 			<finder-column name="applicantIdNo" /> -->
+			<finder-column name="applicantIdType" />
+<!-- 			<finder-column name="delegateIdNo" /> -->
+			<finder-column name="originality" />
+		</finder>
+
+		<finder return-type="Collection" name="G_O_DID">
+			<finder-column name="groupId" />
+			<finder-column name="originDossierId" />
+		</finder>
+		<finder return-type="Collection" name="G">
+			<finder-column name="groupId" />
+		</finder>
+		
+		<finder return-type="Collection" name="DN_AN">
+			<finder-column name="dossierNo" />
+			<finder-column name="applicantIdNo" />
+		</finder>
+		
+		<finder return-type="Collection" name="VIAPOSTAL">
+			<finder-column name="viaPostal" />
+		</finder>
+		
+        <finder name="U_G_GAC_SC_DTNO_DAI_O" return-type="Collection">
+        	<finder-column name="userId"></finder-column>
             <finder-column name="groupId"></finder-column>
-            <finder-column name="companyId"></finder-column>
+            <finder-column name="govAgencyCode"></finder-column>
+            <finder-column name="serviceCode"></finder-column>
+            <finder-column name="dossierActionId"></finder-column>
+            <finder-column name="originality"></finder-column>
+        </finder>
+        
+        <finder return-type="Dossier" name="G_DN">
+			<finder-column name="groupId" />
+			<finder-column name="dossierNo" />
+		</finder>
+
+		<finder return-type="Collection" name="G_AN">
+			<finder-column name="groupId"/>
+			<finder-column name="applicantIdNo" />
+		</finder>
+		<finder return-type="Collection" name="F_GID_AN_DS">
+			<finder-column name="groupId"/>
+			<finder-column name="applicantIdNo" />
+			<finder-column name="dossierStatus" />
+		</finder>
+		<finder return-type="Dossier" name="G_AN_SC_GAC_DTNO_ODID">
+			<finder-column name="groupId"/>
+			<finder-column name="applicantIdNo" />
+			<finder-column name="serviceCode" />
+			<finder-column name="govAgencyCode" />
+			<finder-column name="dossierTemplateNo" />
+			<finder-column name="originDossierId"/>
+		</finder>
+		
+		<finder return-type="Collection" name="O">
+			<finder-column name="originality" />
+		</finder>
+		<finder return-type="Collection" name="GID_PNO">
+			<finder-column name="groupId" />
+			<finder-column name="processNo" />
+		</finder>
+		<finder return-type="Collection" name="NOT_ST_GT_MD">
+			<finder-column name="dossierStatus" comparator="!=" arrayable-operator="AND"/>
+            <finder-column name="modifiedDate" comparator="&gt;="></finder-column>
+		</finder>
+		<finder return-type="Collection" name="GID_ORI_NO">
+			<finder-column name="groupId" />
+			<finder-column name="originDossierNo" />
+		</finder>
+		<finder return-type="Collection" name="ORIGIN_NO">
+			<finder-column name="originDossierNo" />
+		</finder>
+		<finder return-type="Collection" name="G_NOTS_O_SC">
+			<finder-column name="groupId" />
+            <finder-column name="dossierStatus" comparator="!=" arrayable-operator="AND"></finder-column>
+            <finder-column name="originality" comparator="&gt;="></finder-column>
+            <finder-column name="serviceCode"></finder-column>
+		</finder>
+		<finder return-type="Collection" name="G_NOTS_O_DTN">
+			<finder-column name="groupId" />
+            <finder-column name="dossierStatus" comparator="!=" arrayable-operator="AND"></finder-column>
+            <finder-column name="originality" comparator="&gt;="></finder-column>
+            <finder-column name="dossierTemplateNo"></finder-column>
+		</finder>
+		<finder return-type="Collection" name="G_NOTS_O_PN">
+			<finder-column name="groupId" />
+            <finder-column name="dossierStatus" comparator="!=" arrayable-operator="AND"></finder-column>
+            <finder-column name="originality" comparator="&gt;="></finder-column>
+            <finder-column name="processNo"></finder-column>
+		</finder>
+        <finder name="U_G_GAC_SC_DTNO_DS_O" return-type="Collection">
+        	<finder-column name="userId"></finder-column>
+            <finder-column name="groupId"></finder-column>
             <finder-column name="govAgencyCode"></finder-column>
             <finder-column name="serviceCode"></finder-column>
             <finder-column name="dossierTemplateNo"></finder-column>
-            <finder-column name="dossierStatus" comparator="!="></finder-column>
+            <finder-column name="dossierStatus"></finder-column>
+            <finder-column name="originality"></finder-column>
         </finder>
-
+        
+        <finder name="G_GDID" return-type="Collection">
+        	<finder-column name="groupId"></finder-column>
+            <finder-column name="groupDossierId"></finder-column>
+        </finder>
 	</entity>
 
 	<entity name="DossierFile" table="opencps_dossierfile"
@@ -482,6 +780,7 @@
 
 		<order>
 			<order-column name="dossierPartNo" order-by="asc" />
+			<order-column name="modifiedDate" order-by="desc" />
 		</order>
 
 		<!-- Finder methods -->
@@ -559,6 +858,47 @@
          <finder return-type="Collection" name="REF_UID">
         	<finder-column name="referenceUid" />
        	</finder>
+        <finder return-type="Collection" name="G">
+        	<finder-column name="groupId" />
+        </finder>
+		<finder return-type="Collection" name="D_FTN_DTN">
+			<finder-column name="dossierId" />
+			<finder-column name="fileTemplateNo" />
+			<finder-column name="dossierTemplateNo" />
+		</finder>        
+		<finder return-type="Collection" name="G_DID_FTN_R">
+			<finder-column name="groupId" />
+			<finder-column name="dossierId" comparator="=" arrayable-operator="OR"/>
+			<finder-column name="fileTemplateNo" />
+			<finder-column name="removed" />
+		</finder>
+		<finder return-type="Collection" name="G_DID_FTN_R_O">
+			<finder-column name="groupId" />
+			<finder-column name="dossierId" comparator="=" arrayable-operator="OR"/>
+			<finder-column name="fileTemplateNo" />
+			<finder-column name="removed" />
+			<finder-column name="original" />
+		</finder>
+		<finder return-type="Collection" name="F_GID_DID_R_O">
+			<finder-column name="groupId" />
+			<finder-column name="dossierId" comparator="=" arrayable-operator="OR"/>
+			<finder-column name="removed" />
+			<finder-column name="original" />
+		</finder>
+		<finder return-type="DossierFile" name="G_DID_PART_NAME">
+			<finder-column name="groupId" />
+			<finder-column name="dossierId" />
+			<finder-column name="dossierPartNo" />
+			<finder-column name="dossierPartType" />
+			<finder-column name="displayName" />
+		</finder>
+		<finder return-type="DossierFile" name="GID_DID_PART_EFORM">
+			<finder-column name="groupId" />
+			<finder-column name="dossierId" />
+			<finder-column name="dossierPartNo" />
+			<finder-column name="eForm" />
+			<finder-column name="removed" />
+		</finder>
 	</entity>
 
 	<entity name="DossierLog" table="opencps_dossierlog"
@@ -603,6 +943,9 @@
 	
 		<!-- References -->
 
+		<finder return-type="Collection" name="G">
+			<finder-column name="groupId" />
+		</finder>
 	</entity>
 
 	<entity name="PaymentFile" table="opencps_paymentfile"
@@ -628,10 +971,14 @@
 
 		<column name="dossierId" type="long" />
 		<column name="referenceUid" type="String" />
-		<column name="govAgencyCode" type="String" />
-		<column name="govAgencyName" type="String" />
-		<column name="isNew" type="boolean" />
+ 		<column name="govAgencyCode" type="String" />
+ 		<column name="govAgencyName" type="String" />
+		<!-- <column name="isNew" type="boolean" /> -->
 		<column name="paymentFee" type="String" />
+		<column name="advanceAmount" type="long" />
+		<column name="feeAmount" type="long" />
+		<column name="serviceAmount" type="long" />
+		<column name="shipAmount" type="long" />
 		<column name="paymentAmount" type="long" />
 		<column name="paymentNote" type="String" />
 		<column name="epaymentProfile" type="String" />
@@ -648,15 +995,19 @@
 		<column name="invoiceTemplateNo" type="String" />
 		<column name="invoiceIssueNo" type="String" />
 		<column name="invoiceNo" type="String" />
-		<column name="invoiceFileEntryId" type="long" />
+		<column name="invoicePayload" type="String" />
+		<column name="einvoice" type="String" />
+<!-- 		<column name="invoiceFileEntryId" type="long" /> -->
 
 		<!-- Order -->
-
+		<order by="desc">
+			<order-column name="createDate"></order-column>
+		</order>
 		<!-- Finder methods -->
-		<finder return-type="Collection" name="F_DUID">
-			<finder-column name="dossierId" />
-			<finder-column name="referenceUid" />
-		</finder>
+<!-- 		<finder return-type="Collection" name="F_DUID"> -->
+<!-- 			<finder-column name="dossierId" /> -->
+<!-- 			<finder-column name="referenceUid" /> -->
+<!-- 		</finder> -->
 
 		<finder return-type="PaymentFile" name="D_RUID">
 			<finder-column name="dossierId" />
@@ -664,14 +1015,14 @@
 		</finder>
 		<!-- References -->
 		
-		<finder return-type="Collection" name="ISN_GID">
+<!-- 		<finder return-type="Collection" name="ISN_GID"> -->
+<!-- 			<finder-column name="groupId" /> -->
+<!-- 			<finder-column name="isNew" /> -->
+<!-- 		</finder> -->
+		<finder name="DossierId" return-type="PaymentFile">
 			<finder-column name="groupId" />
-			<finder-column name="isNew" />
+			<finder-column name="dossierId" />
 		</finder>
-        <finder name="DossierId" return-type="Collection">
-            <finder-column name="dossierId"></finder-column>
-        </finder>
-		
 
 	</entity>
 
@@ -718,6 +1069,11 @@
 			<finder-column name="govAgencyCode" />
 		</finder>
 
+		<finder return-type="PaymentConfig" name="G_ITN">
+			<finder-column name="groupId" />
+			<finder-column name="invoiceTemplateNo" />
+		</finder>
+		
 		<!-- References -->
 
 	</entity>
@@ -737,7 +1093,7 @@
 		<column name="processNo" type="String" />
 		<column name="processName" type="String" />
 		<column name="description" type="String" />
-		<column name="durationCount" type="int" />
+		<column name="durationCount" type="double" />
 		<column name="durationUnit" type="int" />
 		<column name="counter" type="long" />
 		<column name="generateDossierNo" type="boolean" />
@@ -747,8 +1103,10 @@
 		<column name="generatePassword" type="boolean" />
 		<column name="directNotification" type="boolean" />
 		<column name="serverNo" type="String" />
+		<column name="serverName" type="String" />
 		<column name="requestPayment" type="boolean"/>
 		<column name="paymentFee" type="String"/>
+		<column name="dossierGroupPattern" type="String"/>
 
 		<finder return-type="Collection" name="G_ID">
 			<finder-column name="groupId" />
@@ -783,12 +1141,16 @@
 
 		<column name="serviceProcessId" type="long" primary="true" />
 		<column name="roleId" type="long" primary="true" />
-
+		<column name="roleCode" type="String" />
+		<column name="roleName" type="String" />
 		<column name="moderator" type="boolean" />
 		<column name="condition" type="String" />
 
 		<finder return-type="Collection" name="P_S_ID">
 			<finder-column name="serviceProcessId" />
+		</finder>
+		<finder return-type="ServiceProcessRole" name="F_CODE">
+			<finder-column name="roleCode" />
 		</finder>
 
 	</entity>
@@ -811,13 +1173,16 @@
 		<column name="sequenceNo" type="String" />
 		<column name="dossierStatus" type="String" />
 		<column name="dossierSubStatus" type="String" />
-		<column name="durationCount" type="int" />
+		<column name="durationCount" type="double" />
 		<column name="customProcessUrl" type="String" />
 		<column name="stepInstruction" type="String" />
 		<column name="briefNote" type="String" />
 		<column name="editable" type="boolean" />
 		<column name="restrictDossier" type="String" />
 		<column name="lockState" type="String" />
+		<column name="groupName" type="String" />
+		<column name="roleAsStep" type="String" />
+		<column name="checkInput" type="int" />
 
 		<finder return-type="Collection" name="S_P_ID">
 			<finder-column name="serviceProcessId" />
@@ -839,6 +1204,22 @@
 			<finder-column name="dossierSubStatus"/>
 			<finder-column name="groupId"/>
 		</finder>
+        <finder name="G_SP_SNO" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="serviceProcessId"></finder-column>
+            <finder-column name="sequenceNo"></finder-column>
+        </finder>
+        <finder return-type="ProcessStep" name="GID_SID_STATUS">
+			<finder-column name="groupId"/>
+			<finder-column name="serviceProcessId"/>
+			<finder-column name="dossierStatus"/>
+			<finder-column name="dossierSubStatus"/>
+		</finder>
+        <finder name="G_SP_SCS" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="serviceProcessId"></finder-column>
+            <finder-column name="stepCode" comparator="=" arrayable-operator="OR"></finder-column>
+        </finder>
 
 	</entity>
 	
@@ -857,6 +1238,7 @@
 		<column name="stepCode" type="String" />
 		<column name="serviceProcessId" type="long" />
 		<column name="pluginName" type="String" />
+		<column name="pluginType" type="int" />
 		<column name="sequenceNo" type="String" />
 		<column name="pluginForm" type="String" />
 		<column name="sampleData" type="String" />
@@ -873,15 +1255,64 @@
 
 		<column name="processStepId" type="long" primary="true" />
 		<column name="roleId" type="long" primary="true" />
-
+		<column name="roleCode" type="String" />
+		<column name="roleName" type="String" />
 		<column name="moderator" type="boolean" />
 		<column name="condition" type="String" />
 
 		<finder return-type="Collection" name="P_S_ID">
 			<finder-column name="processStepId" />
 		</finder>
+		<finder return-type="ProcessStepRole" name="F_STEP_ROLE">
+			<finder-column name="processStepId" />
+			<finder-column name="roleId" />
+		</finder>
+		<finder return-type="ProcessStepRole" name="F_CODE">
+			<finder-column name="roleCode" />
+		</finder>
 
 	</entity>
+	
+	<entity local-service="true" name="ProcessSequence" remote-service="false"
+		table="opencps_processsequence" uuid="true">
+		
+		<column name="processSequenceId" type="long" primary="true" />
+		
+		<column name="companyId" type="long" />
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+		
+		<column name="serviceProcessId" type="long" />
+		<column name="sequenceNo" type="String" />
+		<column name="sequenceName" type="String" />
+		<column name="sequenceRole" type="String" />
+		<column name="durationCount" type="double" />
+		
+		<order by="asc">
+			<order-column name="sequenceNo" order-by="asc" />
+		</order>
+        <finder name="G_SN" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="sequenceNo"></finder-column>
+        </finder>
+        <finder name="F_GID_SID" return-type="Collection">
+            <finder-column name="groupId" />
+            <finder-column name="serviceProcessId" />
+        </finder>
+        <finder name="F_GID_SID_SNO" return-type="ProcessSequence">
+            <finder-column name="groupId" />
+            <finder-column name="serviceProcessId" />
+            <finder-column name="sequenceNo" />
+        </finder>
+        <finder name="F_GID_SID_SNOS" return-type="Collection">
+            <finder-column name="groupId" />
+            <finder-column name="serviceProcessId" />
+            <finder-column name="sequenceNo" comparator="=" arrayable-operator="OR"></finder-column>
+        </finder>
+	</entity>	
 	
 	<entity local-service="true" name="DossierRequestUD"
 		remote-service="false" table="opencps_dossierrequests" uuid="true">
@@ -944,9 +1375,9 @@
 		<column name="preCondition" type="String" />
 		<column name="actionCode" type="String" />
 		<column name="actionName" type="String" />
-		<column name="allowAssignUser" type="boolean" />
+		<column name="allowAssignUser" type="int" />
 		<column name="assignUserId" type="long" />
-		<column name="requestPayment" type="boolean" />
+		<column name="requestPayment" type="int" />
 		<column name="paymentFee" type="String" />
 		<column name="createDossierFiles" type="String" />
 		<column name="returnDossierFiles" type="String" />
@@ -957,7 +1388,10 @@
 		<column name="eSignature" type="boolean"/>
 		<column name="configNote" type="String"/>
 		<column name="dossierTemplateNo" type="String"/>
-		
+		<column name="signatureType" type="String"/>
+		<column name="createDossiers" type="String"/>
+		<column name="checkInput" type="int" />
+
 		<finder return-type="Collection" name="S_P_ID">
 			<finder-column name="serviceProcessId" />
 		</finder>
@@ -1013,7 +1447,29 @@
 			<finder-column name="actionCode" />
 			<finder-column name="actionName" />
 		</finder>
-
+		<finder return-type="Collection" name="F_GID_SID_PRE">
+			<finder-column name="groupId" />
+			<finder-column name="serviceProcessId" />
+            <finder-column name="preStepCode" />
+		</finder>
+		<finder return-type="ProcessAction" name="F_GID_SID_AC_PRE_POST" unique="true">
+			<finder-column name="groupId" />
+			<finder-column name="serviceProcessId" />
+			<finder-column name="actionCode" />
+            <finder-column name="preStepCode" />
+            <finder-column name="postStepCode" />
+		</finder>
+		<finder name="G_SPID_PRESC_DOS" return-type="ProcessAction">
+			<finder-column name="groupId" />
+			<finder-column name="serviceProcessId" />
+			<finder-column name="preStepCode" />
+			<finder-column name="createDossiers" />
+		</finder>
+		<finder return-type="Collection" name="F_GID_SID_ACS">
+			<finder-column name="groupId" />
+			<finder-column name="serviceProcessId" />
+            <finder-column name="actionCode" comparator="=" arrayable-operator="OR"></finder-column>
+		</finder>
 	</entity>
 
 	<entity local-service="true" name="DossierAction"
@@ -1031,6 +1487,9 @@
 		<column name="dossierId" type="long" />
 		<column name="serviceProcessId" type="long" />
 		<column name="previousActionId" type="long" />
+		<column name="fromStepCode" type="String" />
+		<column name="fromStepName" type="String" />
+		<column name="fromSequenceNo" type="String" />
 		<column name="actionCode" type="String" />
 		<column name="actionUser" type="String" />
 		<column name="actionName" type="String" />
@@ -1041,10 +1500,16 @@
 		<column name="rollbackable" type="boolean" />
 		<column name="stepCode" type="String" />
 		<column name="stepName" type="String" />
+		<column name="sequenceNo" type="String" />
 		<column name="dueDate" type="Date" />
 		<column name="nextActionId" type="long" />
 		<column name="payload" type="String" />
 		<column name="stepInstruction" type="String" />
+		<column name="state" type="int" />
+		<column name="eventStatus" type="int" />
+        <order by="asc">
+            <order-column name="createDate" order-by="asc"></order-column>
+        </order>
 
 		<finder return-type="DossierAction" name="DID_DPG">
 			<finder-column name="dossierId" />
@@ -1072,6 +1537,85 @@
 			<finder-column name="groupId" />
 			<finder-column name="pending" />
 		</finder>
+        <finder name="DID_FSN" return-type="Collection">
+            <finder-column name="dossierId"></finder-column>
+            <finder-column name="fromSequenceNo"></finder-column>
+        </finder>
+        <finder name="G_DID_SN" return-type="Collection">
+        	<finder-column name="groupId"></finder-column>
+            <finder-column name="dossierId"></finder-column>
+            <finder-column name="sequenceNo"></finder-column>
+        </finder>
+        <finder name="G_DID_FSN" return-type="Collection">
+        	<finder-column name="groupId"></finder-column>
+            <finder-column name="dossierId"></finder-column>
+            <finder-column name="fromSequenceNo"></finder-column>
+        </finder>
+     	<finder return-type="Collection" name="DID_STEP">
+			<finder-column name="dossierId" />
+			<finder-column name="fromStepCode" />
+		</finder>
+     	<finder return-type="Collection" name="DID_SC">
+			<finder-column name="dossierId" />
+			<finder-column name="stepCode" />
+		</finder>
+		<finder return-type="Collection" name="DID_CODE">
+			<finder-column name="dossierId" />
+			<finder-column name="actionCode" />
+		</finder>
+     	<finder return-type="Collection" name="DID_U_SC">
+			<finder-column name="dossierId" />
+			<finder-column name="userId" />
+			<finder-column name="stepCode" />
+		</finder>
+     	<finder return-type="Collection" name="DID_SC_NOT_DAI">
+			<finder-column name="dossierId" />
+			<finder-column name="stepCode" />
+            <finder-column name="dossierActionId" comparator="!="></finder-column>
+			
+		</finder>				
+     	<finder return-type="Collection" name="DID_FSC_NOT_DAI">
+			<finder-column name="dossierId" />
+			<finder-column name="fromStepCode" />
+            <finder-column name="dossierActionId" comparator="!="></finder-column>
+			
+		</finder>				
+     	<finder return-type="Collection" name="DID_U_FSC">
+			<finder-column name="dossierId" />
+			<finder-column name="userId" />
+			<finder-column name="fromStepCode" />
+		</finder>
+
+		<finder name="G_DID" return-type="Collection">
+			<finder-column name="groupId"></finder-column>
+			<finder-column name="dossierId"></finder-column>
+		</finder>		
+
+		<finder name="DD" return-type="Collection">
+			<finder-column name="dueDate" comparator="&lt;"></finder-column>
+            <finder-column name="nextActionId"></finder-column>
+		</finder>		
+	</entity>
+
+	<entity local-service="true" name="DossierUser"
+		remote-service="false" table="opencps_dossieruser" uuid="true">
+
+		<column name="dossierId" type="long" primary="true" />
+		<column name="userId" type="long" primary="true" />
+		<column name="moderator" type="int" />
+		<column name="visited" type="boolean" />
+		<column name="roleId" type="long" />
+
+		<finder return-type="Collection" name="DID">
+			<finder-column name="dossierId" />
+		</finder>
+		<finder return-type="DossierUser" name = "DID_UID">
+			<finder-column name="dossierId" />
+			<finder-column name="userId" />
+		</finder>
+		<finder return-type="Collection" name = "UID">
+			<finder-column name="userId" />
+		</finder>
 	</entity>
 
 	<entity local-service="true" name="DossierActionUser"
@@ -1079,10 +1623,20 @@
 
 		<column name="dossierActionId" type="long" primary="true" />
 		<column name="userId" type="long" primary="true" />
+		<column name="dossierId" type="long" />
+		<column name="stepCode" type="String" />
 		<column name="moderator" type="int" />
-		<column name="assigned" type="boolean" />
+		<column name="assigned" type="int" />
 		<column name="visited" type="boolean" />
-
+		<column name="roleId" type="long" />
+		<column name="delegacy" type="int" />
+		
+		<!-- Filter -->
+		<order by="desc">
+			<order-column name="dossierActionId" order-by="desc" />
+		</order>
+	
+		<!-- Order -->
 		<finder return-type="Collection" name="DID">
 			<finder-column name="dossierActionId" />
 		</finder>
@@ -1093,6 +1647,39 @@
 		<finder return-type="Collection" name = "UID">
 			<finder-column name="userId" />
 		</finder>
+		<finder name="DID_SC" return-type="Collection">
+			<finder-column name="dossierId"></finder-column>
+			<finder-column name="stepCode"></finder-column>
+		</finder>
+		<finder name="DID__DAI_SC_AS" return-type="Collection">
+			<finder-column name="dossierId"></finder-column>
+			<finder-column name="dossierActionId"></finder-column>
+			<finder-column name="stepCode"></finder-column>
+			<finder-column name="assigned" comparator="="
+				arrayable-operator="OR"></finder-column>
+		</finder>
+		<finder return-type="Collection" name="DOSSIER_UID">
+			<finder-column name="dossierId" />
+			<finder-column name="userId" />
+		</finder>
+		<finder return-type="Collection" name="DSID">
+			<finder-column name="dossierId" />
+		</finder>
+		<finder return-type="Collection" name = "DID_DAID">
+			<finder-column name="dossierId" />
+			<finder-column name="dossierActionId" />
+		</finder>
+		<finder name="DID_UID_SC" return-type="Collection">
+			<finder-column name="dossierId"></finder-column>
+			<finder-column name="userId"></finder-column>
+			<finder-column name="stepCode"></finder-column>
+		</finder>
+		<finder name="DID__DAI_UID_SC" return-type="DossierActionUser">
+			<finder-column name="dossierId"></finder-column>
+			<finder-column name="dossierActionId"></finder-column>
+			<finder-column name="userId"></finder-column>
+			<finder-column name="stepCode"></finder-column>
+		</finder>		
 	</entity>
 
 	<entity local-service="true" name="DossierActionSync"
@@ -1121,62 +1708,6 @@
 
 	</entity>
 
-	<entity local-service="true" name="DossierSync" remote-service="false"
-		table="opencps_dossiersync" uuid="true">
-
-		<column name="dossierSyncId" type="long" primary="true" />
-
-		<!-- Audit fields -->
-		<column name="companyId" type="long" />
-		<column name="groupId" type="long" />
-		<column name="userId" type="long" />
-		<column name="userName" type="String" />
-		<column name="createDate" type="Date" />
-		<column name="modifiedDate" type="Date" />
-
-		<column name="dossierId" type="long" />
-		<column name="dossierReferenceUid" type="String" />
-		<column name="createDossier" type="boolean" />
-		<column name="method" type="int" />
-		<column name="classPK" type="long" />
-		<column name="fileReferenceUid" type="String" />
-		<column name="serverNo" type="String" />
-
-		<order>
-			<order-column name="dossierId" order-by="asc" />
-			<order-column name="method" order-by="asc" />
-		</order>
-		
-		<finder return-type="DossierSync" name="F_D_M_CPK_FR">
-			<finder-column name="dossierId"/>
-			<finder-column name="method"/>
-			<finder-column name="classPK"/>
-			<finder-column name="fileReferenceUid"/>
-		</finder>
-		
-		<finder return-type="Collection" name="G_ID">
-			<finder-column name="groupId" />
-		</finder>
-
-		<finder return-type="Collection" name="G_ID_DID">
-			<finder-column name="groupId" />
-			<finder-column name="dossierId" />
-		</finder>
-
-		<finder return-type="Collection" name="G_ID_DRF">
-			<finder-column name="groupId" />
-			<finder-column name="dossierReferenceUid" />
-		</finder>
-
-		<finder return-type="Collection" name="SRV_NO">
-			<finder-column name="serverNo" />
-		</finder>
-		
-		<finder return-type="Collection" name="DossierId">
-			<finder-column name="dossierId" />
-		</finder>
-	</entity>
-
 	<entity local-service="true" name="DossierStatistic"
 		remote-service="false" table="opencps_dossierstatistic" uuid="true">
 
@@ -1192,21 +1723,29 @@
 
 		<column name="month" type="int" />
 		<column name="year" type="int" />
+		<column name="totalCount" type="int" />
+		<column name="deniedCount" type="int" />
+		<column name="cancelledCount" type="int" />
+		<column name="processCount" type="int" />
 		<column name="remainingCount" type="int" />
 		<column name="receivedCount" type="int" />
 		<column name="onlineCount" type="int" />
-		<column name="undueCount" type="int" />
-		<column name="overdueCount" type="int" />
+		<column name="releaseCount" type="int" />
+		<column name="betimesCount" type="int" />
 		<column name="ontimeCount" type="int" />
 		<column name="overtimeCount" type="int" />
-
+		<column name="doneCount" type="int" />
+		<column name="releasingCount" type="int" />
+		<column name="unresolvedCount" type="int" />
+		<column name="processingCount" type="int" />
+		<column name="undueCount" type="int" />
+		<column name="overdueCount" type="int" />
+		<column name="pausingCount" type="int" />
+		<column name="ontimePercentage" type="int" />
 		<column name="govAgencyCode" type="String" />
 		<column name="govAgencyName" type="String" />
 		<column name="domainCode" type="String" />
 		<column name="domainName" type="String" />
-
-		<column name="administrationLevel" type="int" />
-
 		<column name="reporting" type="boolean" />
 
 		<!-- Order -->
@@ -1218,6 +1757,11 @@
 			<finder-column name="year"></finder-column>
 		</finder>
 
+		<finder return-type="Collection" name="G_M_Y_GC_DC" where="govAgencyCode is null and domainCode is null">
+			<finder-column name="groupId"></finder-column>
+			<finder-column name="month"></finder-column>
+			<finder-column name="year"></finder-column>
+		</finder>
 	</entity>
 
 	<entity local-service="true" name="Registration" remote-service="false"
@@ -1405,15 +1949,24 @@
 		<column name="typeName" type="String" />
 		<column name="formScript" type="String" />
 		<column name="formReport" type="String" />
+		<column name="formScriptFileId" type="long" />
+		<column name="formReportFileId" type="long" />
 		<column name="codePattern" type="String" />
-		<column name="counter" type="String" />
+		<column name="dataConfig" type="String" />
+		<column name="tableConfig" type="String" />
+		<column name="counter" type="long" />
 		<column name="mappingData" type="String" />
+		<column name="docSync" type="int" />
+		<column name="govAgencies" type="String" />
 
 		<finder return-type="DeliverableType" name="G_DLT">
 			<finder-column name="groupId" />
 			<finder-column name="typeCode" />
 		</finder>
 
+		<finder return-type="Collection" name="G">
+			<finder-column name="groupId" />
+		</finder>
 	</entity>
 
 	<entity local-service="true" name="Deliverable" remote-service="false"
@@ -1440,10 +1993,15 @@
 		<column name="formData" type="String" />
 		<column name="formScript" type="String" />
 		<column name="formReport" type="String" />
+		<column name="formScriptFileId" type="long" />
+		<column name="formReportFileId" type="long" />
 		<column name="expireDate" type="Date" />
 		<column name="issueDate" type="Date" />
 		<column name="revalidate" type="Date" />
-		<column name="deliverableState" type="String" />
+		<column name="deliverableState" type="int" />
+		<column name="fileEntryId" type="long" />
+		<column name="dossierId" type="long" />
+		<column name="docSync" type="int" />
 
 		<finder return-type="Deliverable" name="DID">
 			<finder-column name="deliverableId" />
@@ -1460,6 +2018,10 @@
 		</finder>
 		
 		<finder return-type="Deliverable" name="FB_DCODE">
+			<finder-column name="deliverableCode"/>
+		</finder>
+		<finder return-type="Deliverable" name="F_GID_DCODE">
+			<finder-column name="groupId" />
 			<finder-column name="deliverableCode"/>
 		</finder>
 
@@ -1487,7 +2049,7 @@
 		<column name="createDate" type="Date" />
 		<column name="modifiedDate" type="Date" />
 
-		<column name="deliverableId" type="String" />
+		<column name="deliverableId" type="long" />
 		<column name="dossierUid" type="String" />
 		<column name="author" type="String" />
 		<column name="content" type="String" />
@@ -1499,6 +2061,9 @@
 <!-- 			<finder-column name="gropuId" /> -->
 <!-- 			<finder-column name="deliverableId" /> -->
 <!-- 		</finder> -->
+		<finder return-type="Collection" name="F_deliverableId">
+			<finder-column name="deliverableId"></finder-column>
+		</finder>
 	</entity>
 
 	<entity local-service="true" name="RegistrationTemplates"
@@ -1570,7 +2135,7 @@
 		</finder>
 	</entity>
 
-		<entity local-service="true" name="DossierMark" remote-service="false"
+	<entity local-service="true" name="DossierMark" remote-service="false"
 		table="opencps_dossiermark" uuid="true">
 
 		<column name="dossierMarkId" type="long" primary="true" />
@@ -1585,8 +2150,10 @@
 		<!-- Other fields -->
 		<column name="dossierId" type="long" />
 		<column name="dossierPartNo" type="String" />
-		<column name="fileCheck" type="boolean" />
-		<column name="fileType" type="int" />
+		<column name="fileCheck" type="int" />
+		<column name="fileMark" type="int" />
+		<column name="fileComment" type="String" />
+		<column name="recordCount" type="String" />
 
 		<finder return-type="DossierMark" name="G_DID_PN">
 			<finder-column name="groupId" />
@@ -1598,8 +2165,446 @@
 			<finder-column name="groupId" />
 			<finder-column name="dossierId" />
 		</finder>
+		<finder return-type="Collection" name="G_DID_MARK">
+			<finder-column name="groupId" />
+			<finder-column name="dossierId" />
+			<finder-column name="fileMark" comparator="!="/>
+		</finder>
+	</entity>
+	
+	<entity local-service="true" name="ActionConfig" remote-service="false"
+		table="opencps_actionconfig" uuid="true">
+
+		<column name="actionConfigId" type="long" primary="true" />
+
+		<!-- Audit fields -->
+		<column name="companyId" type="long" />
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="actionCode" type="String" />
+		<column name="actionName" type="String" />
+		<column name="extraForm" type="boolean" />
+		<column name="formConfig" type="String" />
+		<column name="sampleData" type="String" />
+		<column name="insideProcess" type="boolean" />
+		<column name="userNote" type="int" />
+		<column name="syncType" type="int" />
+		<column name="eventType" type="int" />
+		<column name="infoType" type="int" />
+		<column name="pending" type="boolean" />
+		<column name="rollbackable" type="boolean" />
+		<column name="notificationType" type="String" />
+		<column name="documentType" type="String" />
+		<column name="mappingAction" type="String" />
+		<column name="dateOption" type="int" />
+		
+        <order by="asc">
+            <order-column name="actionCode" order-by="asc" case-sensitive="true"></order-column>
+        </order>
+
+		<finder return-type="Collection" name="F_BY_GID">
+			<finder-column name="groupId"></finder-column>
+		</finder>
+		<finder return-type="ActionConfig" name="F_BY_ActionCode">
+			<finder-column name="groupId"></finder-column>
+			<finder-column name="actionCode"></finder-column>
+		</finder>
+		<finder return-type="Collection" name="G_ET">
+			<finder-column name="groupId"></finder-column>
+			<finder-column name="eventType"></finder-column>
+		</finder>
+		
+	</entity>
+	
+	<entity local-service="true" name="StepConfig" remote-service="false"
+		table="opencps_stepconfig" uuid="true">
+
+		<column name="stepConfigId" type="long" primary="true" />
+
+		<!-- Audit fields -->
+		<column name="companyId" type="long" />
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="stepCode" type="String" />
+		<column name="stepName" type="String" />
+		<column name="stepType" type="int" />
+		<column name="dossierStatus" type="String" />
+		<column name="dossierSubStatus" type="String" />
+		<column name="menuGroup" type="String" />
+		<column name="menuStepName" type="String" />
+		<column name="buttonConfig" type="String" />
+		
+        <order by="asc">
+            <order-column name="stepCode" order-by="asc" case-sensitive="true"></order-column>
+        </order>
+
+		<finder return-type="StepConfig" name="F_BY_stepCode">
+			<finder-column name="groupId" />
+			<finder-column name="stepCode" />
+		</finder>
+		<finder return-type="StepConfig" name="F_GT_STEP">
+			<finder-column name="groupId" />
+			<finder-column name="stepCode" />
+		</finder>
+		<finder return-type="Collection" name="F_GID">
+			<finder-column name="groupId" />
+		</finder>
+
+		<finder return-type="Collection" name="F_MS_SS">
+			<finder-column name="groupId" />
+			<finder-column name="dossierStatus" />
+			<finder-column name="dossierSubStatus" />
+		</finder>
+		
+	</entity>
+	
+	<entity local-service="true" name="MenuConfig" remote-service="false"
+		table="opencps_menuconfig" uuid="true">
+
+		<column name="menuConfigId" type="long" primary="true" />
+
+		<!-- Audit fields -->
+		<column name="companyId" type="long" />
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="menuGroup" type="String" />
+		<column name="menuName" type="String" />
+		<column name="order" type="int" />
+		<column name="menuType" type="int" />
+		<column name="queryParams" type="String" />
+		<column name="tableConfig" type="String" />
+		<column name="buttonConfig" type="String" />
+		<column name="icon" type="String" />
+		
+        <order by="asc">
+            <order-column name="order" order-by="asc" case-sensitive="true"></order-column>
+        </order>
+		
+		<finder return-type="Collection" name="F_BY_GID">
+			<finder-column name="groupId"></finder-column>
+		</finder>
+		<finder return-type="MenuConfig" name="F_BY_menuGroup">
+			<finder-column name="menuGroup"></finder-column>
+		</finder>
+		<finder return-type="MenuConfig" name="F_BY_G_MENU">
+			<finder-column name="groupId" />
+			<finder-column name="menuGroup" />
+		</finder>
+        <finder name="F_A_MID" return-type="Collection">
+            <finder-column name="menuConfigId" arrayable-operator="OR"></finder-column>
+        </finder>
+		
+	</entity>
+	
+	<entity local-service="true" name="MenuRole" remote-service="false"
+		table="opencps_menurole" uuid="true">
+
+		<column name="menuRoleId" type="long" primary="true"/>
+		
+		<column name="menuConfigId" type="long"/>
+
+		<column name="roleId" type="long"/>
+		
+        <finder name="F_RID" return-type="Collection">
+            <finder-column name="roleId" arrayable-operator="OR"></finder-column>
+        </finder>		
+
+		<finder return-type="MenuRole" name="F_MENU_ROLE">
+			<finder-column name="menuConfigId" />
+			<finder-column name="roleId" />
+		</finder>
+
+		<finder return-type="MenuRole" name="F_MID">
+			<finder-column name="menuRoleId" />
+		</finder>
+		<finder return-type="Collection" name="F_CONFIG_ID">
+			<finder-column name="menuConfigId" />
+		</finder>
+		<finder return-type="Collection" name="F_ROLE">
+			<finder-column name="roleId" />
+		</finder>
+
 	</entity>
 
+	<entity local-service="true" name="DocumentType" remote-service="false"
+		table="opencps_documenttype" uuid="true">
+
+		<column name="DocumentTypeId" type="long" primary="true" />
+
+		<!-- Audit fields -->
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="typeCode" type="String" />
+		<column name="templateClass" type="int" />
+		<column name="documentName" type="String" />
+		<column name="codePattern" type="String" />
+		<column name="documentScript" type="String" />
+		<column name="docSync" type="int" />
+		
+        <order by="desc">
+            <order-column name="modifiedDate" order-by="desc" case-sensitive="true" />
+        </order>
+
+		<finder return-type="DocumentType" name="F_CODE">
+			<finder-column name="groupId" />
+			<finder-column name="typeCode" />
+		</finder>
+		<finder return-type="Collection" name="G">
+			<finder-column name="groupId" />
+		</finder>
+	</entity>
+
+	<entity local-service="true" name="DossierSync" remote-service="false"
+		table="opencps_dossiersync" uuid="true">
+
+		<column name="DossierSyncId" type="long" primary="true" />
+
+		<!-- Audit fields -->
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="dossierId" type="long" />
+		<column name="dossierRefUid" type="String" />
+		<column name="syncRefUid" type="String" />
+		<column name="dossierActionId" type="long" />
+		<column name="actionCode" type="String" />
+		<column name="actionName" type="String" />
+		<column name="actionUser" type="String" />
+		<column name="actionNote" type="String" />
+		<column name="syncType" type="int" />
+		<column name="infoType" type="int" />
+		<column name="payload" type="String" />
+		<column name="serverNo" type="String" />
+		<column name="state" type="int" />
+		<column name="retry" type="int" />
+		<column name="messageText" type="String" />
+		<column name="acknowlegement" type="String" />
+		
+        <order by="asc">
+            <order-column name="modifiedDate" order-by="asc" case-sensitive="true" />
+        </order>
+        <finder name="ST" return-type="Collection">
+            <finder-column name="state"></finder-column>
+        </finder>
+        <finder name="DRID_IT" return-type="Collection">
+        	<finder-column name="groupId"></finder-column>
+            <finder-column name="dossierRefUid"></finder-column>
+            <finder-column name="infoType" arrayable-operator="OR" comparator="="></finder-column>
+        </finder>
+        <finder name="G_AC_ST_IT" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="actionCode"></finder-column>
+            <finder-column name="syncType"></finder-column>
+            <finder-column name="infoType" arrayable-operator="OR" comparator="="></finder-column>
+        </finder>
+        <finder name="G_DID_DAD_AC" return-type="DossierSync">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="dossierId"></finder-column>
+            <finder-column name="dossierActionId"></finder-column>
+            <finder-column name="actionCode"></finder-column>
+        </finder>
+        <finder name="G_DID_ST" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="dossierId"></finder-column>
+            <finder-column name="state"></finder-column>
+        </finder>
+        <finder name="G_DID" return-type="Collection">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="dossierId"></finder-column>
+        </finder>
+        <finder name="G_DID_DAD" return-type="DossierSync">
+            <finder-column name="groupId"></finder-column>
+            <finder-column name="dossierId"></finder-column>
+            <finder-column name="dossierActionId"></finder-column>
+        </finder>        
+	</entity>
+	
+	<entity local-service="true" name="DossierDocument" remote-service="false"
+		table="opencps_dossierdocument" uuid="true">
+
+		<column name="DossierDocumentId" type="long" primary="true" />
+
+		<!-- Audit fields -->
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="dossierId" type="long" />
+		<column name="referenceUid" type="String" />
+		<column name="dossierActionId" type="long" />
+		<column name="documentType" type="String" />
+		<column name="documentName" type="String" />
+		<column name="documentCode" type="String" />
+		<column name="documentFileId" type="long" />
+		<column name="docSync" type="int" />
+		
+        <order by="desc">
+            <order-column name="createDate" order-by="desc" case-sensitive="true" />
+        </order>
+
+		<finder return-type="Collection" name="F_DOSSIERID">
+			<finder-column name="dossierId" />
+		</finder>
+		<finder return-type="DossierDocument" name="F_GID_DID">
+			<finder-column name="groupId" />
+			<finder-column name="dossierActionId" />
+		</finder>
+		<finder return-type="DossierDocument" name="F_GID_DID_REF">
+			<finder-column name="groupId" />
+			<finder-column name="dossierId" />
+			<finder-column name="referenceUid" />
+		</finder>
+	</entity>
+
+	<entity name="PublishQueue" table="opencps_publish_queue"
+		local-service="true" remote-service="false" uuid="true">
+
+		<!-- PK fields -->
+
+		<column name="publishQueueId" primary="true" type="long" />
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<column name="dossierId" type="long" />
+		<column name="serverNo" type="String" />
+		<column name="status" type="int" />
+		<column name="retry" type="int" />
+		<column name="publishType" type="int" />
+		<column name="publishData" type="String" />
+		<column name="messageText" type="String" />
+		<column name="acknowlegement" type="String" />
+				
+		<order>
+			<order-column name="modifiedDate" />
+		</order>
+
+		<finder return-type="Collection" name="ST">
+			<finder-column name="status" />		
+		</finder>
+
+		<finder return-type="PublishQueue" name="G_DID_SN">
+			<finder-column name="groupId" />	
+			<finder-column name="dossierId" />	
+			<finder-column name="serverNo" />					
+		</finder>
+
+		<finder return-type="Collection" name="G_DID_SN_NST">
+			<finder-column name="groupId" />	
+			<finder-column name="dossierId" />	
+			<finder-column name="serverNo" />			
+			<finder-column name="status" />		
+		</finder>
+		
+		<finder return-type="Collection" name="G_DID_SN_ST">
+			<finder-column name="groupId" />	
+			<finder-column name="dossierId" />	
+			<finder-column name="serverNo" />			
+			<finder-column name="status" comparator="=" arrayable-operator="OR"/>		
+		</finder>
+		
+		<finder return-type="Collection" name="ST_LT_MD">	
+			<finder-column name="status" comparator="=" arrayable-operator="OR"/>
+			<finder-column name="modifiedDate" comparator="&lt;="/>		
+		</finder>
+	</entity>
+
+	<entity name="DynamicReport" table="opencps_dynamicreport"
+		local-service="true" remote-service="false" uuid="true">
+
+		<!-- PK fields -->
+		<column name="dynamicReportId" primary="true" type="long" />
+
+		<!-- Audit fields -->
+		<column name="companyId" type="long" />
+		<column name="groupId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+		<column name="reportCode" type="String" />
+		<column name="reportName" type="String" />
+		<column name="sharing" type="int" />
+		<column name="filterConfig" type="String" />
+		<column name="tableConfig" type="String" />
+		<column name="userConfig" type="String" />
+		<column name="reportType" type="String" />
+
+		<finder return-type="DynamicReport" name="F_GID_CODE">
+			<finder-column name="groupId" />
+			<finder-column name="reportCode" />
+		</finder>
+	</entity>
+		
+	<entity name="DeliverableTypeRole" table="opencps_deliverabletyperole"
+		local-service="true" remote-service="false" uuid="true">
+
+		<!-- PK fields -->
+
+		<column name="deliverableTypeRoleId" primary="true" type="long" />
+
+		<!-- Group instance -->
+
+		<column name="groupId" type="long" />
+
+		<!-- Audit fields -->
+
+		<column name="companyId" type="long" />
+		<column name="userId" type="long" />
+		<column name="userName" type="String" />
+		<column name="createDate" type="Date" />
+		<column name="modifiedDate" type="Date" />
+
+		<!-- Other fields -->
+
+		<column name="deliverableTypeId" type="long" />
+		<column name="roleId" type="long" />
+		<column name="moderator" type="boolean" />
+		
+		<!-- Order -->
+		<order by="asc">
+			<order-column name="createDate"></order-column>
+		</order>
+		
+		<finder return-type="Collection" name="F_deliverableTypeId">
+			<finder-column name="deliverableTypeId"></finder-column>
+		</finder>
+		<finder return-type="DeliverableTypeRole" name="F_GID_DID_RID">
+			<finder-column name="groupId" />
+			<finder-column name="deliverableTypeId" />
+			<finder-column name="roleId" />
+		</finder>
+		
+	</entity>
+	
+	<entity local-service="true" name="CPSDossierBusiness"
+		remote-service="false">
+	</entity>		
+	
 	<exceptions>
 		<exception>RequiredServiceCode</exception>
 		<exception>DuplicateServiceCode</exception>
@@ -1657,6 +2662,13 @@
 		<exception>DossierPassword</exception>
 		<exception>DossierAccess</exception>
 		<exception>SeqOrder</exception>
-
+		
+		<exception>DuplicateActionCode</exception>
+		<exception>NoSuchDeliverable</exception>
+		
+		<exception>NoSuchProcessSequence</exception>
+		<exception>NoSuchEForm</exception>
+		<exception>NoSuchBooking</exception>
+		
 	</exceptions>
 </service-builder>

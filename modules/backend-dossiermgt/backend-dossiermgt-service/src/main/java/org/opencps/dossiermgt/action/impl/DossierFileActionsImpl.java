@@ -25,6 +25,7 @@ import org.opencps.dossiermgt.service.DossierFileLocalServiceUtil;
 import org.opencps.dossiermgt.service.DossierLocalServiceUtil;
 import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -38,7 +39,6 @@ import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.SortFactoryUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 public class DossierFileActionsImpl implements DossierFileActions {
@@ -145,29 +145,33 @@ public class DossierFileActionsImpl implements DossierFileActions {
 	public void copyFile(String orgFileName, String targetFileName) throws IOException {
 		// TODO Auto-generated method stub
 		InputStream inStream = null;
-		OutputStream outStream = null;
 
-		File afile = new File(orgFileName);
-		File bfile = new File(targetFileName);
-		if (!bfile.exists()) {
-			bfile.createNewFile();
+		try {
+			File afile = new File(orgFileName);
+			File bfile = new File(targetFileName);
+			if (!bfile.exists()) {
+				bfile.createNewFile();
+			}
+			inStream = new FileInputStream(afile);
+			try (OutputStream outStream = new FileOutputStream(bfile)) {
+	
+			byte[] buffer = new byte[1024];
+	
+				int length = 0;
+			// copy the file content in bytes
+			while ((length = inStream.read(buffer)) > 0) {
+	
+				outStream.write(buffer, 0, length);
+	
+			}
+			}
+		} catch (Exception e) {
+			_log.info(e);
+		} finally{
+			if (inStream != null) 
+				inStream.close();
 		}
-		inStream = new FileInputStream(afile);
-		outStream = new FileOutputStream(bfile);
-
-		byte[] buffer = new byte[1024];
-
-		int length;
-		// copy the file content in bytes
-		while ((length = inStream.read(buffer)) > 0) {
-
-			outStream.write(buffer, 0, length);
-
-		}
-
-		inStream.close();
-		outStream.close();
-		_log.info("Create file " + targetFileName + " success");
+//		_log.info("Create file " + targetFileName + " success");
 	}
 
 	@Override
@@ -184,26 +188,42 @@ public class DossierFileActionsImpl implements DossierFileActions {
 		}
 		// now zip files one by one
 		// create ZipOutputStream to write to the zip file
-		fos = new FileOutputStream(zipDirName);
-		zos = new ZipOutputStream(fos);
-		for (String filePath : filesListInDir) {
-			System.out.println("Zipping " + filePath);
-			// for ZipEntry we need to keep only relative file path, so we
-			// used substring on absolute path
-			ZipEntry ze = new ZipEntry(filePath.substring(dir.getAbsolutePath().length() + 1, filePath.length()));
-			zos.putNextEntry(ze);
-			// read the file and write to ZipOutputStream
-			FileInputStream fis = new FileInputStream(filePath);
-			byte[] buffer = new byte[1024];
-			int len;
-			while ((len = fis.read(buffer)) > 0) {
-				zos.write(buffer, 0, len);
+		try {
+			fos = new FileOutputStream(zipDirName);
+			zos = new ZipOutputStream(fos);
+			ZipEntry ze = null;
+			try {
+				for (String filePath : filesListInDir) {
+					// System.out.println("Zipping " + filePath);
+					// for ZipEntry we need to keep only relative file path, so we
+					// used substring on absolute path
+					ze = new ZipEntry(filePath.substring(dir.getAbsolutePath().length() + 1, filePath.length()));
+					zos.putNextEntry(ze);
+					// read the file and write to ZipOutputStream
+					try (FileInputStream fis = new FileInputStream(filePath)) {
+						byte[] buffer = new byte[1024];
+						int len = 0;
+						while ((len = fis.read(buffer)) > 0) {
+							zos.write(buffer, 0, len);
+						}
+					}
+				}
+			} catch (Exception e) {
+				_log.error(e);
+			} 
+			finally{
+				if (zos != null)
+					zos.closeEntry();
 			}
-			zos.closeEntry();
-			fis.close();
+		} catch (Exception e) {
+			_log.error(e);
+		} finally{
+			if (zos != null)
+				zos.close();
+			if (fos != null)
+				fos.close();
 		}
-		zos.close();
-		fos.close();
+		
 		_log.info("Zip file Successfull");
 
 	}
@@ -214,8 +234,6 @@ public class DossierFileActionsImpl implements DossierFileActions {
 		
 		DossierFile dossierFile = DossierFileLocalServiceUtil.getDossierFileByReferenceUid(dossierId, referenceUid);
 		
-				
-	
 			// String dossierTemplateNo = StringPool.BLANK;
 	
 			String defaultData = StringPool.BLANK;
@@ -297,4 +315,47 @@ public class DossierFileActionsImpl implements DossierFileActions {
 
 		return DossierFileLocalServiceUtil.getByFileTemplateNo(id, fileTemplateNo);
 	}
+
+	@Override
+	public void uploadFileEntry(String name, InputStream inputStream, ServiceContext serviceContext) {
+//		long userId = serviceContext.getUserId();
+
+//		DossierFile dossierFile = dossierFileLocalService.getDossierFileByReferenceUid(dossierId, referenceUid);
+
+//		long fileEntryId = 0;
+
+		try {
+//			FileEntry fileEntry = FileUploadUtils.uploadDossierFile(userId, groupId, dossierFile.getFileEntryId(),
+//					inputStream, sourceFileName, null, 0, serviceContext);
+//
+//			if (fileEntry != null) {
+//				fileEntryId = fileEntry.getFileEntryId();
+//			}
+		} catch (Exception e) {
+			throw new SystemException(e);
+		}
+	}
+
+	@Override
+	public DossierFile addDossierFileEForm(long groupId, long dossierId, String referenceUid, String dossierTemplateNo,
+			String dossierPartNo, String fileTemplateNo, String displayName, String sourceFileName, long fileSize,
+			InputStream inputStream, String fileType, String isSync, ServiceContext serviceContext)
+			throws SystemException, PortalException {
+
+		return DossierFileLocalServiceUtil.addDossierFileEForm(groupId, dossierId, referenceUid, dossierTemplateNo,
+				dossierPartNo, fileTemplateNo, displayName, sourceFileName, fileSize, inputStream, fileType, isSync,
+				serviceContext);
+	}
+
+	@Override
+	public DossierFile addDossierFile(long groupId, long dossierId, String referenceUid, String dossierTemplateNo,
+			String dossierPartNo, String fileTemplateNo, String displayName, String sourceFileName, long fileSize,
+			InputStream inputStream, String fileType, String isSync, String formScript, String formReport,
+			boolean eForm, String formData, ServiceContext serviceContext) throws SystemException, PortalException {
+
+		return DossierFileLocalServiceUtil.addDossierFile(groupId, dossierId, referenceUid, dossierTemplateNo,
+				dossierPartNo, fileTemplateNo, displayName, sourceFileName, fileSize, inputStream, fileType, isSync,
+				formScript, formReport, eForm, formData, serviceContext);
+	}
+
 }

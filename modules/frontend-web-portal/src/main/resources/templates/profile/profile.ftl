@@ -7,18 +7,22 @@
 			
 			<#if userType?has_content && userType == "employee">
 				<input type="file" id="avatar_file_profile" accept="image/*"  onchange="profile_changeAvatarFileEntry(this)" style="display: none;" />
-				<img id="profile_avatar_thumbnail" src="/o/frontend.web.portal/images/default_avatar.png" class="img-responsive max-width-100 img-rounded">
-				<div class="text-center"><a id="change_avatar_profile" data-pk="${(employee.employeeId)!}" href="#" class="text-light-gray">Thay đổi avatar</a></div>
+				<img id="profile_avatar_thumbnail" src="/o/frontend.web.portal/images/default_avatar.png" class="img-responsive max-width-100 img-rounded" style="width: 100%; height: auto;">
+				<div class="text-center"><a id="change_avatar_profile" data-pk="${(employee.employeeId)!}" href="javascript:;" class="text-light-gray">Thay đổi avatar</a></div>
 				<p class="name text-bold text-center" data-bind="text:fullnameEmployee" id="">${(employee.fullName)!}</p>
 				<div>Thư điện tử: <span class="text-bold" data-bind="text:emailEmployee" id="">${(employee.email)!}</span></div>
 				<div>Ngày sinh: <span class="text-bold" data-bind="text:birthdateEmployee" id="">${(employee.birthdate)!}</span></div>
 				<div>Số điện thoại: <span class="text-bold" data-bind="text:mobileEmployee" id="">${(employee.telNo)!}</span></div>
 			<#elseif userType?has_content && userType == "applicant">
-				<input type="file" id="avatar_file_profile" accept="image/*"  onchange="profile_changeAvatarFileEntry(this)" style="display: none;" />
-				<img id="profile_avatar_thumbnail" src="/o/frontend.web.portal/images/default_avatar.png" class="img-responsive max-width-100 img-rounded">
-				<div class="text-center"><a id="change_avatar_profile" data-pk="${(applicantId)!}" href="#" class="text-light-gray">Thay đổi avatar</a></div>
+				<input type="file" id="avatar_file_profile" accept="image/*"  onchange="profile_changeAvatarFileEntry(this)" style="display: none;"/>
+				<img id="profile_avatar_thumbnail" src="/o/frontend.web.portal/images/default_avatar.png" class="img-responsive max-width-100 img-rounded" style="width: 100%; height: auto;">
+				<div class="text-center"><a id="change_avatar_profile" data-pk="${(applicantId)!}" href="javascript:;" class="text-light-gray">Thay đổi avatar</a></div>
 				<p class="name text-bold text-center" data-bind="text:applicantName" id="profileName"></p>
-				<div>Số CMND/Hộ chiếu: <span class="text-bold" data-bind="text:applicantIdNo" id="profileIdNo"></span></div>
+				<#if applicantIdType == 'business' >
+					<div>Mã số thuế: <span class="text-bold" data-bind="text:applicantIdNo" id="profileIdNo"></span></div>
+				<#else>
+					<div>Số CMND/Hộ chiếu: <span class="text-bold" data-bind="text:applicantIdNo" id="profileIdNo"></span></div>
+				</#if>
 				<div>Ngày cấp: <span class="text-bold" data-bind="text:applicantIdDate" id="profileDate"></span></div>
 				<div>Thư điện tử: <span class="text-bold" data-bind="text:contactEmail" id="profileEmail"></span></div>
 			</#if>
@@ -51,7 +55,7 @@
 									<div class="col-sm-7">
 										<span id="applicantName" data-pk="1" data-toggle="#editApplicantName" data-original-title="Nhập tên công ty" tabindex="-1" class="" data-bind="text:applicantName"> <#-- ${api.applicant.applicantName} --> </span>
 										<span class="pull-right">
-											<a href="#" id="editApplicantName" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editApplicantName" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -62,7 +66,7 @@
 									<div class="col-sm-7">
 										<span id="address" data-pk="1" data-toggle="#editAddress" data-original-title="Nhập địa chỉ" tabindex="-1" class="" data-bind="text:address"> </span>
 										<span class="pull-right">
-											<a href="#" id="editAddress" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editAddress" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -73,7 +77,7 @@
 									<div class="col-sm-7">
 										<span id="city" data-pk="1" data-type="select" data-toggle="#editCity" data-original-title="Chọn thành phố" tabindex="-1" class="" data-bind="text:cityName"><#--  ${api.applicant.cityName} --> </span>
 										<span class="pull-right">
-											<a href="#" id="editCity" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editCity" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -84,7 +88,7 @@
 									<div class="col-sm-7">
 										<span id="district" data-pk="1" data-type="select" data-toggle="#editDistrict" data-original-title="Chọn quận/ huyện" tabindex="-1" class="" data-bind="text:districtName"><#-- ${api.applicant.districtName} --></span>
 										<span class="pull-right">
-											<a href="#" id="editDistrict" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editDistrict" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -95,7 +99,7 @@
 									<div class="col-sm-7">
 										<span id="wards" data-pk="1" data-type="select" data-toggle="#editWards" data-original-title="Chọn xã/ phường" tabindex="-1" class="" data-bind="text:wardName"><#-- ${api.applicant.wardName} --></span>
 										<span class="pull-right">
-											<a href="#" id="editWards" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editWards" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -106,7 +110,7 @@
 									<div class="col-sm-7">
 										<span id="phone" data-pk="1" data-toggle="#editPhone" data-original-title="Nhập số điện thoại" tabindex="-1" class="" data-bind="text:contactTelNo"><#-- ${api.applicant.contactTelNo} --></span>
 										<span class="pull-right">
-											<a href="#" id="editPhone" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editPhone" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -117,7 +121,7 @@
 									<div class="col-sm-7">
 										<span id="email" data-pk="1" data-toggle="#editEmail" data-original-title="Nhập email" tabindex="-1" class="" data-bind="text:contactEmail"><#-- ${api.applicant.contactEmail} --> </span>
 										<!-- <span class="pull-right">
-											<a href="#" id="editEmail" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editEmail" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span> -->
 									</div>
 								</div>
@@ -128,7 +132,7 @@
 									<div class="col-sm-7">
 										<span id="contactName" data-pk="1" data-toggle="#editContactName" data-original-title="Tên người đại diện" tabindex="-1" class="" data-bind="text:contactName"><#-- ${api.applicant.contactName} --></span>
 										<span class="pull-right">
-											<a href="#" id="editContactName" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editContactName" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -148,7 +152,7 @@
 									<div class="col-sm-7">
 										<span id="applicantName" data-pk="1" data-toggle="#editApplicantName" data-original-title="Nhập họ và tên" tabindex="-1" class="" data-bind="text:applicantName"><#-- ${api.applicant.applicantName} --></span>
 										<span class="pull-right">
-											<a href="#" id="editApplicantName" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editApplicantName" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -159,7 +163,7 @@
 									<div class="col-sm-7">
 										<span id="address" data-pk="1" data-toggle="#editAddress" data-original-title="Nhập địa chỉ" tabindex="-1" class="" data-bind="text:address"><#-- ${api.applicant.address} --></span>
 										<span class="pull-right">
-											<a href="#" id="editAddress" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editAddress" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -170,7 +174,7 @@
 									<div class="col-sm-7">
 										<span id="city" data-pk="1" data-type="select" data-toggle="#editCity" data-original-title="Chọn tỉnh/ thành phố" tabindex="-1" class="" data-bind="text:cityName"><#-- ${api.applicant.cityName} --></span>
 										<span class="pull-right">
-											<a href="#" id="editCity" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editCity" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -181,7 +185,7 @@
 									<div class="col-sm-7">
 										<span id="district" data-pk="1" data-type="select" data-toggle="#editDistrict" data-original-title="Chọn quận/ huyện" tabindex="-1" class="" data-bind="text:districtName"><#-- ${api.applicant.districtName} --></span>
 										<span class="pull-right">
-											<a href="#" id="editDistrict" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editDistrict" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -192,7 +196,7 @@
 									<div class="col-sm-7">
 										<span id="wards" data-pk="1" data-type="select" data-toggle="#editWards" data-original-title="Chọn xã/ phường" tabindex="-1" class="" data-bind="text:wardName"><#-- ${api.applicant.wardName} --></span>
 										<span class="pull-right">
-											<a href="#" id="editWards" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editWards" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -203,7 +207,7 @@
 									<div class="col-sm-7">
 										<span id="phone" data-pk="1" data-toggle="#editPhone" data-original-title="Nhập số điện thoại" tabindex="-1" class="" data-bind="text:contactTelNo"><#-- ${api.applicant.contactTelNo} --></span>
 										<span class="pull-right">
-											<a href="#" id="editPhone" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editPhone" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span>
 									</div>
 								</div>
@@ -214,7 +218,7 @@
 									<div class="col-sm-7">
 										<span id="email" data-pk="1" data-toggle="#editEmail" data-original-title="Nhập email" tabindex="-1" class="" data-bind="text:contactEmail"><#-- ${api.applicant.contactEmail} --></span>
 										<#-- <span class="pull-right">
-											<a href="#" id="editEmail" style="float: right"><i class="fa fa-pencil"></i></a>
+											<a href="javascript:;" id="editEmail" style="float: right"><i class="fa fa-pencil"></i></a>
 										</span> -->
 									</div>
 								</div>
@@ -243,7 +247,7 @@
 									${employee.fullname}
 								</span>
 								<span class="pull-right">
-									<a href="#" id="editFullname" style="float: right"><i class="fa fa-pencil"></i></a>
+									<a href="javascript:;" id="editFullname" style="float: right"><i class="fa fa-pencil"></i></a>
 								</span>
 							</div>
 						</div>
@@ -254,7 +258,7 @@
 							<div class="col-sm-7">
 								<span id="gender" data-pk="1" data-type="select" data-toggle="#editGender" data-original-title="Chọn tỉnh/ thành phố" tabindex="-1" class="">${employee.gender} </span>
 								<span class="pull-right">
-									<a href="#" id="editGender" style="float: right"><i class="fa fa-pencil"></i></a>
+									<a href="javascript:;" id="editGender" style="float: right"><i class="fa fa-pencil"></i></a>
 								</span>
 							</div>
 						</div>
@@ -265,7 +269,7 @@
 							<div class="col-sm-7">
 								<span id="telNo" data-pk="1" data-toggle="#editTelNo" data-original-title="Nhập số điện thoại" tabindex="-1" class="" > ${employee.telNo} </span>
 								<span class="pull-right">
-									<a href="#" id="editTelNo" style="float: right"><i class="fa fa-pencil"></i></a>
+									<a href="javascript:;" id="editTelNo" style="float: right"><i class="fa fa-pencil"></i></a>
 								</span>
 							</div>
 						</div>
@@ -276,7 +280,7 @@
 							<div class="col-sm-7">
 								<span id="mobile" data-pk="1" data-toggle="#editMobile" data-original-title="Nhập số điện thoại" tabindex="-1" class="" > ${employee.mobile} </span>
 								<span class="pull-right">
-									<a href="#" id="editMobile" style="float: right"><i class="fa fa-pencil"></i></a>
+									<a href="javascript:;" id="editMobile" style="float: right"><i class="fa fa-pencil"></i></a>
 								</span>
 							</div>
 						</div>
@@ -287,7 +291,7 @@
 							<div class="col-sm-7">
 								<span id="email" data-pk="1" data-toggle="#editEmail" data-original-title="Nhập email" tabindex="-1" class="" >${employee.email} </span>
 								<span class="pull-right">
-									<a href="#" id="editEmail" style="float: right"><i class="fa fa-pencil"></i></a>
+									<a href="javascript:;" id="editEmail" style="float: right"><i class="fa fa-pencil"></i></a>
 								</span>
 							</div>
 						</div>
@@ -1152,6 +1156,20 @@
 		
 		$("#avatar_file_profile").trigger({ type: "click" });
 	});
+	
+	window.onload = function(){
+		var urlReadFile = fileAttachmentUrl({
+			method : "GET",
+			url : "${api.server}/users/${userId}/photo",
+			async : false,
+			success: function(options){
+				var urlOut = options.url;
+				$('#profile_avatar_thumbnail').attr('src', urlOut);
+
+			},
+			error: function(){}
+		});
+	}
 
 	function profile_changeAvatarFileEntry(fileInput) {
 		
@@ -1187,46 +1205,33 @@
 				
 				reader.readAsDataURL(file);
 
-				// call ajax
+				var data = new FormData();
+				data.append( 'fileName', $(fileInput)[0].files[0].name);
+				data.append( 'fileType', $(fileInput)[0].files[0].type);
+				data.append( 'fileSize', $(fileInput)[0].files[0].size);
+				data.append( 'file', $(fileInput)[0].files[0]);
 
-				// var fileName= file.name;
-				// var fileType= file.type;
-				// var fileSize= file.size;
-				// var className= "${(constants.className)!}";
-				// var classPK= $("#change_avatar_profile").attr("data-pk");
-				// var formData = new FormData();
-
-				// formData.append('file', file);
-				// formData.append('fileName', fileName);
-				// formData.append('fileType', fileType);
-				// formData.append('fileSize', fileSize);
-				// formData.append('className', className);
-				// formData.append('classPK', classPK);
-
-				// $.ajax({
-
-				// 	url: employeeUpdateBaseUrl + "/"+ classPK + "/photo" ,
-
-				// 	type: 'PUT',
-				// 	headers: {
-				// 		"groupId": ${groupId}
-				// 	},
-				// 	async: false,
-				// 	contentType: false,
-				// 	processData: false, 
-				// 	data: formData,
-				// 	success: function(result) {
-
-				// 		showMessageToastr("success", 'Yêu cầu của bạn được xử lý thành công!');
-
-				// 	},
-				// 	error: function(xhr, textStatus, errorThrown) {
-
-				// 		showMessageByAPICode(xhr.status);
-
-				// 	}
-
-				// });
+				$.ajax({
+					type : 'PUT', 
+					url  : '${api.server}/users/${userId}/photo', 
+					data : data,
+					processData: false,
+					contentType: false,
+					cache: false,
+					headers: {
+						groupId: ${groupId}
+					},
+					success :  function(result){ 
+						notification.show({
+							message: "Upload ảnh thành công!"
+						}, "success");
+					},
+					error:function(result){
+						notification.show({
+							message: "Yêu cầu không thành công, xin vui lòng thử lại."
+						}, "error");
+					}
+				});
 				
 			}
 

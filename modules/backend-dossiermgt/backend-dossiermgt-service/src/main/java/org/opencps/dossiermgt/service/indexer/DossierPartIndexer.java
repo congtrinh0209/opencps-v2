@@ -1,16 +1,6 @@
 package org.opencps.dossiermgt.service.indexer;
 
-import java.util.Locale;
-
-import javax.portlet.PortletRequest;
-import javax.portlet.PortletResponse;
-
-import org.opencps.dossiermgt.constants.DossierPartTerm;
-import org.opencps.dossiermgt.model.DossierPart;
-import org.opencps.dossiermgt.model.DossierTemplate;
-import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
-import org.opencps.dossiermgt.service.DossierTemplateLocalServiceUtil;
-
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -23,9 +13,24 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.IndexWriterHelperUtil;
 import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.Locale;
+
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
+
+import org.opencps.dossiermgt.constants.DossierPartTerm;
+import org.opencps.dossiermgt.model.DossierPart;
+import org.opencps.dossiermgt.model.DossierTemplate;
+import org.opencps.dossiermgt.service.DossierPartLocalServiceUtil;
+import org.opencps.dossiermgt.service.DossierTemplateLocalServiceUtil;
+import org.osgi.service.component.annotations.Component;
+
+@Component(
+    immediate = true,
+    service = BaseIndexer.class
+)
 public class DossierPartIndexer extends BaseIndexer<DossierPart> {
 	public static final String CLASS_NAME = DossierPart.class.getName();
 
@@ -78,6 +83,7 @@ public class DossierPartIndexer extends BaseIndexer<DossierPart> {
 		document.addTextSortable(DossierPartTerm.FILE_TEMPLATE_NO, object.getFileTemplateNo());
 		document.addTextSortable(DossierPartTerm.ESIGN, Boolean.toString(object.getESign()));
 		document.addTextSortable(DossierPartTerm.DELIVERABLE_TYPE, Validator.isNotNull(object.getDeliverableType()) ? object.getDeliverableType() : StringPool.BLANK );
+		document.addTextSortable(DossierPartTerm.EFORM, Boolean.toString(object.getEForm()));
 
 		return document;
 	}

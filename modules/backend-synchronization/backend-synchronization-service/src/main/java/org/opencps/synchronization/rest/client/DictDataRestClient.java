@@ -25,12 +25,15 @@ import org.opencps.synchronization.rest.model.DictItemModel;
 
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 
 public class DictDataRestClient {
 	private String username;
 	private String password;
 	private String baseUrl;
 	private long groupId;
+	private static Log _log = LogFactoryUtil.getLog(DictDataRestClient.class);
 	
 	public long getGroupId() {
 		return groupId;
@@ -44,12 +47,12 @@ public class DictDataRestClient {
 	
 	public static DictDataRestClient fromJSONObject(JSONObject configObj) {
 		if (configObj.has(SyncServerTerm.SERVER_USERNAME) 
-				&& configObj.has(SyncServerTerm.SERVER_PASSWORD)
+				&& configObj.has(SyncServerTerm.SERVER_SECRET)
 				&& configObj.has(SyncServerTerm.SERVER_URL)
 				&& configObj.has(SyncServerTerm.SERVER_GROUP_ID)) {
 			return new DictDataRestClient(
 					configObj.getString(SyncServerTerm.SERVER_USERNAME), 
-					configObj.getString(SyncServerTerm.SERVER_PASSWORD), 
+					configObj.getString(SyncServerTerm.SERVER_SECRET), 
 					configObj.getString(SyncServerTerm.SERVER_URL),
 					configObj.getLong(SyncServerTerm.SERVER_GROUP_ID));
 		}
@@ -90,31 +93,27 @@ public class DictDataRestClient {
 			HttpResponse getqueryresponse = httpClient.execute(getRequest);
  			 			
 			if (getqueryresponse.getStatusLine().getStatusCode() == SyncServerTerm.STATUS_OK) {
-				BufferedReader br = new BufferedReader(new InputStreamReader((getqueryresponse.getEntity().getContent())));
-				String output = "";
-				StringBuilder jsonStr = new StringBuilder();
-				
-				while ((output = br.readLine()) != null) {
-					jsonStr.append(output);
+				try (BufferedReader br = new BufferedReader(new InputStreamReader((getqueryresponse.getEntity().getContent())))) {
+					String output = "";
+					StringBuilder jsonStr = new StringBuilder();
+					
+					while ((output = br.readLine()) != null) {
+						jsonStr.append(output);
+					}
+	
+					JSONObject obj = JSONFactoryUtil.createJSONObject(jsonStr.toString());
+	
+					httpClient.close();	
+					
+					result = DictCollectionModel.fromJSONObject(obj);
 				}
-
-				JSONObject obj = JSONFactoryUtil.createJSONObject(jsonStr.toString());
-
-				httpClient.close();	
-				
-				result = DictCollectionModel.fromJSONObject(obj);
 			}
 		} catch (MalformedURLException e) {
-
-			e.printStackTrace();
-
+			_log.error(e);
 		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		}
-		catch (Exception e) {
-			e.printStackTrace();
+			_log.error(e);
+		} catch (Exception e) {
+			_log.error(e);
 		}			
 		
 		return result;
@@ -141,32 +140,28 @@ public class DictDataRestClient {
 			HttpResponse getqueryresponse = httpClient.execute(getRequest);
 						
 			if (getqueryresponse.getStatusLine().getStatusCode() == SyncServerTerm.STATUS_OK) {
-				BufferedReader br = new BufferedReader(new InputStreamReader((getqueryresponse.getEntity().getContent())));
-				String output = "";
-				StringBuilder jsonStr = new StringBuilder();
-				
-				while ((output = br.readLine()) != null) {
-					jsonStr.append(output);
+				try (BufferedReader br = new BufferedReader(new InputStreamReader((getqueryresponse.getEntity().getContent())))) {
+					String output = "";
+					StringBuilder jsonStr = new StringBuilder();
+					
+					while ((output = br.readLine()) != null) {
+						jsonStr.append(output);
+					}
+					
+					JSONObject obj = JSONFactoryUtil.createJSONObject(jsonStr.toString());
+	
+					httpClient.close();	
+					
+					result = DictItemModel.fromJSONObject(obj);
 				}
-				
-				JSONObject obj = JSONFactoryUtil.createJSONObject(jsonStr.toString());
-
-				httpClient.close();	
-				
-				result = DictItemModel.fromJSONObject(obj);
 			}
 		} catch (MalformedURLException e) {
-
-			e.printStackTrace();
-
+			_log.error(e);
 		} catch (IOException e) {
-
-			e.printStackTrace();
-
+			_log.error(e);
+		} catch (Exception e) {
+			_log.error(e);
 		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}			
 		
 		return result;
 	}	
@@ -191,32 +186,28 @@ public class DictDataRestClient {
 			HttpResponse getqueryresponse = httpClient.execute(getRequest);
  			 			
 			if (getqueryresponse.getStatusLine().getStatusCode() == SyncServerTerm.STATUS_OK) {
-				BufferedReader br = new BufferedReader(new InputStreamReader((getqueryresponse.getEntity().getContent())));
-				String output = "";
-				StringBuilder jsonStr = new StringBuilder();
-				
-				while ((output = br.readLine()) != null) {
-					jsonStr.append(output);
+				try (BufferedReader br = new BufferedReader(new InputStreamReader((getqueryresponse.getEntity().getContent())))) {
+					String output = "";
+					StringBuilder jsonStr = new StringBuilder();
+					
+					while ((output = br.readLine()) != null) {
+						jsonStr.append(output);
+					}
+	
+					JSONObject obj = JSONFactoryUtil.createJSONObject(jsonStr.toString());
+	
+					httpClient.close();	
+					
+					result = DictGroupModel.fromJSONObject(obj);
 				}
-
-				JSONObject obj = JSONFactoryUtil.createJSONObject(jsonStr.toString());
-
-				httpClient.close();	
-				
-				result = DictGroupModel.fromJSONObject(obj);
 			}
 		} catch (MalformedURLException e) {
-
-			e.printStackTrace();
-
+			_log.error(e);
 		} catch (IOException e) {
-
-			e.printStackTrace();
-
+			_log.error(e);
+		} catch (Exception e) {
+			_log.error(e);
 		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}			
 		
 		return result;
 	}	
